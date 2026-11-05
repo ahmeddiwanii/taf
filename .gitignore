@@ -108,3 +108,8 @@ TECHNICAL_REFERENCE.md
 TODO.md
 VISUAL_*.md
 usecase-diagram.md
+
+# Old MySQL migration archive (local only)
+prisma/migrations-mysql-legacy/
+prisma/schema_updates.prisma
+
