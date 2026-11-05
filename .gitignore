@@ -1,7 +1,7 @@
-# See https://help.github.com/articles/ignoring-files/ for more about ignoring files.
-
 # dependencies
 /node_modules
+/.pnp
+.pnp.js
 
 # next.js
 /.next/
@@ -9,36 +9,54 @@
 
 # production
 /build
+/dist
 
-# debug
+# debug / logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
+server_log*.txt
+*.log
+*.har
 
-# env files
-.env*
+# env & secrets — never commit
+.env
+.env.*
 !.env.example
+credentials.md
+*.pem
+*.key
+*.p12
+*.pfx
+secrets/
+.secret*
 
-# vercel
+# vercel / local tooling
 .vercel
+.vscode/
+*.code-workspace
+.idea/
+.kilo/
+.venv/
+venv/
 
-# typescript
+# typescript build info
 *.tsbuildinfo
 next-env.d.ts
 
-# Local generated demo-account credentials
-credentials.md
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
+*~
 
-# Local tooling / noise (keep the public repo CV-clean)
-.vscode/
-*.code-workspace
-.kilo/
-server_log*.txt
-*.har
+# scratch / one-off scripts
 recon.py
 har_analyze.py
 rename_all.js
+
+# local notes & AI session dumps (keep the public repo CV-clean)
 finisheddoc.md
 COMPONENT_INVENTORY.md
 COMPONENT_LIBRARY.md
@@ -48,8 +66,45 @@ DESIGN_SYSTEM_README.txt
 IMPLEMENTATION_DIRECTORS_AND_COLLABORATIONS*.md
 TECHNICAL_INVENTORY.md
 PRODUCT.md
-
-# OS / editor
-.DS_Store
-Thumbs.db
-*.swp
+ANALYSIS_*.md
+ANALYSIS_*.json
+AT_A_GLANCE.md
+BEFORE_AND_AFTER.md
+CHANGES_SUMMARY.md
+CODE_HIGHLIGHTS.md
+COMPLETE_*.md
+COMPREHENSIVE_ANALYSIS.json
+DEPLOYMENT_GUIDE.md
+DESIGN_ENHANCEMENTS.md
+DETAILED_CHANGELOG.md
+DIRECTOR_SYSTEM_*.md
+DISC_COLOR_THEORY_IMPLEMENTATION.md
+DOCUMENTATION_INDEX.md
+EMPLOYEE_FEATURES_IMPLEMENTATION.md
+ENHANCED_*.md
+EVENT_*.md
+FEATURE_GUIDE_*.md
+FILES_GENERATED.md
+FINAL_*.md
+HR_EVENTS_*.md
+IMPLEMENTATION_*.md
+IMPLEMENTATION_*.json
+IMPLEMENTATION_*.txt
+INTERNSHIP_PROJECT_REPORT.md
+MANIFEST.md
+MIGRATION_SETUP.md
+ORGANIZATION_FEATURE_GUIDE.md
+PROFESSIONAL_SAAS_IMPLEMENTATION.md
+PROJECT_DOCUMENTATION.txt
+project-documentation.md
+PROPOSAL_*.md
+PROPOSALS_*.md
+QUICK_*.md
+QUICK_*.txt
+QUICKSTART_GUIDE.md
+README_ANALYSIS.md
+TASK_MANAGEMENT_SYSTEM.md
+TECHNICAL_REFERENCE.md
+TODO.md
+VISUAL_*.md
+usecase-diagram.md

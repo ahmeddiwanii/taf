@@ -7,10 +7,19 @@ loadEnvConfig(process.cwd())
 const prisma = new PrismaClient()
 
 const ORG_ID = "test-org-maison"
+
+// Passwords come from local env only — never hardcode secrets in the repo.
 const PASSWORD = {
-  admin: "[set-in-local-env]",
-  hr: "[set-in-local-env]",
-  member: "[set-in-local-env]",
+  admin: process.env.SEED_ADMIN_PASSWORD,
+  hr: process.env.SEED_HR_PASSWORD,
+  member: process.env.SEED_MEMBER_PASSWORD,
+}
+
+if (!PASSWORD.admin || !PASSWORD.hr || !PASSWORD.member) {
+  console.error(
+    "Missing SEED_ADMIN_PASSWORD / SEED_HR_PASSWORD / SEED_MEMBER_PASSWORD in your local .env",
+  )
+  process.exit(1)
 }
 
 const accounts = [
