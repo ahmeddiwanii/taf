@@ -25,25 +25,29 @@ Tafsula helps young people find clubs and events, join a bureau or a team, compl
 
 ```bash
 cp .env.example .env
+# Fill DATABASE_URL, DIRECT_URL, NEXTAUTH_SECRET
+# For demos, also set SEED_ADMIN_PASSWORD, SEED_HR_PASSWORD, SEED_MEMBER_PASSWORD
 npm install
 npx prisma migrate deploy
 npm run seed:test
 npm run dev
 ```
 
-Fill Postgres and `NEXTAUTH_SECRET` in `.env` first. Never commit real secrets.
+Never commit real `.env` values. Passwords for seed accounts live only in your local env (and optionally a local `credentials.md`, which is gitignored).
 
-## Demo login accounts
+## Demo accounts (local only)
 
-Created by `npm run seed:test` (safe fictional passwords for local / portfolio demos):
+`npm run seed:test` creates three roles when seed passwords are set in `.env`:
 
-| Role | Email | Password | Opens |
-| --- | --- | --- | --- |
-| Superadmin | `admin@tafsula.test` | `[set-in-local-env]` | `/dashboard/admin` |
-| Bureau (HR) | `hr@tafsula.test` | `[set-in-local-env]` | `/dashboard/hr` |
-| Member | `member@tafsula.test` | `[set-in-local-env]` | `/dashboard/member` |
+| Role | Email | Opens |
+| --- | --- | --- |
+| Superadmin | `admin@tafsula.test` | `/dashboard/admin` |
+| Bureau (HR) | `hr@tafsula.test` | `/dashboard/hr` |
+| Member | `member@tafsula.test` | `/dashboard/member` |
 
-The seed also creates a sample club (`Maison El Medina`), a public open night, a welcome-desk team, and one assigned task.
+Passwords are **not** stored in this repo. The seed script prints them once in your terminal.
+
+It also creates a sample club (`Maison El Medina`), a public open night, a welcome-desk team, and one assigned task.
 
 ## Scripts
 
@@ -52,7 +56,7 @@ The seed also creates a sample club (`Maison El Medina`), a public open night, a
 | `npm run dev` | Local server |
 | `npm run build` | Prisma generate + Next build |
 | `npm start` | Production server |
-| `npm run seed:test` | Upsert demo org + role accounts |
+| `npm run seed:test` | Upsert demo org + role accounts (needs seed env vars) |
 | `npm run seed` | Alternate seed script |
 
 ## Deploy outline
