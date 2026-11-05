@@ -6,7 +6,7 @@ import { getHRSessionUser } from "../../../../lib/hr-session-user"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card"
 import { Button } from "../../../../components/ui/button"
 import Link from "next/link"
-import { Calendar, Heart, MessageCircle, Share2, Plus } from "lucide-react"
+import { Calendar, Heart, MessageCircle, Share2, Plus, Pencil } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
 export default async function HomePageFeed() {
@@ -78,12 +78,11 @@ export default async function HomePageFeed() {
   return (
     <HRLayout orgName={organization?.name || "Your workspace"}>
         <div className="mx-auto max-w-4xl space-y-8">
-          {/* Header */}
-          <div className="mb-8">
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-              Home Feed
+          <div className="mb-6 sm:mb-8">
+            <h1 className="text-2xl font-semibold tracking-tight text-[#1e302d] sm:text-3xl">
+              Club news
             </h1>
-            <p className="text-gray-600">Latest updates, events, and announcements</p>
+            <p className="mt-1 text-sm text-[#737c74]">Share updates, then edit them anytime if something changes.</p>
           </div>
 
           {/* Create Post / Event Section */}
@@ -172,20 +171,25 @@ export default async function HomePageFeed() {
               posts.map((post) => (
                 <Card key={post.id} className="hover:shadow-lg transition-shadow border-l-4 border-l-blue-500">
                   <CardHeader className="pb-3">
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-2">
-                          <div className="w-10 h-10 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center text-white font-bold text-sm">
-                            {post.author?.name?.charAt(0).toUpperCase()}
-                          </div>
-                          <div>
-                            <p className="font-semibold text-gray-900">{post.author?.name || "Unknown"}</p>
-                            <p className="text-xs text-gray-500">
-                              {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
-                            </p>
-                          </div>
+                    <div className="flex items-start justify-between gap-3">
+                      <div className="flex min-w-0 flex-1 items-center gap-2">
+                        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#203b36] text-sm font-bold text-white">
+                          {post.author?.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="truncate font-semibold text-gray-900">{post.author?.name || "Unknown"}</p>
+                          <p className="text-xs text-gray-500">
+                            {formatDistanceToNow(new Date(post.createdAt), { addSuffix: true })}
+                          </p>
                         </div>
                       </div>
+                      <Link
+                        href={`/dashboard/hr/posts/${post.id}/edit`}
+                        className="inline-flex shrink-0 items-center gap-1.5 rounded-lg border border-[#deddd3] px-2.5 py-1.5 text-xs font-semibold text-[#53635a] no-underline hover:bg-[#f5f4ef]"
+                      >
+                        <Pencil className="h-3.5 w-3.5" />
+                        Edit
+                      </Link>
                     </div>
                   </CardHeader>
 

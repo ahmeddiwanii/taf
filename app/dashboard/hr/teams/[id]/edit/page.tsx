@@ -127,7 +127,7 @@ export default function SquadCommandPage() {
         fetchData()
       }
     } catch (e) {
-      toast.error("Transmission Failed")
+      toast.error("Something went wrong")
     } finally {
       setSaving(false)
     }
@@ -141,7 +141,7 @@ export default function SquadCommandPage() {
         body: JSON.stringify({ userId })
       })
       if (res.ok) {
-        toast.success("Personnel Deployed")
+        toast.success("Member added")
         fetchData()
       }
     } catch (e) {
@@ -155,7 +155,7 @@ export default function SquadCommandPage() {
         method: "DELETE"
       })
       if (res.ok) {
-        toast.success("Personnel Recalled")
+        toast.success("Member removed")
         fetchData()
       }
     } catch (e) {
@@ -171,7 +171,7 @@ export default function SquadCommandPage() {
         body: JSON.stringify({ userId })
       })
       if (res.ok) {
-        toast.success(isCurrentlyDirector ? "Command Authority Revoked" : "Commissioned as Director")
+        toast.success(isCurrentlyDirector ? "Lead removed" : "Set as team lead")
         fetchData()
       }
     } catch (e) {
@@ -202,7 +202,7 @@ export default function SquadCommandPage() {
         })
       })
       if (res.ok) {
-        toast.success(`Mission Deployed to ${showAssignModal.userName.split(' ')[0]}`)
+        toast.success(`Task given to ${showAssignModal.userName.split(' ')[0]}`)
         setShowAssignModal(null)
         setTaskForm({ title: "", description: "", priority: "MEDIUM" })
         fetchData()
@@ -234,7 +234,7 @@ export default function SquadCommandPage() {
               onClick={() => router.push("/dashboard/hr/teams")}
               className="mb-8 -ml-4 text-white/40 hover:text-white transition-colors"
             >
-              <ArrowLeft className="w-4 h-4 mr-2" /> Operational Grid
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to teams
             </Button>
             
             <div className="flex items-start gap-6">
@@ -278,7 +278,7 @@ export default function SquadCommandPage() {
 
           <div className="flex gap-4">
              <div className="px-6 py-4 rounded-2xl bg-white/[0.02] border border-white/[0.08] text-right">
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Squad Status</p>
+                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-1">Team status</p>
                 <div className="flex items-center gap-2 justify-end">
                    <div className={`w-2 h-2 rounded-full ${team.status === 'active' ? 'bg-emerald-500' : 'bg-red-500'} animate-pulse`} />
                    <span className="text-xs font-black text-white uppercase tracking-widest">{team.status}</span>
@@ -299,15 +299,15 @@ export default function SquadCommandPage() {
         {/* Main Orchestrator Grid */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 mb-12">
           
-          {/* Asset Pool (Source) */}
+          {/* Pool (Source) */}
           <div className="lg:col-span-4 flex flex-col bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] backdrop-blur-xl overflow-hidden min-h-[600px]">
              <div className="p-8 border-b border-white/[0.05] bg-white/[0.02]">
                 <div className="flex items-center justify-between mb-6">
                    <div>
-                      <h3 className="text-xl font-black text-white tracking-tight leading-none" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>ASSET POOL</h3>
+                      <h3 className="text-xl font-black text-white tracking-tight leading-none" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>People</h3>
                       <p className="text-[10px] font-black text-white/20 uppercase tracking-widest mt-2">Organization Resources</p>
                    </div>
-                   <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">{filteredResources.length} Units</Badge>
+                   <Badge className="bg-blue-500/10 text-blue-400 border-blue-500/20">{filteredResources.length} people</Badge>
                 </div>
                 <div className="relative group">
                    <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-blue-500 transition-colors" />
@@ -360,10 +360,10 @@ export default function SquadCommandPage() {
                 <div className="flex items-center justify-between mb-10 relative z-10">
                    <div>
                       <h3 className="text-2xl font-black text-white tracking-tight flex items-center gap-3" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                         SQUAD DEPLOYMENT
+                         Team members
                          <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 uppercase text-[9px] font-black tracking-widest">{team.members.length} Members</Badge>
                       </h3>
-                      <p className="text-white/20 text-xs font-medium mt-1 uppercase tracking-widest">Active Personnel Allocation</p>
+                      <p className="text-white/20 text-xs font-medium mt-1 uppercase tracking-widest">Who is on this team</p>
                    </div>
                    <div className="p-3 rounded-2xl bg-white/5 border border-white/10 text-white/20">
                       <Users className="w-6 h-6" />
@@ -402,21 +402,21 @@ export default function SquadCommandPage() {
                                    <button 
                                       onClick={() => setShowAssignModal({ userId: member.userId, userName: member.user.name })}
                                       className="p-2 rounded-xl text-white/20 hover:text-emerald-400 hover:bg-emerald-500/10 transition-all"
-                                      title="Deploy Mission to Asset"
+                                      title="Give task to person"
                                    >
                                       <Target className="w-4 h-4" />
                                    </button>
                                    <button 
                                       onClick={() => handleToggleDirector(member.userId, isDirector)}
                                       className={`p-2 rounded-xl transition-all ${isDirector ? 'text-blue-400 bg-blue-500/10' : 'text-white/20 hover:text-blue-400 hover:bg-white/5'}`}
-                                      title={isDirector ? "Revoke Command" : "Appoint Director"}
+                                      title={isDirector ? "Remove lead" : "Appoint Director"}
                                    >
                                       <Shield className="w-4 h-4" />
                                    </button>
                                    <button 
                                       onClick={() => handleRemoveMember(member.userId)}
                                       className="p-2 rounded-xl text-white/20 hover:text-red-400 hover:bg-red-500/10 transition-all"
-                                      title="Recall Member"
+                                      title="Remove member"
                                    >
                                       <Trash2 className="w-4 h-4" />
                                    </button>
@@ -425,7 +425,7 @@ export default function SquadCommandPage() {
 
                              <div className="flex items-center justify-between border-t border-white/5 pt-4">
                                 <span className={`text-[9px] font-black uppercase tracking-[0.2em] ${isDirector ? 'text-blue-400' : 'text-white/10'}`}>
-                                   {isDirector ? "Operational Command" : "Assigned Asset"}
+                                   {isDirector ? "Team leads" : "Assigned Asset"}
                                 </span>
                                 {isDirector && <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />}
                              </div>
@@ -437,7 +437,7 @@ export default function SquadCommandPage() {
                    {team.members.length === 0 && (
                       <div className="md:col-span-2 py-20 flex flex-col items-center justify-center border-2 border-dashed border-white/5 rounded-[2rem] text-white/20">
                          <UserPlus className="w-12 h-12 mb-4 opacity-10" />
-                         <p className="text-xs font-black uppercase tracking-[0.3em] text-center leading-loose">Squad Empty<br/>Deploy Assets from the Pool</p>
+                         <p className="text-xs font-black uppercase tracking-[0.3em] text-center leading-loose">No members yet<br/>Approves from the Pool</p>
                       </div>
                    )}
                 </div>
@@ -451,14 +451,14 @@ export default function SquadCommandPage() {
               <div className="p-2.5 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                  <Target className="w-5 h-5" />
               </div>
-              <h3 className="text-3xl font-black text-white tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>TACTICAL INTELLIGENCE</h3>
+              <h3 className="text-3xl font-black text-white tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Tips</h3>
            </div>
 
            <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 text-white">
               {/* Squad Level Tasks */}
               <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] p-10 backdrop-blur-xl">
                  <div className="flex items-center justify-between mb-8">
-                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Squad Objectives</p>
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Team tasks</p>
                     <Badge className="bg-emerald-500/10 text-emerald-400 border-none">{team.tasks.length} Active</Badge>
                  </div>
                  <div className="space-y-4">
@@ -494,8 +494,8 @@ export default function SquadCommandPage() {
               {/* Personnel Performance Metrics */}
               <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] p-10 backdrop-blur-xl">
                  <div className="flex items-center justify-between mb-8">
-                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Individual Assets</p>
-                    <span className="text-[10px] text-white/10 font-black tracking-widest uppercase">Cross-Intelligence View</span>
+                    <p className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">People</p>
+                    <span className="text-[10px] text-white/10 font-black tracking-widest uppercase">Overview</span>
                  </div>
                  <div className="space-y-4">
                     {team.members.map(member => {
@@ -510,7 +510,7 @@ export default function SquadCommandPage() {
                            </div>
                            <div className="flex items-center gap-4">
                               <div className="text-right">
-                                 <p className="text-[9px] font-black text-white/10 uppercase mb-0.5">Assigned Missions</p>
+                                 <p className="text-[9px] font-black text-white/10 uppercase mb-0.5">Assigned tasks</p>
                                  <p className="text-xs font-black text-blue-400">{memberTasks.length}</p>
                               </div>
                               <button className="p-2 text-white/10 hover:text-white transition-colors">
@@ -550,14 +550,14 @@ export default function SquadCommandPage() {
                      <Target className="w-8 h-8 text-emerald-500" />
                   </div>
                   <div>
-                     <h3 className="text-2xl font-black text-white leading-tight uppercase tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Direct Deployment</h3>
+                     <h3 className="text-2xl font-black text-white leading-tight uppercase tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Give a task</h3>
                      <p className="text-emerald-400/40 text-[10px] font-black uppercase tracking-widest mt-0.5 mt-1">Target: {showAssignModal.userName}</p>
                   </div>
                </div>
 
                <div className="space-y-6">
                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Mission Objective</label>
+                     <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Task title</label>
                      <Input 
                         placeholder="e.g., Conduct Security Audit"
                         value={taskForm.title}
@@ -567,7 +567,7 @@ export default function SquadCommandPage() {
                   </div>
 
                   <div className="space-y-2">
-                     <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Operational Parameters</label>
+                     <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Details</label>
                      <Input 
                         placeholder="Detailed instructions for the asset..."
                         value={taskForm.description}
@@ -608,7 +608,7 @@ export default function SquadCommandPage() {
                         disabled={creatingTask || !taskForm.title}
                         className="flex-1 h-16 rounded-2xl bg-emerald-600 hover:bg-emerald-700 text-white uppercase font-black text-[10px] tracking-widest shadow-xl shadow-emerald-600/20"
                      >
-                        {creatingTask ? "Deploying..." : "Commit Mission"}
+                        {creatingTask ? "Saving…" : "Create task"}
                      </Button>
                   </div>
                </div>

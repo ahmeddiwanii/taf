@@ -5,13 +5,13 @@ import { useSession } from "next-auth/react"
 import { useRouter } from "next/navigation"
 import { toast } from "sonner"
 import { HRLayout } from "@/components/layout/hr-layout"
-import { Card, CardContent } from "@/components/ui/card"
+import { PageTour } from "@/components/dashboard/page-tour"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import {
-  CheckCircle2, Clock, AlertCircle, Plus, ArrowRight, ClipboardList, Search, Users, Calendar,
-  MoreVertical, Target, Zap, Shield, Filter, LayoutGrid, Trash2, ChevronDown
+  CheckCircle2, Clock, Plus, ArrowRight, ClipboardList, Search, Users, Calendar,
+  Target, Zap, Trash2
 } from "lucide-react"
 import Link from "next/link"
 import { format } from "date-fns"
@@ -26,16 +26,16 @@ interface Task {
 }
 
 const priorityConfig: any = {
-  URGENT: { border: "border-red-500/30", text: "text-red-400", bg: "bg-red-500/10", label: "CRITICAL" },
-  HIGH: { border: "border-orange-500/30", text: "text-orange-400", bg: "bg-orange-500/10", label: "HIGH PRIO" },
-  MEDIUM: { border: "border-amber-500/30", text: "text-amber-400", bg: "bg-amber-500/10", label: "STANDBY" },
-  LOW: { border: "border-emerald-500/30", text: "text-emerald-400", bg: "bg-emerald-500/10", label: "ROUTINE" },
+  URGENT: { border: "border-red-200", text: "text-red-700", bg: "bg-red-50", label: "Urgent" },
+  HIGH: { border: "border-orange-200", text: "text-orange-700", bg: "bg-orange-50", label: "High" },
+  MEDIUM: { border: "border-amber-200", text: "text-amber-700", bg: "bg-amber-50", label: "Medium" },
+  LOW: { border: "border-emerald-200", text: "text-emerald-700", bg: "bg-emerald-50", label: "Low" },
 }
 
 const statusConfig: any = {
-  FINALIZED: { icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/30", label: "FINALIZED" },
-  ACTIVE: { icon: Zap, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/30", label: "ACTIVE" },
-  PENDING: { icon: Clock, color: "text-white/40", bg: "bg-white/5", border: "border-white/10", label: "PENDING" },
+  FINALIZED: { icon: CheckCircle2, color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", label: "Done" },
+  ACTIVE: { icon: Zap, color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200", label: "Active" },
+  PENDING: { icon: Clock, color: "text-slate-600", bg: "bg-slate-50", border: "border-slate-200", label: "Pending" },
 }
 
 export default function HRTasksPage() {
@@ -65,36 +65,35 @@ export default function HRTasksPage() {
   }
 
   const handleDelete = async (id: string) => {
-    if (!confirm("Are you sure you want to terminate this objective?")) return
+    if (!confirm("Delete this task?")) return
     try {
       const res = await fetch(`/api/teams/tasks/${id}`, { method: "DELETE" })
       if (res.ok) {
-        toast.success("Objective Terminated")
+        toast.success("Task deleted")
         fetchData()
       }
-    } catch (error) {
-      toast.error("Operation Failed")
+    } catch {
+      toast.error("Could not delete the task")
     }
   }
 
   const handleStatusChange = async (id: string, newStatus: string) => {
-    // Optimistic UI update
-    setTasks(prev => prev.map(t => t.id === id ? { ...t, status: newStatus } : t))
+    setTasks((prev) => prev.map((t) => (t.id === id ? { ...t, status: newStatus } : t)))
     try {
       const res = await fetch(`/api/teams/tasks/${id}`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ status: newStatus })
+        body: JSON.stringify({ status: newStatus }),
       })
       if (!res.ok) {
-        toast.error("Network Error: Failed to sync status")
-        fetchData() // Revert back
+        toast.error("Could not update status")
+        fetchData()
       } else {
-        toast.success(`Status upgraded to ${newStatus}`)
+        toast.success("Status updated")
       }
     } catch {
-      toast.error("Transmission Error")
-      fetchData() // Revert back
+      toast.error("Could not update status")
+      fetchData()
     }
   }
 
@@ -115,166 +114,185 @@ export default function HRTasksPage() {
 
   return (
     <HRLayout orgName={session?.user?.name || "Organization"}>
-      <div className="space-y-8 relative z-10">
-        {/* Header */}
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <h1 className="text-5xl font-black text-white tracking-tighter mb-2 uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              MISSION <span className="text-blue-500">CONTROL</span>
+      <PageTour
+        storageKey="tafsula_tour_hr_tasks_v1"
+        steps={[
+          {
+            target: "tasks-actions",
+            title: "Create or review",
+            body: "Create a new task, or review work people already sent in.",
+          },
+          {
+            target: "tasks-stats",
+            title: "Quick numbers",
+            body: "See how many tasks are waiting, active, or done.",
+          },
+          {
+            target: "tasks-search",
+            title: "Find a task",
+            body: "Type a word from the title to find it fast.",
+          },
+          {
+            target: "tasks-filters",
+            title: "Filter the list",
+            body: "Tap a status or urgency to show only those tasks. Tap again to clear.",
+          },
+          {
+            target: "tasks-list",
+            title: "Your task list",
+            body: "Open a task to see details, change status, or delete it.",
+          },
+        ]}
+      />
+
+      <div className="relative z-10 space-y-8">
+        <div className="mb-6 flex flex-col gap-4 md:mb-8 md:flex-row md:items-end md:justify-between">
+          <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#1e302d] sm:text-3xl">
+              Tasks
             </h1>
-            <p className="text-white/40 font-medium tracking-wide">Coordinate deployment tasks and operational objectives</p>
+            <p className="mt-1 text-sm text-[#737c74]">
+              Create work, give it to a team, then check what is done.
+            </p>
           </motion.div>
-          
+
           <motion.div
+            data-tour="tasks-actions"
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
-            className="flex gap-4"
+            className="flex flex-wrap gap-2"
           >
-
-            <Button asChild className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-white gap-3 rounded-2xl shadow-xl shadow-blue-600/20 border border-blue-500/50 font-black transition-all hover:scale-105 active:scale-95 uppercase tracking-widest text-[10px]">
+            <Button asChild variant="outline" className="h-11 rounded-xl border-[#deddd3] text-[#203b36]">
+              <Link href="/dashboard/hr/tasks/review" className="flex items-center gap-2">
+                <CheckCircle2 className="h-4 w-4" />
+                Review work
+              </Link>
+            </Button>
+            <Button asChild className="h-11 rounded-xl bg-[#203b36] px-5 text-white hover:bg-[#2d5148]">
               <Link href="/dashboard/hr/tasks/create" className="flex items-center gap-2">
-                <Plus className="w-5 h-5" />
-                ASSIGN OBJECTIVE
+                <Plus className="h-4 w-4" />
+                Create task
               </Link>
             </Button>
           </motion.div>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-6">
-          <StatCard label="TOTAL ASSETS" value={stats.total} icon={ClipboardList} color="blue" />
-          <StatCard label="PENDING" value={stats.pending} icon={Clock} color="white/20" />
-          <StatCard label="ACTIVE OPS" value={stats.active} icon={Zap} color="amber" />
-          <StatCard label="FINALIZED" value={stats.finalized} icon={CheckCircle2} color="emerald" />
+        <div data-tour="tasks-stats" className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+          <StatCard label="All tasks" value={stats.total} icon={ClipboardList} />
+          <StatCard label="Pending" value={stats.pending} icon={Clock} />
+          <StatCard label="Active" value={stats.active} icon={Zap} />
+          <StatCard label="Done" value={stats.finalized} icon={CheckCircle2} />
         </div>
 
-        {/* Filters */}
-        <div className="space-y-6">
-           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
-              <div className="lg:col-span-2 space-y-2">
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Objective Search</p>
-                <div className="relative group">
-                  <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-blue-500 transition-colors" />
-                  <Input
-                    placeholder="Locate objectives in the datastream..."
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    className="h-16 pl-14 bg-white/[0.03] border-white/[0.08] focus:border-blue-500/50 text-white rounded-2xl transition-all backdrop-blur-xl group-hover:bg-white/[0.05]"
+        <div className="space-y-4">
+          <div data-tour="tasks-search" className="relative">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b938a]" />
+            <Input
+              placeholder="Search by task name…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-12 rounded-xl border-[#deddd3] bg-white pl-11 text-sm text-[#1e302d] placeholder:text-[#9aa39a]"
+            />
+          </div>
+
+          <div data-tour="tasks-filters" className="flex flex-wrap gap-2">
+            {["PENDING", "ACTIVE", "FINALIZED"].map((s) => {
+              const isActive = statusFilter === s
+              const style = statusConfig[s]
+              return (
+                <button
+                  key={s}
+                  type="button"
+                  onClick={() => setStatusFilter(isActive ? null : s)}
+                  className={`h-10 rounded-xl border px-4 text-xs font-semibold transition-all ${
+                    isActive
+                      ? `${style.bg} ${style.color} ${style.border}`
+                      : "border-[#deddd3] bg-white text-[#53635a] hover:border-[#203b36]/30 hover:text-[#1e302d]"
+                  }`}
+                >
+                  {style.label}
+                </button>
+              )
+            })}
+            <span className="mx-1 hidden h-10 w-px bg-[#e7e5dc] sm:block" />
+            {["URGENT", "HIGH", "MEDIUM", "LOW"].map((p) => {
+              const isActive = priorityFilter === p
+              const style = priorityConfig[p]
+              return (
+                <button
+                  key={p}
+                  type="button"
+                  onClick={() => setPriorityFilter(isActive ? null : p)}
+                  className={`h-10 rounded-xl border px-4 text-xs font-semibold transition-all ${
+                    isActive
+                      ? `${style.bg} ${style.text} ${style.border}`
+                      : "border-[#deddd3] bg-white text-[#53635a] hover:border-[#203b36]/30 hover:text-[#1e302d]"
+                  }`}
+                >
+                  {style.label}
+                </button>
+              )
+            })}
+          </div>
+        </div>
+
+        <div data-tour="tasks-list">
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div key="loading" className="space-y-4">
+                {[...Array(4)].map((_, i) => (
+                  <div
+                    key={i}
+                    className="h-28 animate-pulse rounded-2xl border border-[#e7e5dc] bg-white"
                   />
-                </div>
-              </div>
-
-              <div className="space-y-2">
-                 <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Quick Filters</p>
-                 <div className="flex p-1.5 bg-white/[0.03] border border-white/[0.08] rounded-2xl backdrop-blur-xl h-16 items-center gap-2">
-                    <Button variant="ghost" className="flex-1 h-full rounded-xl text-[10px] font-black uppercase text-white/30 hover:text-white hover:bg-white/5">
-                       <Filter className="w-4 h-4 mr-2" /> Sort
-                    </Button>
-                    <Button variant="ghost" className="flex-1 h-full rounded-xl text-[10px] font-black uppercase text-white/30 hover:text-white hover:bg-white/5">
-                       <LayoutGrid className="w-4 h-4 mr-2" /> View
-                    </Button>
-                 </div>
-              </div>
-           </div>
-
-           <div className="flex flex-wrap gap-3">
-              <p className="w-full text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1 mb-1">Status Classification</p>
-              {["PENDING", "ACTIVE", "FINALIZED"].map(s => {
-                const isActive = statusFilter === s
-                const style = statusConfig[s]
-                return (
-                  <button 
-                    key={s} 
-                    onClick={() => setStatusFilter(isActive ? null : s)}
-                    className={`h-11 px-6 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                      isActive 
-                      ? `${style.bg} ${style.color} ${style.border} shadow-lg` 
-                      : "bg-white/[0.02] text-white/30 border-white/5 hover:border-white/20 hover:text-white"
-                    }`}
-                  >
-                    {s}
-                  </button>
-                )
-              })}
-              <div className="w-px h-11 bg-white/5 mx-2" />
-              {["URGENT", "HIGH", "MEDIUM", "LOW"].map(p => {
-                const isActive = priorityFilter === p
-                return (
-                  <button 
-                    key={p} 
-                    onClick={() => setPriorityFilter(isActive ? null : p)}
-                    className={`h-11 px-6 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                      isActive 
-                      ? "bg-amber-600 text-white border-amber-500 shadow-lg shadow-amber-600/20" 
-                      : "bg-white/[0.02] text-white/30 border-white/5 hover:border-white/20 hover:text-white"
-                    }`}
-                  >
-                    {p}
-                  </button>
-                )
-              })}
-           </div>
+                ))}
+              </motion.div>
+            ) : filtered.length === 0 ? (
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0, y: 16 }}
+                animate={{ opacity: 1, y: 0 }}
+                className="rounded-2xl border border-[#e7e5dc] bg-white py-20 text-center"
+              >
+                <ClipboardList className="mx-auto mb-4 h-12 w-12 text-[#cfcfc4]" />
+                <p className="text-lg font-semibold text-[#1e302d]">No tasks yet</p>
+                <p className="mx-auto mt-2 mb-6 max-w-sm text-sm text-[#737c74]">
+                  Create a task to give work to a team.
+                </p>
+                <Button asChild className="h-11 rounded-xl bg-[#203b36] px-6 text-white hover:bg-[#2d5148]">
+                  <Link href="/dashboard/hr/tasks/create">Create task</Link>
+                </Button>
+              </motion.div>
+            ) : (
+              <motion.div key="list" initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
+                {filtered.map((task, index) => (
+                  <TaskCard
+                    key={task.id}
+                    task={task}
+                    index={index}
+                    onDelete={() => handleDelete(task.id)}
+                    onStatusChange={(status) => handleStatusChange(task.id, status)}
+                  />
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
-
-        {/* Tasks List */}
-        <AnimatePresence mode="wait">
-          {loading ? (
-            <motion.div key="loading" className="space-y-4">
-              {[...Array(4)].map((_, i) => (
-                <div key={i} className="h-32 rounded-[2rem] bg-white/5 animate-pulse border border-white/5" />
-              ))}
-            </motion.div>
-          ) : filtered.length === 0 ? (
-            <motion.div 
-              key="empty"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="py-32 text-center bg-white/[0.02] border border-white/[0.08] rounded-[3rem] backdrop-blur-xl"
-            >
-              <ClipboardList className="w-20 h-20 text-white/5 mx-auto mb-6" />
-              <p className="text-xl font-black text-white/40 tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Grid Silence Detected</p>
-              <p className="text-sm text-white/20 mt-2 mb-8 max-w-sm mx-auto">No matching objectives found in the current datastream. Initialize a new mission priority.</p>
-              <Button asChild className="h-12 px-8 bg-white/5 hover:bg-blue-600 border border-white/10 hover:border-blue-500 text-white font-bold rounded-xl transition-all">
-                <Link href="/dashboard/hr/tasks/create">NEW MISSION</Link>
-              </Button>
-            </motion.div>
-          ) : (
-            <motion.div 
-              key="list"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="space-y-4"
-            >
-              {filtered.map((task, index) => (
-                <TaskCard 
-                  key={task.id} 
-                  task={task} 
-                  index={index} 
-                  onDelete={() => handleDelete(task.id)} 
-                  onStatusChange={(status) => handleStatusChange(task.id, status)}
-                />
-              ))}
-            </motion.div>
-          )}
-        </AnimatePresence>
       </div>
     </HRLayout>
   )
 }
 
-function StatCard({ label, value, icon: Icon, color }: any) {
+function StatCard({ label, value, icon: Icon }: any) {
   return (
-    <div className="bg-white/[0.02] border border-white/[0.08] backdrop-blur-xl p-8 rounded-[2rem] group hover:bg-white/[0.04] transition-all duration-500">
-      <div className="flex items-center justify-between mb-2">
-         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{label}</p>
-         <div className={`p-2 rounded-xl bg-white/5 text-white/40 group-hover:text-blue-400 group-hover:bg-blue-400/10 transition-all`}>
-            <Icon className="w-4 h-4" />
-         </div>
+    <div className="rounded-2xl border border-[#e7e5dc] bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8b938a]">{label}</p>
+        <div className="rounded-xl bg-[#f5f4ef] p-2 text-[#53635a]">
+          <Icon className="h-4 w-4" />
+        </div>
       </div>
-      <p className="text-4xl font-black text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{value}</p>
+      <p className="text-3xl font-semibold tracking-tight text-[#1e302d]">{value}</p>
     </div>
   )
 }
@@ -286,86 +304,74 @@ function TaskCard({ task, index, onDelete, onStatusChange }: { task: Task, index
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="group relative bg-white/[0.02] border border-white/[0.08] hover:border-blue-500/30 rounded-[2rem] overflow-hidden transition-all duration-500 shadow-2xl hover:shadow-blue-500/10"
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.04 }}
+      className="rounded-2xl border border-[#e7e5dc] bg-white p-4 shadow-sm sm:p-5"
     >
-      <div className="p-8 flex flex-col xl:flex-row items-start xl:items-center gap-8">
-        {/* Left: Status Icon */}
-        <div className={`p-5 rounded-[1.5rem] bg-white/5 border border-white/5 transition-all group-hover:scale-110 ${st.bg} ${st.border}`}>
-           <StatusIcon className={`w-8 h-8 ${st.color} transition-all`} />
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+        <div className={`inline-flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border ${st.bg} ${st.border}`}>
+          <StatusIcon className={`h-5 w-5 ${st.color}`} />
         </div>
 
-        {/* Center: Content */}
-        <div className="flex-1 min-w-0 space-y-4">
-          <div className="flex flex-wrap items-center gap-4">
-             <h3 className="text-xl font-black text-white tracking-tight truncate group-hover:text-blue-400 transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                {task.title}
-             </h3>
-             <Badge className={`h-6 px-3 text-[10px] font-black tracking-widest border ${pr.border} ${pr.bg} ${pr.text} rounded-lg`}>
-                {pr.label}
-             </Badge>
-             
-             {/* Dynamic HR Production Task Changer Dropdown */}
-             <div className="relative group/select">
-               <select 
-                 value={task.status}
-                 onChange={(e) => onStatusChange(e.target.value)}
-                 className={`h-6 pl-3 pr-7 text-[10px] font-black tracking-widest border ${st.border} ${st.bg} ${st.color} rounded-lg cursor-pointer outline-none appearance-none hover:brightness-125 transition-all`}
-               >
-                 {["PENDING", "ACTIVE", "FINALIZED"].map(s => (
-                   <option key={s} value={s} className="bg-[#0a0a0f] text-white py-2 border-none">
-                     {s}
-                   </option>
-                 ))}
-               </select>
-               <ChevronDown className={`absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 ${st.color} pointer-events-none`} />
-             </div>
+        <div className="min-w-0 flex-1 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <h3 className="truncate text-base font-semibold text-[#1e302d] sm:text-lg">{task.title}</h3>
+            <Badge className={`rounded-lg border px-2 py-0.5 text-[10px] font-semibold ${pr.border} ${pr.bg} ${pr.text}`}>
+              {pr.label}
+            </Badge>
+            <select
+              value={task.status}
+              onChange={(e) => onStatusChange(e.target.value)}
+              className={`h-7 rounded-lg border px-2 text-[10px] font-semibold outline-none ${st.border} ${st.bg} ${st.color}`}
+            >
+              {["PENDING", "ACTIVE", "FINALIZED"].map((s) => (
+                <option key={s} value={s}>
+                  {statusConfig[s]?.label || s}
+                </option>
+              ))}
+            </select>
           </div>
 
-          <div className="flex flex-col md:flex-row md:items-center gap-4 md:gap-6">
-             {task.description && (
-               <p className="text-sm text-white/30 font-medium line-clamp-1 flex-1 max-w-md">
-                 {task.description}
-               </p>
-             )}
-             <div className="flex flex-wrap items-center gap-4 md:gap-6 text-[10px] font-black uppercase tracking-widest text-white/10 group-hover:text-white/20 transition-colors mt-2 md:mt-0">
-                {task.team && (
-                  <div className="flex items-center gap-2">
-                     <Users className="w-3.5 h-3.5" />
-                     <span>SQUAD {task.team.name}</span>
-                  </div>
-                )}
-                {task.assignments && task.assignments.length > 0 && (
-                  <div className="flex items-center gap-2">
-                     <Target className="w-3.5 h-3.5" />
-                     <span>{task.assignments.length} ASSETS DEPLOYED</span>
-                  </div>
-                )}
-                {task.dueDate && (
-                  <div className="flex items-center gap-2 text-blue-400/40 group-hover:text-blue-400 transition-colors">
-                     <Calendar className="w-3.5 h-3.5" />
-                     <span>ETA: {format(new Date(task.dueDate), "MMM d, yyyy")}</span>
-                  </div>
-                )}
-             </div>
+          {task.description && <p className="line-clamp-2 text-sm text-[#737c74]">{task.description}</p>}
+
+          <div className="flex flex-wrap gap-3 text-[11px] font-medium text-[#8b938a]">
+            {task.team && (
+              <span className="inline-flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                {task.team.name}
+              </span>
+            )}
+            {task.assignments && task.assignments.length > 0 && (
+              <span className="inline-flex items-center gap-1">
+                <Target className="h-3.5 w-3.5" />
+                {task.assignments.length} assigned
+              </span>
+            )}
+            {task.dueDate && (
+              <span className="inline-flex items-center gap-1">
+                <Calendar className="h-3.5 w-3.5" />
+                Due {format(new Date(task.dueDate), "MMM d, yyyy")}
+              </span>
+            )}
           </div>
         </div>
 
-        {/* Right: Actions */}
-        <div className="flex items-center gap-3 w-full xl:w-auto mt-4 xl:mt-0 pt-4 xl:pt-0 border-t border-white/5 xl:border-none">
-          <button 
+        <div className="flex items-center gap-2 border-t border-[#eeebe3] pt-3 sm:border-0 sm:pt-0">
+          <button
+            type="button"
             onClick={onDelete}
-            className="p-4 rounded-2xl bg-white/5 hover:bg-red-500/20 text-white/10 hover:text-red-400 transition-all border border-white/5 hover:border-red-500/30 flex-1 xl:flex-none flex items-center justify-center"
-            title="Terminate Objective"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-xl border border-rose-100 text-rose-500 hover:bg-rose-50"
+            title="Delete task"
           >
-             <Trash2 className="w-6 h-6" />
+            <Trash2 className="h-4 w-4" />
           </button>
-          <Link href={`/dashboard/hr/tasks/${task.id}`} className="flex-1 xl:flex-none">
-            <button className="w-full p-4 rounded-2xl bg-white/5 hover:bg-blue-600 text-white/20 hover:text-white transition-all border border-white/5 hover:border-blue-500 shadow-xl group-hover:shadow-blue-600/20 flex items-center justify-center">
-               <ArrowRight className="w-6 h-6" />
-            </button>
+          <Link
+            href={`/dashboard/hr/tasks/${task.id}`}
+            className="inline-flex h-10 flex-1 items-center justify-center gap-1 rounded-xl bg-[#203b36] px-4 text-sm font-semibold text-white no-underline sm:flex-none"
+          >
+            Open
+            <ArrowRight className="h-4 w-4" />
           </Link>
         </div>
       </div>

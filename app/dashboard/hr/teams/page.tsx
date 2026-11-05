@@ -3,28 +3,23 @@
 import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { UserRole } from "../../../../types/user"
 import { HRLayout } from "@/components/layout/hr-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { PageTour } from "@/components/dashboard/page-tour"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
-import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
-import { 
-  Search, 
-  Users, 
-  Plus, 
-  Calendar, 
-  Briefcase, 
-  Eye, 
-  Edit, 
-  CheckCircle, 
-  Trash2, 
-  AlertCircle,
+import {
+  Search,
+  Users,
+  Plus,
+  Calendar,
+  Briefcase,
+  Eye,
+  Edit,
+  CheckCircle,
+  Trash2,
   MoreVertical,
-  Target,
-  Rocket,
-  Zap
+  LayoutGrid,
 } from "lucide-react"
 import { motion, AnimatePresence } from "framer-motion"
 
@@ -62,16 +57,12 @@ export default function TeamsPage() {
   const [showCreateModal, setShowCreateModal] = useState(false)
   const [newTeam, setNewTeam] = useState({ name: "", purpose: "", type: "independent" })
   const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
   const [actionMenuId, setActionMenuId] = useState<string | null>(null)
 
   useEffect(() => {
-    if (status === "unauthenticated") {
-      router.push("/auth/login")
-    }
-
+    if (status === "unauthenticated") router.push("/auth/login")
     if (status === "authenticated" && session?.user.role === "HR") {
       fetchTeamsAndEvents()
     }
@@ -79,22 +70,15 @@ export default function TeamsPage() {
 
   useEffect(() => {
     let filtered = teams
-
-    if (searchQuery.trim() !== "") {
-      const query = searchQuery.toLowerCase()
-      filtered = filtered.filter((team) => team.name.toLowerCase().includes(query))
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase()
+      filtered = filtered.filter((t) => t.name.toLowerCase().includes(q))
     }
-
-    if (filterType === "event-based") {
-      filtered = filtered.filter((team) => team.eventId)
-    } else if (filterType === "independent") {
-      filtered = filtered.filter((team) => !team.eventId)
-    }
-
+    if (filterType === "event-based") filtered = filtered.filter((t) => t.eventId)
+    if (filterType === "independent") filtered = filtered.filter((t) => !t.eventId)
     if (selectedEvent && filterType !== "independent") {
-      filtered = filtered.filter((team) => team.eventId === selectedEvent)
+      filtered = filtered.filter((t) => t.eventId === selectedEvent)
     }
-
     setFilteredTeams(filtered)
   }, [searchQuery, teams, filterType, selectedEvent])
 
@@ -104,54 +88,42 @@ export default function TeamsPage() {
         fetch(`/api/teams?organizationId=${session?.user.organizationId}`),
         fetch(`/api/events?organizationId=${session?.user.organizationId}`),
       ])
-
-      if (!teamsRes.ok || !eventsRes.ok) throw new Error("Failed to fetch data")
-
+      if (!teamsRes.ok || !eventsRes.ok) throw new Error("Failed to fetch")
       const teamsData = await teamsRes.json()
       const eventsResponse = await eventsRes.json()
-
       const teamsArray = teamsData?.teams || (Array.isArray(teamsData) ? teamsData : [])
-      
       setTeams(teamsArray)
       setFilteredTeams(teamsArray)
       setEvents(eventsResponse?.events || [])
-      setIsLoading(false)
-    } catch (error) {
-      console.error("Error fetching data:", error)
-      setError("Failed to load teams. Please try again.")
+    } catch {
+      toast.error("Could not load teams")
+    } finally {
       setIsLoading(false)
     }
   }
 
   const handleDeleteTeam = async (teamId: string) => {
     try {
-      const res = await fetch(`/api/teams/${teamId}`, {
-        method: "DELETE",
-      })
-
-      if (!res.ok) throw new Error("Failed to delete team")
-      
-      toast.success("Squad Devalidated")
+      const res = await fetch(`/api/teams/${teamId}`, { method: "DELETE" })
+      if (!res.ok) throw new Error("Failed")
+      toast.success("Team deleted")
       fetchTeamsAndEvents()
-    } catch (error: any) {
-      toast.error("Recall Failed")
+    } catch {
+      toast.error("Could not delete team")
     } finally {
       setIsDeleting(null)
     }
   }
 
-  const handleEditTeam = (teamId: string) => {
-    router.push(`/dashboard/hr/teams/${teamId}/edit`)
-  }
-
-  const handleManageTeam = (teamId: string) => {
-    router.push(`/dashboard/hr/teams/${teamId}`)
-  }
-
   const handleCreateTeam = async () => {
-    if (!newTeam.name.trim()) return
-    if (newTeam.type === "event-based" && !selectedEvent) return
-
+    if (!newTeam.name.trim()) {
+      toast.error("Please enter a team name")
+      return
+    }
+    if (newTeam.type === "event-based" && !selectedEvent) {
+      toast.error("Please pick an event")
+      return
+    }
     setIsCreating(true)
     try {
       const res = await fetch("/api/teams", {
@@ -164,15 +136,14 @@ export default function TeamsPage() {
           eventId: newTeam.type === "event-based" ? selectedEvent : null,
         }),
       })
-
-      if (!res.ok) throw new Error("Failed to create team")
-
+      if (!res.ok) throw new Error("Failed")
+      toast.success("Team created")
       setNewTeam({ name: "", purpose: "", type: "independent" })
       setShowCreateModal(false)
       setSelectedEvent(null)
       await fetchTeamsAndEvents()
-    } catch (error) {
-      alert("Error creating team")
+    } catch {
+      toast.error("Could not create team")
     } finally {
       setIsCreating(false)
     }
@@ -182,16 +153,16 @@ export default function TeamsPage() {
     total: teams.length,
     eventBased: teams.filter((t) => t.eventId).length,
     independent: teams.filter((t) => !t.eventId).length,
-    active: teams.filter((t) => t.status === "active").length,
+    active: teams.filter((t) => t.status === "active" || t.status === "ACTIVE").length,
   }
 
   if (isLoading) {
     return (
       <HRLayout orgName={session?.user?.name || "Organization"}>
-        <div className="flex justify-center items-center py-24 relative z-10">
-          <div className="space-y-4 text-center">
-             <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto" />
-             <p className="text-white/40 font-bold tracking-widest uppercase text-xs">Syncing Command Center...</p>
+        <div className="flex items-center justify-center py-24">
+          <div className="text-center">
+            <div className="mx-auto h-12 w-12 animate-spin rounded-full border-4 border-[#203b36]/15 border-t-[#203b36]" />
+            <p className="mt-4 text-sm text-[#737c74]">Loading teams…</p>
           </div>
         </div>
       </HRLayout>
@@ -200,112 +171,131 @@ export default function TeamsPage() {
 
   return (
     <HRLayout orgName={session?.user?.name || "Organization"}>
-      <div className="space-y-8 relative z-10">
-        {/* Header */}
-        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
-          <motion.div 
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-          >
-            <h1 className="text-5xl font-black text-white tracking-tighter mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              TEAM <span className="text-blue-500">INTEL</span>
-            </h1>
-            <p className="text-white/40 font-medium tracking-wide">Configure operational squads and deployment units</p>
-          </motion.div>
-          
-          <motion.div
-            initial={{ opacity: 0, x: 20 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="flex gap-4"
-          >
+      <PageTour
+        storageKey="tafsula_tour_hr_teams_v1"
+        steps={[
+          {
+            target: "teams-actions",
+            title: "Create a team",
+            body: "Add a new team, or open the board to move people into teams.",
+          },
+          {
+            target: "teams-stats",
+            title: "Quick numbers",
+            body: "See how many teams you have, and which ones are linked to an event.",
+          },
+          {
+            target: "teams-search",
+            title: "Find a team",
+            body: "Search by name, or filter by event teams vs standing teams.",
+          },
+          {
+            target: "teams-list",
+            title: "Your teams",
+            body: "Open a team to see members and tasks. Edit or delete from the menu.",
+          },
+        ]}
+      />
+
+      <div className="relative z-10 space-y-6 sm:space-y-8">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+          <div>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#1e302d] sm:text-3xl">Teams</h1>
+            <p className="mt-1 text-sm text-[#737c74]">
+              Make teams, add people, and give them work.
+            </p>
+          </div>
+          <div data-tour="teams-actions" className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
             <Button
               onClick={() => router.push("/dashboard/hr/teams/orchestrator")}
               variant="outline"
-              className="h-14 px-8 bg-white/5 hover:bg-white/10 text-white gap-3 rounded-2xl border-white/10 font-black transition-all"
+              className="h-11 w-full rounded-xl border-[#deddd3] text-[#203b36] sm:w-auto"
             >
-              <Zap className="w-5 h-5 text-blue-400" />
-              SQUAD ORCHESTRATOR
+              <LayoutGrid className="mr-2 h-4 w-4" />
+              Team board
             </Button>
             <Button
               onClick={() => setShowCreateModal(true)}
-              className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-white gap-3 rounded-2xl shadow-xl shadow-blue-600/20 border border-blue-500/50 font-black transition-all hover:scale-105 active:scale-95"
+              className="h-11 w-full rounded-xl bg-[#203b36] text-white hover:bg-[#2d5148] sm:w-auto"
             >
-              <Plus className="w-5 h-5" />
-              DEPLOY NEW SQUAD
+              <Plus className="mr-2 h-4 w-4" />
+              Create team
             </Button>
-          </motion.div>
-        </div>
-
-        {/* Stats Grid */}
-        <div className="grid gap-6 md:grid-cols-4">
-          <StatCard icon={Users} label="TOTAL ASSETS" value={stats.total} color="blue" />
-          <StatCard icon={Calendar} label="EVENT BASED" value={stats.eventBased} color="purple" />
-          <StatCard icon={Briefcase} label="STANDALONE" value={stats.independent} color="emerald" />
-          <StatCard icon={CheckCircle} label="OPERATIONAL" value={stats.active} color="amber" />
-        </div>
-
-        {/* Search & Filter */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
-          <div className="lg:col-span-2 space-y-2">
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Registry Search</p>
-            <div className="relative group">
-              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-blue-500 transition-colors" />
-              <Input
-                placeholder="Locate squads in the database..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="h-16 pl-14 bg-white/[0.03] border-white/[0.08] focus:border-blue-500/50 text-white rounded-2xl transition-all backdrop-blur-xl group-hover:bg-white/[0.05]"
-              />
-            </div>
-          </div>
-
-          <div className="space-y-2">
-            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Deployment Type</p>
-            <div className="flex p-1.5 bg-white/[0.03] border border-white/[0.08] rounded-2xl backdrop-blur-xl h-16 items-center">
-              {(["all", "event-based", "independent"] as const).map((filter) => (
-                <button
-                  key={filter}
-                  onClick={() => { setFilterType(filter); setSelectedEvent(null); }}
-                  className={`flex-1 h-full rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                    filterType === filter 
-                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" 
-                    : "text-white/30 hover:text-white hover:bg-white/5"
-                  }`}
-                >
-                  {filter === "all" ? "Grid" : filter === "event-based" ? "Events" : "Direct"}
-                </button>
-              ))}
-            </div>
           </div>
         </div>
 
-        {/* Event Filter (Visible only when 'event-based' is selected) */}
+        <div data-tour="teams-stats" className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+          <StatCard icon={Users} label="All teams" value={stats.total} />
+          <StatCard icon={Calendar} label="For an event" value={stats.eventBased} />
+          <StatCard icon={Briefcase} label="Standing teams" value={stats.independent} />
+          <StatCard icon={CheckCircle} label="Active" value={stats.active} />
+        </div>
+
+        <div data-tour="teams-search" className="space-y-3">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b938a]" />
+            <Input
+              placeholder="Search by team name…"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="h-12 rounded-xl border-[#deddd3] bg-white pl-11 text-sm text-[#1e302d] placeholder:text-[#9aa39a]"
+            />
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { id: "all", label: "All" },
+                { id: "event-based", label: "Event teams" },
+                { id: "independent", label: "Standing teams" },
+              ] as const
+            ).map((f) => (
+              <button
+                key={f.id}
+                type="button"
+                onClick={() => {
+                  setFilterType(f.id)
+                  setSelectedEvent(null)
+                }}
+                className={`h-10 rounded-xl border px-4 text-xs font-semibold transition-all ${
+                  filterType === f.id
+                    ? "border-[#203b36] bg-[#203b36] text-white"
+                    : "border-[#deddd3] bg-white text-[#53635a] hover:border-[#203b36]/30 hover:text-[#1e302d]"
+                }`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
         <AnimatePresence>
           {filterType === "event-based" && events.length > 0 && (
             <motion.div
-              initial={{ opacity: 0, height: 0, marginTop: 0 }}
-              animate={{ opacity: 1, height: "auto", marginTop: 24 }}
-              exit={{ opacity: 0, height: 0, marginTop: 0 }}
-              className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar"
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="flex gap-2 overflow-x-auto pb-1"
             >
               <button
+                type="button"
                 onClick={() => setSelectedEvent(null)}
-                className={`px-6 py-3 rounded-xl border text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all flex-shrink-0 ${
-                  selectedEvent === null 
-                  ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/20" 
-                  : "bg-white/5 text-white/40 border-white/10 hover:border-white/20 hover:text-white"
+                className={`h-10 shrink-0 rounded-xl border px-4 text-xs font-semibold ${
+                  selectedEvent === null
+                    ? "border-[#203b36] bg-[#eef3e4] text-[#1e302d]"
+                    : "border-[#deddd3] bg-white text-[#53635a]"
                 }`}
               >
-                All Events
+                All events
               </button>
               {events.map((event) => (
                 <button
                   key={event.id}
+                  type="button"
                   onClick={() => setSelectedEvent(event.id)}
-                  className={`px-6 py-3 rounded-xl border text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all flex-shrink-0 ${
-                    selectedEvent === event.id 
-                    ? "bg-blue-500/20 text-blue-400 border-blue-500 shadow-lg shadow-blue-500/10" 
-                    : "bg-white/5 text-white/40 border-white/10 hover:border-white/20 hover:text-white"
+                  className={`h-10 shrink-0 rounded-xl border px-4 text-xs font-semibold ${
+                    selectedEvent === event.id
+                      ? "border-[#203b36] bg-[#eef3e4] text-[#1e302d]"
+                      : "border-[#deddd3] bg-white text-[#53635a]"
                   }`}
                 >
                   {event.title}
@@ -315,166 +305,154 @@ export default function TeamsPage() {
           )}
         </AnimatePresence>
 
-        {/* Teams Grid */}
-        <AnimatePresence mode="wait">
+        <div data-tour="teams-list">
           {filteredTeams.length === 0 ? (
-            <motion.div 
-              key="empty"
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -20 }}
-              className="py-32 text-center bg-white/[0.02] border border-white/[0.08] rounded-[2rem] backdrop-blur-xl"
-            >
-                <Target className="w-20 h-20 text-white/5 mx-auto mb-6" />
-                <p className="text-xl font-black text-white/40 tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>No Active Squads Detected</p>
-                <p className="text-sm text-white/20 mt-2 mb-8 max-w-sm mx-auto">The operational grid is empty. Initialize your first team to begin assignment protocols.</p>
-                <Button
-                  onClick={() => setShowCreateModal(true)}
-                  className="h-12 px-8 bg-white/5 hover:bg-blue-600 border border-white/10 hover:border-blue-500 text-white font-bold rounded-xl transition-all"
-                >
-                  INITIALIZE SQUAD
-                </Button>
-            </motion.div>
+            <div className="rounded-2xl border border-[#e7e5dc] bg-white py-16 text-center sm:py-20">
+              <Users className="mx-auto mb-4 h-12 w-12 text-[#cfcfc4]" />
+              <p className="text-lg font-semibold text-[#1e302d]">No teams yet</p>
+              <p className="mx-auto mt-2 mb-6 max-w-sm text-sm text-[#737c74]">
+                Create a team, add people, then give them tasks.
+              </p>
+              <Button
+                onClick={() => setShowCreateModal(true)}
+                className="h-11 rounded-xl bg-[#203b36] px-6 text-white hover:bg-[#2d5148]"
+              >
+                Create team
+              </Button>
+            </div>
           ) : (
-            <motion.div 
-              key="grid"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
-            >
+            <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
               {filteredTeams.map((team, index) => (
-                <TeamCard 
-                  key={team.id} 
-                  team={team} 
-                  index={index} 
-                  onManage={() => handleManageTeam(team.id)}
-                  onEdit={() => handleEditTeam(team.id)}
+                <TeamCard
+                  key={team.id}
+                  team={team}
+                  index={index}
+                  onManage={() => router.push(`/dashboard/hr/teams/${team.id}`)}
+                  onEdit={() => router.push(`/dashboard/hr/teams/${team.id}/edit`)}
                   onDelete={() => setIsDeleting(team.id)}
                   isActionMenuOpen={actionMenuId === team.id}
                   setActionMenuId={setActionMenuId}
                 />
               ))}
-            </motion.div>
+            </div>
           )}
-        </AnimatePresence>
+        </div>
       </div>
 
-      {/* Create Team Modal */}
       <AnimatePresence>
         {showCreateModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-             <motion.div 
+          <div className="fixed inset-0 z-50 flex items-end justify-center p-0 sm:items-center sm:p-4">
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+              className="absolute inset-0 bg-[#132b2a]/50 backdrop-blur-sm"
               onClick={() => setShowCreateModal(false)}
             />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-lg bg-[#0a0a10] border border-white/10 rounded-[2.5rem] shadow-2xl p-10 overflow-hidden"
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              className="relative max-h-[92vh] w-full overflow-y-auto rounded-t-3xl border border-[#e7e5dc] bg-white p-5 shadow-xl sm:max-w-lg sm:rounded-2xl sm:p-7"
             >
-              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600" />
-              <div className="flex items-center gap-4 mb-8">
-                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                    <Rocket className="w-7 h-7 text-blue-400" />
-                 </div>
-                 <div>
-                    <h3 className="text-2xl font-black text-white leading-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SQUAD INITIALIZATION</h3>
-                    <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-0.5">Define new operational parameters</p>
-                 </div>
-              </div>
+              <h3 className="text-xl font-semibold text-[#1e302d]">Create a team</h3>
+              <p className="mt-1 text-sm text-[#737c74]">Give it a clear name so people know what it is for.</p>
 
-              <div className="space-y-6">
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Team Designation</label>
+              <div className="mt-6 space-y-4">
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-[#1e302d]">Team name</label>
                   <Input
-                    placeholder="e.g., Strike Team Alpha"
+                    placeholder="e.g. Welcome desk"
                     value={newTeam.name}
                     onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
-                    className="h-14 bg-white/5 border-white/10 text-white rounded-xl focus:border-blue-500/50"
+                    className="h-11 rounded-xl border-[#deddd3] bg-[#fbfaf7] text-[#1e302d]"
                   />
                 </div>
-
-                <div className="space-y-2">
-                  <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Mission Purpose</label>
+                <div>
+                  <label className="mb-1.5 block text-sm font-semibold text-[#1e302d]">What is this team for?</label>
                   <Input
-                    placeholder="Brief description of objectives"
+                    placeholder="Short description (optional)"
                     value={newTeam.purpose}
                     onChange={(e) => setNewTeam({ ...newTeam, purpose: e.target.value })}
-                    className="h-14 bg-white/5 border-white/10 text-white rounded-xl focus:border-blue-500/50"
+                    className="h-11 rounded-xl border-[#deddd3] bg-[#fbfaf7] text-[#1e302d]"
                   />
                 </div>
-
-                <div className="space-y-3">
-                  <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Operational Type</label>
-                  <div className="flex gap-4">
+                <div>
+                  <label className="mb-2 block text-sm font-semibold text-[#1e302d]">Team type</label>
+                  <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
                     <button
+                      type="button"
                       onClick={() => setNewTeam({ ...newTeam, type: "event-based" })}
-                      className={`flex-1 h-14 rounded-xl border flex items-center justify-center gap-2 font-bold transition-all ${
-                        newTeam.type === "event-based" 
-                        ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/20" 
-                        : "bg-white/5 text-white/30 border-white/10 hover:border-white/20"
+                      className={`flex h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${
+                        newTeam.type === "event-based"
+                          ? "border-[#203b36] bg-[#eef3e4] text-[#1e302d]"
+                          : "border-[#deddd3] bg-[#fbfaf7] text-[#53635a]"
                       }`}
                     >
-                      <Calendar className="w-4 h-4" />
-                      EVENT-LINKED
+                      <Calendar className="h-4 w-4" /> For an event
                     </button>
                     <button
+                      type="button"
                       onClick={() => setNewTeam({ ...newTeam, type: "independent" })}
-                      className={`flex-1 h-14 rounded-xl border flex items-center justify-center gap-2 font-bold transition-all ${
-                        newTeam.type === "independent" 
-                        ? "bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/20" 
-                        : "bg-white/5 text-white/30 border-white/10 hover:border-white/20"
+                      className={`flex h-12 items-center justify-center gap-2 rounded-xl border text-sm font-semibold ${
+                        newTeam.type === "independent"
+                          ? "border-[#203b36] bg-[#eef3e4] text-[#1e302d]"
+                          : "border-[#deddd3] bg-[#fbfaf7] text-[#53635a]"
                       }`}
                     >
-                      <Briefcase className="w-4 h-4" />
-                      STANDALONE
+                      <Briefcase className="h-4 w-4" /> Standing team
                     </button>
                   </div>
                 </div>
 
                 {newTeam.type === "event-based" && (
-                  <div className="space-y-2">
-                    <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Select Operations Center</label>
-                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
-                      {events.map((event) => (
-                        <button
-                          key={event.id}
-                          onClick={() => setSelectedEvent(event.id)}
-                          className={`w-full p-4 border rounded-xl text-left transition-all group ${
-                            selectedEvent === event.id
-                              ? "bg-blue-500/10 border-blue-500 ring-1 ring-blue-500/50"
-                              : "bg-white/5 border-white/10 hover:border-white/20"
-                          }`}
-                        >
-                          <div className="flex justify-between items-center">
-                             <p className={`font-black tracking-tight ${selectedEvent === event.id ? "text-blue-400" : "text-white"}`}>{event.title}</p>
-                             <div className={`w-2 h-2 rounded-full ${selectedEvent === event.id ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" : "bg-white/10"}`} />
-                          </div>
-                        </button>
-                      ))}
+                  <div>
+                    <label className="mb-2 block text-sm font-semibold text-[#1e302d]">Pick an event</label>
+                    <div className="max-h-40 space-y-2 overflow-y-auto">
+                      {events.length === 0 ? (
+                        <p className="rounded-xl border border-[#deddd3] bg-[#fbfaf7] p-3 text-sm text-[#737c74]">
+                          No events yet. Create an event first, or make a standing team.
+                        </p>
+                      ) : (
+                        events.map((event) => (
+                          <button
+                            key={event.id}
+                            type="button"
+                            onClick={() => setSelectedEvent(event.id)}
+                            className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left text-sm font-medium ${
+                              selectedEvent === event.id
+                                ? "border-[#203b36] bg-[#eef3e4] text-[#1e302d]"
+                                : "border-[#deddd3] bg-[#fbfaf7] text-[#53635a]"
+                            }`}
+                          >
+                            {event.title}
+                            <span
+                              className={`h-2.5 w-2.5 rounded-full ${
+                                selectedEvent === event.id ? "bg-[#203b36]" : "bg-[#cfcfc4]"
+                              }`}
+                            />
+                          </button>
+                        ))
+                      )}
                     </div>
                   </div>
                 )}
 
-                <div className="flex gap-4 pt-6">
+                <div className="flex flex-col-reverse gap-2 pt-2 sm:flex-row">
                   <Button
                     variant="ghost"
-                    className="flex-1 h-16 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 font-black uppercase tracking-widest"
+                    className="h-11 flex-1 rounded-xl text-[#53635a]"
                     onClick={() => setShowCreateModal(false)}
                     disabled={isCreating}
                   >
-                    Abort
+                    Cancel
                   </Button>
                   <Button
-                    className="flex-1 h-16 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest shadow-xl shadow-blue-600/20"
+                    className="h-11 flex-1 rounded-xl bg-[#203b36] text-white hover:bg-[#2d5148]"
                     onClick={handleCreateTeam}
                     disabled={isCreating}
                   >
-                    {isCreating ? "Deploying..." : "Confirm Deployment"}
+                    {isCreating ? "Saving…" : "Create team"}
                   </Button>
                 </div>
               </div>
@@ -483,44 +461,46 @@ export default function TeamsPage() {
         )}
       </AnimatePresence>
 
-      {/* Delete Confirmation Modal */}
       <AnimatePresence>
         {isDeleting && (
-          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
-            <motion.div 
+          <div className="fixed inset-0 z-[60] flex items-end justify-center p-0 sm:items-center sm:p-4">
+            <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-black/90 backdrop-blur-xl" 
+              className="absolute inset-0 bg-[#132b2a]/50 backdrop-blur-sm"
               onClick={() => setIsDeleting(null)}
             />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.9, y: 20 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.9, y: 20 }}
-              className="relative w-full max-w-sm bg-[#0a0a0f] border border-red-500/20 rounded-[2.5rem] shadow-2xl p-10 text-center overflow-hidden"
+            <motion.div
+              initial={{ opacity: 0, y: 24 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 24 }}
+              className="relative w-full rounded-t-3xl border border-[#e7e5dc] bg-white p-6 text-center shadow-xl sm:max-w-sm sm:rounded-2xl"
             >
-              <div className="absolute top-0 left-0 w-full h-1.5 bg-red-600" />
-              <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6 mx-auto">
-                 <Trash2 className="w-10 h-10 text-red-500" />
+              <div className="mx-auto mb-4 flex h-14 w-14 items-center justify-center rounded-2xl bg-rose-50 text-rose-500">
+                <Trash2 className="h-6 w-6" />
               </div>
-              <h3 className="text-3xl font-black text-white leading-tight mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>PURGE SQUAD?</h3>
-              <p className="text-white/40 text-sm font-medium italic mb-10">This will permanently deauthorize all team members and erase operational history from the primary database.</p>
-              
-              <div className="flex flex-col gap-3">
-                 <Button
-                    onClick={() => { handleDeleteTeam(isDeleting); setIsDeleting(null); }}
-                    className="h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-xl shadow-red-600/20"
-                 >
-                   CONFIRM PURGE
-                 </Button>
-                 <Button
-                    variant="ghost"
-                    className="h-14 rounded-2xl text-white/40 hover:text-white"
-                    onClick={() => setIsDeleting(null)}
-                 >
-                   ABORT MISSION
-                 </Button>
+              <h3 className="text-xl font-semibold text-[#1e302d]">Delete this team?</h3>
+              <p className="mt-2 text-sm text-[#737c74]">
+                Members will be removed from the team. This cannot be undone.
+              </p>
+              <div className="mt-6 flex flex-col gap-2">
+                <Button
+                  onClick={() => {
+                    handleDeleteTeam(isDeleting)
+                    setIsDeleting(null)
+                  }}
+                  className="h-11 rounded-xl bg-rose-600 text-white hover:bg-rose-700"
+                >
+                  Yes, delete
+                </Button>
+                <Button
+                  variant="ghost"
+                  className="h-11 rounded-xl text-[#53635a]"
+                  onClick={() => setIsDeleting(null)}
+                >
+                  Cancel
+                </Button>
               </div>
             </motion.div>
           </div>
@@ -530,142 +510,150 @@ export default function TeamsPage() {
   )
 }
 
-function StatCard({ icon: Icon, label, value, color }: any) {
-  const themes: any = {
-    blue: { border: "border-blue-500/20", text: "text-blue-400", bg: "bg-blue-600/10" },
-    purple: { border: "border-purple-500/20", text: "text-purple-400", bg: "bg-purple-600/10" },
-    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", bg: "bg-emerald-600/10" },
-    amber: { border: "border-amber-500/20", text: "text-amber-400", bg: "bg-amber-600/10" },
-  }
-  const theme = themes[color]
+function StatCard({ icon: Icon, label, value }: { icon: any; label: string; value: number }) {
   return (
-    <div className={`bg-white/[0.02] border ${theme.border} backdrop-blur-xl p-6 rounded-3xl group hover:bg-white/[0.04] transition-all duration-500`}>
-      <div className="flex items-center justify-between mb-2">
-         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{label}</p>
-         <div className={`p-2 rounded-xl ${theme.bg} ${theme.text}`}>
-            <Icon className="w-4 h-4" />
-         </div>
+    <div className="rounded-2xl border border-[#e7e5dc] bg-white p-4 shadow-sm sm:p-5">
+      <div className="mb-2 flex items-center justify-between">
+        <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8b938a]">{label}</p>
+        <div className="rounded-xl bg-[#f5f4ef] p-2 text-[#53635a]">
+          <Icon className="h-4 w-4" />
+        </div>
       </div>
-      <p className="text-4xl font-black text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{value}</p>
+      <p className="text-3xl font-semibold tracking-tight text-[#1e302d]">{value}</p>
     </div>
   )
 }
 
-function TeamCard({ team, index, onManage, onEdit, onDelete, isActionMenuOpen, setActionMenuId }: any) {
+function TeamCard({
+  team,
+  index,
+  onManage,
+  onEdit,
+  onDelete,
+  isActionMenuOpen,
+  setActionMenuId,
+}: {
+  team: Team
+  index: number
+  onManage: () => void
+  onEdit: () => void
+  onDelete: () => void
+  isActionMenuOpen: boolean
+  setActionMenuId: (id: string | null) => void
+}) {
   return (
     <motion.div
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.05 }}
-      className="group relative bg-white/[0.02] border border-white/[0.08] hover:border-blue-500/30 rounded-[2rem] overflow-hidden transition-all duration-500 shadow-2xl hover:shadow-blue-500/10 flex flex-col"
+      transition={{ delay: index * 0.03 }}
+      className="relative flex flex-col rounded-2xl border border-[#e7e5dc] bg-white p-4 shadow-sm sm:p-5"
     >
-      <div className="p-8 flex flex-col h-full">
-        {/* Header */}
-        <div className="flex items-start justify-between mb-6">
-          <div className="flex-1 min-w-0">
-             <div className="flex items-center gap-3 mb-1">
-                <h3 className="text-2xl font-black text-white tracking-tight truncate group-hover:text-blue-400 transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{team.name}</h3>
-                <span className={`w-2 h-2 rounded-full ${team.status === "active" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-white/20"}`} />
-             </div>
-             <p className="text-white/40 text-sm font-medium line-clamp-1">{team.purpose || "No operational summary defined"}</p>
+      <div className="mb-4 flex items-start justify-between gap-2">
+        <div className="min-w-0 flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="truncate text-lg font-semibold text-[#1e302d]">{team.name}</h3>
+            <span
+              className={`h-2 w-2 shrink-0 rounded-full ${
+                team.status === "active" || team.status === "ACTIVE" ? "bg-emerald-500" : "bg-[#cfcfc4]"
+              }`}
+            />
           </div>
-          
-          <div className="relative">
-            <button 
-              onClick={() => setActionMenuId(isActionMenuOpen ? null : team.id)}
-              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors border border-white/5"
-            >
-              <MoreVertical className="w-5 h-5" />
-            </button>
-            <AnimatePresence>
-              {isActionMenuOpen && (
-                <motion.div 
-                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
-                  className="absolute right-0 top-12 w-48 bg-[#0a0a10] border border-white/10 rounded-2xl shadow-2xl z-20 py-2 backdrop-blur-xl"
+          <p className="mt-1 line-clamp-2 text-sm text-[#737c74]">
+            {team.purpose || "No description yet"}
+          </p>
+        </div>
+        <div className="relative shrink-0">
+          <button
+            type="button"
+            onClick={() => setActionMenuId(isActionMenuOpen ? null : team.id)}
+            className="rounded-xl border border-[#deddd3] p-2 text-[#637168] hover:bg-[#f5f4ef]"
+            aria-label="Team actions"
+          >
+            <MoreVertical className="h-4 w-4" />
+          </button>
+          <AnimatePresence>
+            {isActionMenuOpen && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96, y: 6 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.96, y: 6 }}
+                className="absolute right-0 top-11 z-20 w-44 overflow-hidden rounded-xl border border-[#e7e5dc] bg-white py-1 shadow-lg"
+              >
+                <button
+                  type="button"
+                  onClick={onManage}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[#1e302d] hover:bg-[#f5f4ef]"
                 >
-                  <button onClick={onManage} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-white/60 hover:bg-white/5 hover:text-white transition-colors">
-                    <Eye className="w-4 h-4 text-blue-400" /> Squadron Intel
-                  </button>
-                  <button onClick={onEdit} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-white/60 hover:bg-white/5 hover:text-white transition-colors">
-                    <Edit className="w-4 h-4 text-indigo-400" /> Modify Parameters
-                  </button>
-                  <div className="border-t border-white/5 my-2" />
-                  <button onClick={onDelete} className="w-full flex items-center gap-3 px-4 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors">
-                    <Trash2 className="w-4 h-4" /> Final Recall
-                  </button>
-                </motion.div>
-              )}
-            </AnimatePresence>
-          </div>
-        </div>
-
-        {/* Members Avatars */}
-        {team.members && team.members.length > 0 && (
-          <div className="flex flex-wrap gap-2 mb-6">
-            {team.members.slice(0, 10).map((member: any) => (
-               <div key={member.id} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden transition-all hover:bg-white/10 hover:border-white/20" title={member.user?.name}>
-                 {member.user?.avatarId ? (
-                    // In a generic scenario we'd show the avatar image, but here we can just use initials to be safe
-                    <span className="text-[10px] font-bold text-white/60 uppercase">{member.user?.name?.charAt(0)}</span>
-                 ) : (
-                    <span className="text-[10px] font-bold text-white/60 uppercase">{member.user?.name?.charAt(0)}</span>
-                 )}
-               </div>
-            ))}
-            {team.members.length > 10 && (
-               <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
-                 <span className="text-[10px] font-black text-blue-400">+{team.members.length - 10}</span>
-               </div>
+                  <Eye className="h-4 w-4 text-[#53635a]" /> Open
+                </button>
+                <button
+                  type="button"
+                  onClick={onEdit}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-[#1e302d] hover:bg-[#f5f4ef]"
+                >
+                  <Edit className="h-4 w-4 text-[#53635a]" /> Edit
+                </button>
+                <div className="my-1 border-t border-[#eeebe3]" />
+                <button
+                  type="button"
+                  onClick={onDelete}
+                  className="flex w-full items-center gap-2 px-3 py-2.5 text-left text-sm text-rose-600 hover:bg-rose-50"
+                >
+                  <Trash2 className="h-4 w-4" /> Delete
+                </button>
+              </motion.div>
             )}
-          </div>
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {team.members?.length > 0 && (
+        <div className="mb-4 flex flex-wrap gap-1.5">
+          {team.members.slice(0, 8).map((member: any) => (
+            <div
+              key={member.id || member.userId}
+              title={member.user?.name}
+              className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#e7e5dc] bg-[#f5f4ef] text-[10px] font-bold uppercase text-[#53635a]"
+            >
+              {member.user?.name?.charAt(0) || "?"}
+            </div>
+          ))}
+          {team.members.length > 8 && (
+            <div className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#dce7cf] bg-[#eef3e4] text-[10px] font-bold text-[#42592a]">
+              +{team.members.length - 8}
+            </div>
+          )}
+        </div>
+      )}
+
+      <div className="mb-4 grid grid-cols-2 gap-2">
+        <div className="rounded-xl border border-[#eeebe3] bg-[#fbfaf7] px-3 py-2.5">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#8b938a]">Members</p>
+          <p className="text-lg font-semibold text-[#1e302d]">{team.memberCount ?? team.members?.length ?? 0}</p>
+        </div>
+        <div className="rounded-xl border border-[#eeebe3] bg-[#fbfaf7] px-3 py-2.5">
+          <p className="text-[10px] font-bold uppercase tracking-wider text-[#8b938a]">Tasks</p>
+          <p className="text-lg font-semibold text-[#1e302d]">{team.taskCount ?? 0}</p>
+        </div>
+      </div>
+
+      <div className="mt-auto flex items-center justify-between border-t border-[#eeebe3] pt-3">
+        {team.eventId ? (
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#637168]">
+            <Calendar className="h-3.5 w-3.5" /> Event team
+          </span>
+        ) : (
+          <span className="inline-flex items-center gap-1.5 text-xs font-medium text-[#637168]">
+            <Briefcase className="h-3.5 w-3.5" /> Standing team
+          </span>
         )}
-
-        {/* Info */}
-        <div className="space-y-4 mb-8">
-           <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl transition-all group-hover:bg-white/[0.04]">
-              <div className="flex items-center gap-3">
-                 <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
-                    <Users className="w-4 h-4 text-blue-400" />
-                 </div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Members</span>
-              </div>
-              <span className="text-xl font-black text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{team.memberCount}</span>
-           </div>
-
-           <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl transition-all group-hover:bg-white/[0.04]">
-              <div className="flex items-center gap-3">
-                 <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
-                    <Target className="w-4 h-4 text-emerald-400" />
-                 </div>
-                 <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Tasks</span>
-              </div>
-              <span className="text-xl font-black text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{team.taskCount}</span>
-           </div>
-        </div>
-
-        {/* Footer */}
-        <div className="mt-auto pt-6 border-t border-white/[0.05] flex items-center justify-between">
-           {team.eventId ? (
-             <div className="flex items-center gap-2 text-purple-400">
-                <Calendar className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Operation Bound</span>
-             </div>
-           ) : (
-             <div className="flex items-center gap-2 text-blue-400/60">
-                <Briefcase className="w-3.5 h-3.5" />
-                <span className="text-[10px] font-black uppercase tracking-widest">Independent Unit</span>
-             </div>
-           )}
-           <button 
-             onClick={onManage} 
-             className="flex items-center gap-2 text-white/20 hover:text-blue-400 transition-all font-black uppercase text-[8px] tracking-[0.3em] group/btn"
-           >
-              INTEL
-              <Eye className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
-           </button>
-        </div>
+        <button
+          type="button"
+          onClick={onManage}
+          className="inline-flex h-9 items-center gap-1 rounded-xl bg-[#203b36] px-3 text-sm font-semibold text-white hover:bg-[#2d5148]"
+        >
+          Open <Eye className="h-3.5 w-3.5" />
+        </button>
       </div>
     </motion.div>
   )

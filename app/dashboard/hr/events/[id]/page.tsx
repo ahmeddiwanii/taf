@@ -137,7 +137,7 @@ export default function EventCommandDeck() {
         body: JSON.stringify({ status: newStatus })
       })
       if (res.ok) {
-        toast.success(`Operational State: ${newStatus}`)
+        toast.success(`Status: ${newStatus}`)
         fetchEventData()
         setShowStatusMenu(false)
       }
@@ -164,7 +164,7 @@ export default function EventCommandDeck() {
         body: JSON.stringify({ eventId: id, directorIds: newDirectorIds })
       })
       if (res.ok) {
-        toast.success("Command Authorization Updated")
+        toast.success("Access updated")
         fetchEventData()
       }
     } catch (e) {
@@ -178,16 +178,16 @@ export default function EventCommandDeck() {
       const res = await fetch(`/api/teams/${teamId}/members`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userId: reg.userId, roleInTeam: "Mission Asset" })
+        body: JSON.stringify({ userId: reg.userId, roleInTeam: "Member" })
       })
       
       if (res.ok) {
-        toast.success(`Asset ${reg.user.name} deployed to squad.`)
+        toast.success(`${reg.user.name} added to the team.`)
         setShowAssignModal(null)
         fetchEventData()
       }
     } catch (e) {
-      toast.error("Deployment failure")
+      toast.error("Could not add to team")
     } finally {
       setProcessing(false)
     }
@@ -221,7 +221,7 @@ export default function EventCommandDeck() {
                 onClick={() => router.push("/dashboard/hr/events")}
                 className="text-white/40 hover:text-white transition-colors -ml-4"
             >
-                <ArrowLeft className="w-4 h-4 mr-2" /> Mission Repository
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back to events
             </Button>
 
             <div className="flex gap-4">
@@ -280,7 +280,7 @@ export default function EventCommandDeck() {
                        EVT-{event.id.slice(-4).toUpperCase()}
                     </Badge>
                     <span className="text-[10px] text-blue-400 font-black uppercase tracking-[0.4em] ml-1 flex items-center gap-2">
-                       <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" /> Operational Center
+                       <span className="w-1.5 h-1.5 rounded-full bg-blue-400 animate-pulse" /> Event hub
                     </span>
                  </div>
                  <h1 className="text-6xl md:text-8xl font-black text-white tracking-tighter mb-8 max-w-4xl leading-[0.9]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
@@ -307,7 +307,7 @@ export default function EventCommandDeck() {
                        <TrendingUp className="w-5 h-5 text-emerald-500" />
                        <div>
                           <p className="text-[9px] font-black text-white/20 uppercase tracking-widest">Enrollment</p>
-                          <p className="text-sm font-black text-white uppercase tracking-tight">{event._count.registrations} Assets Registered</p>
+                          <p className="text-sm font-black text-white uppercase tracking-tight">{event._count.registrations} people signed up</p>
                        </div>
                     </div>
                  </div>
@@ -319,11 +319,11 @@ export default function EventCommandDeck() {
            {/* Left Column: Command & Force Structure */}
            <div className="lg:col-span-8 space-y-12">
               
-              {/* Signals Intelligence Section (New Personnel Requests) */}
+              {/* Join requests Section (New Personnel Requests) */}
               <section className="space-y-6">
                  <div className="flex items-center gap-3 ml-2">
                     <Radio className="w-5 h-5 text-emerald-400" />
-                    <h3 className="text-2xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Signals Intelligence</h3>
+                    <h3 className="text-2xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Join requests</h3>
                  </div>
 
                  <div className="space-y-4">
@@ -344,17 +344,17 @@ export default function EventCommandDeck() {
                                        <Badge className="bg-amber-500/10 text-amber-400 border-none text-[8px] font-black tracking-widest uppercase">Pending</Badge>
                                     )}
                                     {reg.preferredTeamId && (
-                                       <Badge className="bg-blue-500/10 text-blue-400 border-none text-[8px] font-black tracking-widest uppercase">Squad Preference</Badge>
+                                       <Badge className="bg-blue-500/10 text-blue-400 border-none text-[8px] font-black tracking-widest uppercase">Preferred team</Badge>
                                     )}
                                  </div>
-                                 <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-1">Asset Signal Detected @ {format(new Date(reg.appliedAt), "HH:mm")}</p>
+                                 <p className="text-[9px] text-white/20 font-bold uppercase tracking-widest mt-1">Signal Detected @ {format(new Date(reg.appliedAt), "HH:mm")}</p>
                               </div>
                            </div>
                            <Button 
                              onClick={() => setShowAssignModal(reg)}
                              className="h-9 px-4 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white text-[9px] font-black uppercase tracking-widest transition-all"
                            >
-                              <UserCheck className="w-3.5 h-3.5 mr-2" /> Deploy Asset
+                              <UserCheck className="w-3.5 h-3.5 mr-2" /> Approve
                            </Button>
                         </Card>
                       ))
@@ -367,12 +367,12 @@ export default function EventCommandDeck() {
                  </div>
               </section>
 
-              {/* Command Hierarchy */}
+              {/* Event leads */}
               <section className="space-y-6">
                  <div className="flex items-center justify-between ml-2">
                     <div className="flex items-center gap-3">
                        <Shield className="w-5 h-5 text-blue-400" />
-                       <h3 className="text-2xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Command Hierarchy</h3>
+                       <h3 className="text-2xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Event leads</h3>
                     </div>
                     <Button 
                        variant="ghost" 
@@ -414,11 +414,11 @@ export default function EventCommandDeck() {
                  </div>
               </section>
 
-              {/* Force Deployment */}
+              {/* Teams */}
               <section className="space-y-6">
                  <div className="flex items-center gap-3 ml-2">
                     <LayoutGrid className="w-5 h-5 text-blue-400" />
-                    <h3 className="text-2xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Force Deployment</h3>
+                    <h3 className="text-2xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Teams</h3>
                  </div>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -433,10 +433,10 @@ export default function EventCommandDeck() {
                               <div className="w-16 h-16 rounded-2xl bg-blue-600/10 flex items-center justify-center text-blue-400 group-hover:bg-blue-600 group-hover:text-white transition-all shadow-inner">
                                  <Users className="w-8 h-8" />
                               </div>
-                              <Badge className="bg-white/5 text-white/40 border-none px-3 py-1 text-[9px] font-black uppercase tracking-widest">Active Squad</Badge>
+                              <Badge className="bg-white/5 text-white/40 border-none px-3 py-1 text-[9px] font-black uppercase tracking-widest">Active team</Badge>
                            </div>
                            <h4 className="text-2xl font-black text-white mb-2 uppercase tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{team.name}</h4>
-                           <p className="text-xs text-white/30 font-medium mb-8 leading-relaxed italic">"{team.purpose || "Squad purpose mission data missing."}"</p>
+                           <p className="text-xs text-white/30 font-medium mb-8 leading-relaxed italic">"{team.purpose || "No team description yet."}"</p>
                            
                            <div className="flex items-center border-t border-white/5 pt-6 gap-6">
                               <div className="flex items-center gap-2">
@@ -459,7 +459,7 @@ export default function EventCommandDeck() {
                            onClick={() => router.push("/dashboard/hr/teams")}
                            className="mt-4 text-blue-500 font-bold uppercase text-[10px] tracking-widest hover:text-blue-400"
                          >
-                            Initialize Squad Allocation <ChevronRight className="w-3 h-3 ml-1" />
+                            Set up teams <ChevronRight className="w-3 h-3 ml-1" />
                          </Button>
                       </div>
                     )}
@@ -483,10 +483,10 @@ export default function EventCommandDeck() {
                  <Card className="p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/[0.08] backdrop-blur-3xl space-y-10">
                     <div>
                        <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em] mb-6 flex items-center gap-2">
-                          <ClipboardList className="w-3.5 h-3.5" /> Mission Overview
+                          <ClipboardList className="w-3.5 h-3.5" /> About this event
                        </h4>
                        <p className="text-sm font-medium text-white/60 leading-relaxed italic">
-                          {event.description || "Operational mandate data missing. Tactical purpose unknown."}
+                          {event.description || "No description yet."}
                        </p>
                     </div>
 
@@ -521,12 +521,12 @@ export default function EventCommandDeck() {
                  <div className="p-8 bg-gradient-to-br from-emerald-600/10 to-transparent border border-emerald-500/20 rounded-[2.5rem]">
                     <div className="flex items-center gap-3 mb-6">
                        <Zap className="w-5 h-5 text-emerald-400" />
-                       <h4 className="text-xs font-black text-white uppercase tracking-widest" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Operational Success</h4>
+                       <h4 className="text-xs font-black text-white uppercase tracking-widest" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Tips</h4>
                     </div>
                     <div className="space-y-4">
                         <div className="flex items-end justify-between">
                            <p className="text-3xl font-black text-white tracking-tighter">{Math.round((event._count.attendances / (event._count.registrations || 1)) * 100)}%</p>
-                           <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Asset Attendance</p>
+                           <p className="text-[10px] font-black text-emerald-500 uppercase tracking-widest mb-1">Attendance</p>
                         </div>
                         <div className="h-1.5 w-full bg-white/5 rounded-full overflow-hidden">
                            <motion.div 
@@ -560,7 +560,7 @@ export default function EventCommandDeck() {
                exit={{ opacity: 0, scale: 0.9, y: 20 }}
                className="relative w-full max-w-lg bg-[#0a0a10] border border-white/10 rounded-[2.5rem] shadow-2xl p-10"
             >
-               <h3 className="text-2xl font-black mb-2 uppercase italic tracking-tighter">Asset Deployment</h3>
+               <h3 className="text-2xl font-black mb-2 uppercase italic tracking-tighter">Deployment</h3>
                <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mb-8">Select target squad for {showAssignModal.user.name}</p>
                
                <div className="space-y-3">
@@ -573,7 +573,7 @@ export default function EventCommandDeck() {
                     >
                        <div>
                           <p className="font-black text-lg uppercase tracking-tighter group-hover:text-blue-400 transition-colors">{team.name}</p>
-                          <p className="text-[9px] text-white/20 font-black uppercase tracking-widest mt-1">{team._count.members} Assets Active</p>
+                          <p className="text-[9px] text-white/20 font-black uppercase tracking-widest mt-1">{team._count.members} people active</p>
                        </div>
                        <ChevronRight className="w-5 h-5 text-white/10 group-hover:text-blue-500 transition-all" />
                     </button>

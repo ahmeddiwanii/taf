@@ -4,32 +4,34 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { HRLayout } from "@/components/layout/hr-layout"
-import { 
-  Plus, 
-  ArrowLeft, 
-  Zap, 
-  Target, 
-  Users, 
+import { PageTour } from "@/components/dashboard/page-tour"
+import {
+  Plus,
+  ArrowLeft,
+  Users,
   Calendar,
   AlertCircle,
   CheckCircle2,
-  Rocket,
-  Shield,
-  Clock,
-  LayoutGrid
+  FilePlus2,
 } from "lucide-react"
-import { motion, AnimatePresence } from "framer-motion"
+import { motion } from "framer-motion"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Textarea } from "@/components/ui/textarea"
-import { Badge } from "@/components/ui/badge"
 import { toast } from "sonner"
 
 interface Team {
   id: string
   name: string
   purpose: string
-  members: { userId: string, user: { name: string } }[]
+  members: { userId: string; user: { name: string } }[]
+}
+
+const PRIORITY_LABELS: Record<string, string> = {
+  LOW: "Low",
+  MEDIUM: "Medium",
+  HIGH: "High",
+  URGENT: "Urgent",
 }
 
 export default function CreateTaskPage() {
@@ -38,7 +40,7 @@ export default function CreateTaskPage() {
   const [teams, setTeams] = useState<Team[]>([])
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
-  
+
   const [formData, setFormData] = useState({
     title: "",
     description: "",
@@ -47,7 +49,7 @@ export default function CreateTaskPage() {
     assigneeId: "",
     dueDate: "",
     hrDocumentName: "",
-    hrDocumentUrl: ""
+    hrDocumentUrl: "",
   })
 
   useEffect(() => {
@@ -60,10 +62,12 @@ export default function CreateTaskPage() {
     try {
       const res = await fetch(`/api/teams?organizationId=${session?.user.organizationId}`)
       const data = await res.json()
-      setTeams(data)
-      setLoading(false)
+      const list = Array.isArray(data) ? data : Array.isArray(data?.teams) ? data.teams : []
+      setTeams(list)
     } catch (error) {
       console.error("Error fetching teams:", error)
+      setTeams([])
+    } finally {
       setLoading(false)
     }
   }
@@ -71,7 +75,7 @@ export default function CreateTaskPage() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     if (!formData.title || !formData.teamId) {
-      toast.error("Required fields missing")
+      toast.error("Please add a title and pick a team")
       return
     }
 
@@ -82,250 +86,286 @@ export default function CreateTaskPage() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           ...formData,
-          organizationId: session?.user.organizationId
-        })
+          organizationId: session?.user?.organizationId,
+        }),
       })
 
       if (res.ok) {
-        toast.success("Mission Objective Assigned")
+        toast.success("Task created")
         router.push("/dashboard/hr/tasks")
       } else {
-        toast.error("Assignment Failed")
+        toast.error("Could not create the task")
       }
-    } catch (error) {
-      toast.error("System Error")
+    } catch {
+      toast.error("Something went wrong")
     } finally {
       setSubmitting(false)
     }
   }
 
-  const selectedTeam = teams.find(t => t.id === formData.teamId)
+  const selectedTeam = Array.isArray(teams) ? teams.find((t) => t.id === formData.teamId) : undefined
 
   return (
-    <HRLayout orgName={session?.user.name || "Organization"}>
-      <div className="relative z-10 max-w-5xl mx-auto">
-        {/* Header */}
-        <div className="mb-12">
-          <Button 
-            variant="ghost" 
+    <HRLayout orgName={session?.user?.name || "Organization"}>
+      <PageTour
+        storageKey="tafsula_tour_hr_create_task_v1"
+        steps={[
+          {
+            target: "task-title",
+            title: "Write a clear title",
+            body: "Keep it short. Example: “Set up the welcome desk”.",
+          },
+          {
+            target: "task-details",
+            title: "Add details (optional)",
+            body: "Explain what to do, where, and anything people should know.",
+          },
+          {
+            target: "task-priority",
+            title: "Set how urgent it is",
+            body: "Urgent means do it first. Low means it can wait.",
+          },
+          {
+            target: "task-assign",
+            title: "Who does the work?",
+            body: "Pick a team. Then you can give it to the whole team, or to one person.",
+          },
+        ]}
+      />
+
+      <div className="relative z-10 mx-auto max-w-5xl">
+        <div className="mb-8">
+          <Button
+            variant="ghost"
             onClick={() => router.back()}
-            className="mb-6 -ml-4 text-white/40 hover:text-white transition-colors"
+            className="mb-4 -ml-2 text-[#637168] hover:bg-white hover:text-[#1e302d]"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Return to Command
+            <ArrowLeft className="mr-2 h-4 w-4" /> Back to tasks
           </Button>
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-          >
-            <h1 className="text-6xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              ASSIGN <span className="text-blue-500">OBJECTIVE</span>
+          <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }}>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#1e302d] sm:text-3xl">
+              Create a task
             </h1>
-            <p className="text-white/40 font-medium tracking-widest mt-2 uppercase text-[10px]">Initialize tactical deployment and task distribution</p>
+            <p className="mt-1 text-sm text-[#737c74]">
+              Write what needs to be done, pick a team, then send it.
+            </p>
           </motion.div>
         </div>
 
-        <form onSubmit={handleSubmit} className="grid grid-cols-1 lg:grid-cols-3 gap-12">
-          {/* Main Config (Left) */}
-          <div className="lg:col-span-2 space-y-10">
-            {/* Title & Description */}
-            <div className="space-y-6">
-              <div className="group">
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-3 ml-1">Objective Title</p>
-                <Input 
-                  value={formData.title}
-                  onChange={e => setFormData({...formData, title: e.target.value})}
-                  placeholder="e.g., Protocol Zero Implementation"
-                  className="h-16 bg-white/[0.03] border-white/[0.08] focus:border-blue-500/50 text-xl font-bold rounded-2xl transition-all"
-                />
-              </div>
-              
-              <div className="group">
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-3 ml-1">Mission Parameters</p>
-                <Textarea 
-                  value={formData.description}
-                  onChange={e => setFormData({...formData, description: e.target.value})}
-                  placeholder="Detail the operational requirements..."
-                  className="min-h-[200px] bg-white/[0.03] border-white/[0.08] focus:border-blue-500/50 text-base rounded-2xl transition-all resize-none p-6"
-                />
-              </div>
+        <form onSubmit={handleSubmit} className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+          <div className="space-y-6 lg:col-span-2">
+            <div data-tour="task-title" className="rounded-2xl border border-[#e7e5dc] bg-white p-5 shadow-sm">
+              <label className="mb-2 block text-sm font-semibold text-[#1e302d]">Task title</label>
+              <Input
+                value={formData.title}
+                onChange={(e) => setFormData({ ...formData, title: e.target.value })}
+                placeholder="e.g. Print badges for the event"
+                className="h-12 rounded-xl border-[#deddd3] bg-[#fbfaf7] text-base font-medium text-[#1e302d] placeholder:text-[#9aa39a] focus-visible:ring-[#203b36]/20"
+              />
+            </div>
 
-              {/* Document Attachment */}
-              <div className="group">
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-3 ml-1">Briefing Attachment (Optional)</p>
-                <div className="relative overflow-hidden bg-white/[0.03] border border-white/[0.08] rounded-2xl p-4 flex items-center justify-between hover:bg-white/[0.05] transition-all focus-within:border-blue-500/50">
+            <div data-tour="task-details" className="rounded-2xl border border-[#e7e5dc] bg-white p-5 shadow-sm">
+              <label className="mb-2 block text-sm font-semibold text-[#1e302d]">Details</label>
+              <Textarea
+                value={formData.description}
+                onChange={(e) => setFormData({ ...formData, description: e.target.value })}
+                placeholder="What should they do? Any tips or links?"
+                className="min-h-[160px] resize-none rounded-xl border-[#deddd3] bg-[#fbfaf7] p-4 text-sm text-[#1e302d] placeholder:text-[#9aa39a]"
+              />
+
+              <div className="mt-4">
+                <p className="mb-2 text-sm font-semibold text-[#1e302d]">File (optional)</p>
+                <div className="relative flex items-center gap-3 overflow-hidden rounded-xl border border-dashed border-[#deddd3] bg-[#fbfaf7] p-3">
                   <input
                     type="file"
-                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                    className="absolute inset-0 cursor-pointer opacity-0"
                     onChange={(e) => {
-                      const file = e.target.files?.[0];
+                      const file = e.target.files?.[0]
                       if (file) {
-                        const reader = new FileReader();
+                        const reader = new FileReader()
                         reader.onloadend = () => {
                           setFormData({
                             ...formData,
                             hrDocumentName: file.name,
-                            hrDocumentUrl: reader.result as string
-                          });
-                        };
-                        reader.readAsDataURL(file);
+                            hrDocumentUrl: reader.result as string,
+                          })
+                        }
+                        reader.readAsDataURL(file)
                       }
                     }}
                   />
-                  <div className="flex items-center gap-3 w-full">
-                    <div className="p-2.5 rounded-xl bg-blue-500/10 text-blue-400">
-                       <CheckCircle2 className={`w-4 h-4 ${formData.hrDocumentName ? 'block' : 'hidden'}`} />
-                       <Plus className={`w-4 h-4 ${formData.hrDocumentName ? 'hidden' : 'block'}`} />
-                    </div>
-                    <div>
-                       <p className="text-xs font-bold text-white tracking-widest uppercase">
-                         {formData.hrDocumentName || "Attach Document"}
-                       </p>
-                       <p className="text-[10px] text-white/40 tracking-widest uppercase mt-0.5">
-                         {formData.hrDocumentName ? "File Ready for Transmission" : "PDF, Images, or Text Formats"}
-                       </p>
-                    </div>
+                  <div className="rounded-lg bg-[#eef3e4] p-2 text-[#42592a]">
+                    {formData.hrDocumentName ? (
+                      <CheckCircle2 className="h-4 w-4" />
+                    ) : (
+                      <Plus className="h-4 w-4" />
+                    )}
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium text-[#1e302d]">
+                      {formData.hrDocumentName || "Add a file"}
+                    </p>
+                    <p className="text-xs text-[#8b938a]">PDF, image, or text</p>
                   </div>
                 </div>
               </div>
             </div>
 
-            {/* Tactical Grid */}
-            <div className="grid grid-cols-2 gap-8">
-               <div className="space-y-4">
-                  <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Deployment Priority</p>
-                  <div className="grid grid-cols-2 gap-2">
-                     {["LOW", "MEDIUM", "HIGH", "URGENT"].map(p => (
-                       <button
-                         key={p}
-                         type="button"
-                         onClick={() => setFormData({...formData, priority: p})}
-                         className={`h-12 rounded-xl border text-[10px] font-black uppercase tracking-widest transition-all ${
-                           formData.priority === p 
-                           ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/20" 
-                           : "bg-white/[0.02] text-white/20 border-white/5 hover:border-white/20"
-                         }`}
-                       >
-                         {p}
-                       </button>
-                     ))}
-                  </div>
-               </div>
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+              <div
+                data-tour="task-priority"
+                className="rounded-2xl border border-[#e7e5dc] bg-white p-5 shadow-sm"
+              >
+                <p className="mb-3 text-sm font-semibold text-[#1e302d]">How urgent?</p>
+                <div className="grid grid-cols-2 gap-2">
+                  {(["LOW", "MEDIUM", "HIGH", "URGENT"] as const).map((p) => {
+                    const selected = formData.priority === p
+                    return (
+                      <button
+                        key={p}
+                        type="button"
+                        onClick={() => setFormData({ ...formData, priority: p })}
+                        className={`h-11 rounded-xl border text-xs font-semibold transition-all ${
+                          selected
+                            ? "border-[#203b36] bg-[#203b36] text-white"
+                            : "border-[#deddd3] bg-[#fbfaf7] text-[#53635a] hover:border-[#203b36]/40 hover:text-[#1e302d]"
+                        }`}
+                      >
+                        {PRIORITY_LABELS[p]}
+                      </button>
+                    )
+                  })}
+                </div>
+              </div>
 
-               <div className="space-y-4">
-                  <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Deadline Horizon</p>
-                  <div className="relative">
-                    <Calendar className="absolute left-4 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" />
-                    <Input 
-                      type="date"
-                      value={formData.dueDate}
-                      onChange={e => setFormData({...formData, dueDate: e.target.value})}
-                      className="h-12 pl-12 bg-white/[0.03] border-white/[0.08] focus:border-blue-400/50 text-sm font-bold rounded-xl [color-scheme:dark]"
-                    />
-                  </div>
-               </div>
+              <div className="rounded-2xl border border-[#e7e5dc] bg-white p-5 shadow-sm">
+                <p className="mb-3 text-sm font-semibold text-[#1e302d]">Due date</p>
+                <div className="relative">
+                  <Calendar className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#8b938a]" />
+                  <Input
+                    type="date"
+                    value={formData.dueDate}
+                    onChange={(e) => setFormData({ ...formData, dueDate: e.target.value })}
+                    className="h-11 rounded-xl border-[#deddd3] bg-[#fbfaf7] pl-10 text-sm font-medium text-[#1e302d]"
+                  />
+                </div>
+              </div>
             </div>
           </div>
 
-          {/* Unit Assignment (Right) */}
-          <div className="space-y-8">
-            <div className="p-8 rounded-[2.5rem] bg-white/[0.02] border border-white/[0.08] backdrop-blur-xl relative overflow-hidden group">
-               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-600/5 blur-[50px] -mr-16 -mt-16 group-hover:bg-blue-600/10 transition-colors" />
-               
-               <div className="flex items-center gap-3 mb-8">
-                  <Shield className="w-5 h-5 text-blue-400" />
-                  <h3 className="text-xl font-black text-white tracking-tight uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Unit Allocation</h3>
-               </div>
+          <div className="space-y-4">
+            <div data-tour="task-assign" className="rounded-2xl border border-[#e7e5dc] bg-white p-5 shadow-sm">
+              <div className="mb-5 flex items-center gap-2">
+                <Users className="h-5 w-5 text-[#42592a]" />
+                <h3 className="text-base font-semibold text-[#1e302d]">Who does this?</h3>
+              </div>
 
-               <div className="space-y-6">
-                  {/* Select Squad */}
-                  <div className="space-y-3">
-                    <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Primary Squad</p>
-                    <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                      {teams.map(team => (
+              <div className="space-y-2">
+                <p className="text-sm font-semibold text-[#1e302d]">Team</p>
+                {loading ? (
+                  <p className="text-sm text-[#8b938a]">Loading teams…</p>
+                ) : teams.length === 0 ? (
+                  <p className="rounded-xl border border-[#deddd3] bg-[#fbfaf7] p-3 text-sm text-[#737c74]">
+                    No teams yet. Create a team first, then come back.
+                  </p>
+                ) : (
+                  <div className="custom-scrollbar max-h-[200px] space-y-2 overflow-y-auto pr-1">
+                    {teams.map((team) => {
+                      const selected = formData.teamId === team.id
+                      return (
                         <button
                           key={team.id}
                           type="button"
-                          onClick={() => setFormData({...formData, teamId: team.id, assigneeId: ""})}
-                          className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${
-                            formData.teamId === team.id 
-                            ? "bg-blue-600/10 border-blue-500/50 text-white" 
-                            : "bg-white/[0.02] border-white/5 text-white/40 hover:border-white/20 hover:text-white"
+                          onClick={() =>
+                            setFormData({ ...formData, teamId: team.id, assigneeId: "" })
+                          }
+                          className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left transition-all ${
+                            selected
+                              ? "border-[#203b36] bg-[#eef3e4] text-[#1e302d]"
+                              : "border-[#deddd3] bg-[#fbfaf7] text-[#53635a] hover:border-[#203b36]/35"
                           }`}
                         >
-                          <div className="flex items-center gap-3">
-                             <Users className={`w-4 h-4 ${formData.teamId === team.id ? 'text-blue-400' : 'text-white/20'}`} />
-                             <span className="text-xs font-black uppercase tracking-wider">{team.name}</span>
-                          </div>
-                          <div className={`w-2 h-2 rounded-full ${formData.teamId === team.id ? 'bg-blue-500' : 'bg-white/10'}`} />
-                        </button>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Select Individual in Squad */}
-                  {selectedTeam && (
-                    <motion.div 
-                      initial={{ opacity: 0, x: 20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      className="space-y-3 pt-6 border-t border-white/5"
-                    >
-                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Specific Asset (Optional)</p>
-                      <div className="space-y-2 max-h-[200px] overflow-y-auto pr-2 custom-scrollbar">
-                        <button
-                          type="button"
-                          onClick={() => setFormData({...formData, assigneeId: ""})}
-                          className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${
-                            formData.assigneeId === "" 
-                            ? "bg-white/10 border-white/20 text-white" 
-                            : "bg-white/[0.02] border-white/5 text-white/40 hover:border-white/20 hover:text-white"
-                          }`}
-                        >
-                          <span className="text-[10px] font-black uppercase tracking-widest">Entire Squad</span>
-                        </button>
-                        {selectedTeam.members.map(member => (
-                          <button
-                            key={member.userId}
-                            type="button"
-                            onClick={() => setFormData({...formData, assigneeId: member.userId})}
-                            className={`w-full p-4 rounded-2xl border flex items-center justify-between transition-all ${
-                              formData.assigneeId === member.userId 
-                              ? "bg-blue-600/10 border-blue-500/40 text-white" 
-                              : "bg-white/[0.02] border-white/5 text-white/40 hover:border-white/20 hover:text-white"
+                          <span className="text-sm font-semibold">{team.name}</span>
+                          <span
+                            className={`h-2.5 w-2.5 rounded-full ${
+                              selected ? "bg-[#203b36]" : "bg-[#cfcfc4]"
                             }`}
-                          >
-                            <span className="text-[10px] font-bold">{member.user.name}</span>
-                            <Target className={`w-3.5 h-3.5 ${formData.assigneeId === member.userId ? 'text-blue-400' : 'opacity-0'}`} />
-                          </button>
-                        ))}
-                      </div>
-                    </motion.div>
-                  )}
-               </div>
+                          />
+                        </button>
+                      )
+                    })}
+                  </div>
+                )}
+              </div>
 
-               <div className="mt-10">
-                  <Button 
-                    disabled={submitting || !formData.title || !formData.teamId}
-                    className="w-full h-16 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black shadow-xl shadow-blue-600/20 border border-blue-500/50 uppercase tracking-widest text-xs transition-all active:scale-95 disabled:opacity-20"
-                  >
-                    {submitting ? "Transmitting..." : (
-                      <>
-                        <Zap className="w-5 h-5 mr-3" />
-                        Execute Assignment
-                      </>
-                    )}
-                  </Button>
-               </div>
+              {selectedTeam && (
+                <motion.div
+                  initial={{ opacity: 0, y: 8 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="mt-5 space-y-2 border-t border-[#eeebe3] pt-5"
+                >
+                  <p className="text-sm font-semibold text-[#1e302d]">Person (optional)</p>
+                  <div className="custom-scrollbar max-h-[200px] space-y-2 overflow-y-auto pr-1">
+                    <button
+                      type="button"
+                      onClick={() => setFormData({ ...formData, assigneeId: "" })}
+                      className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left transition-all ${
+                        formData.assigneeId === ""
+                          ? "border-[#203b36] bg-[#eef3e4] text-[#1e302d]"
+                          : "border-[#deddd3] bg-[#fbfaf7] text-[#53635a] hover:border-[#203b36]/35"
+                      }`}
+                    >
+                      <span className="text-sm font-semibold">Whole team</span>
+                    </button>
+                    {(selectedTeam.members || []).map((member) => {
+                      const selected = formData.assigneeId === member.userId
+                      return (
+                        <button
+                          key={member.userId}
+                          type="button"
+                          onClick={() =>
+                            setFormData({ ...formData, assigneeId: member.userId })
+                          }
+                          className={`flex w-full items-center justify-between rounded-xl border px-3 py-3 text-left transition-all ${
+                            selected
+                              ? "border-[#203b36] bg-[#eef3e4] text-[#1e302d]"
+                              : "border-[#deddd3] bg-[#fbfaf7] text-[#53635a] hover:border-[#203b36]/35"
+                          }`}
+                        >
+                          <span className="text-sm font-medium">
+                            {member.user?.name || "Member"}
+                          </span>
+                          {selected && <CheckCircle2 className="h-4 w-4 text-[#42592a]" />}
+                        </button>
+                      )
+                    })}
+                  </div>
+                </motion.div>
+              )}
+
+              <Button
+                disabled={submitting || !formData.title || !formData.teamId}
+                className="mt-6 h-12 w-full rounded-xl bg-[#203b36] text-sm font-semibold text-white hover:bg-[#2d5148] disabled:opacity-40"
+              >
+                {submitting ? (
+                  "Saving…"
+                ) : (
+                  <>
+                    <FilePlus2 className="mr-2 h-4 w-4" />
+                    Create task
+                  </>
+                )}
+              </Button>
             </div>
 
-            {/* Visual Context */}
-            <div className="bg-gradient-to-br from-indigo-500/10 to-blue-500/10 border border-blue-500/20 p-6 rounded-[2rem]">
-               <div className="flex items-center gap-3 mb-3 text-blue-400">
-                  <AlertCircle className="w-4 h-4" />
-                  <span className="text-[10px] font-black uppercase tracking-widest">System Intelligence</span>
-               </div>
-               <p className="text-[10px] leading-relaxed text-white/40 font-medium tracking-wide">
-                 Personnel assigned to this objective will receive immediate synchronization. Activity logs will be monitored in real-time.
-               </p>
+            <div className="rounded-2xl border border-[#dce7cf] bg-[#f3f7ea] p-4">
+              <div className="mb-2 flex items-center gap-2 text-[#42592a]">
+                <AlertCircle className="h-4 w-4" />
+                <span className="text-xs font-bold uppercase tracking-wider">Tip</span>
+              </div>
+              <p className="text-sm leading-relaxed text-[#53635a]">
+                People on this task will see it right away in their task list.
+              </p>
             </div>
           </div>
         </form>

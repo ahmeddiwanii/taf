@@ -19,18 +19,18 @@ import { Button } from "../../../../components/ui/button"
 import { Badge } from "../../../../components/ui/badge"
 
 const statusTheme: any = {
-  approved: { color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20", icon: CheckCircle },
-  submitted: { color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20", icon: Clock },
-  rejected: { color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/20", icon: X },
-  in_review: { color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20", icon: Activity },
+  approved: { color: "text-emerald-700", bg: "bg-emerald-50", border: "border-emerald-200", icon: CheckCircle, label: "Approved" },
+  submitted: { color: "text-amber-700", bg: "bg-amber-50", border: "border-amber-200", icon: Clock, label: "Pending" },
+  rejected: { color: "text-rose-700", bg: "bg-rose-50", border: "border-rose-200", icon: X, label: "Rejected" },
+  in_review: { color: "text-blue-700", bg: "bg-blue-50", border: "border-blue-200", icon: Activity, label: "In review" },
 }
 
 const typeTheme: any = {
-  idea: { icon: Lightbulb, color: "text-amber-400" },
-  event: { icon: Calendar, color: "text-blue-400" },
-  project: { icon: Target, color: "text-rose-400" },
-  initiative: { icon: TrendingUp, color: "text-emerald-400" },
-  default: { icon: Sparkles, color: "text-purple-400" },
+  idea: { icon: Lightbulb, color: "text-amber-600" },
+  event: { icon: Calendar, color: "text-blue-600" },
+  project: { icon: Target, color: "text-rose-600" },
+  initiative: { icon: TrendingUp, color: "text-emerald-600" },
+  default: { icon: Sparkles, color: "text-[#53635a]" },
 }
 
 function proposalSwot(p: any) {
@@ -190,77 +190,78 @@ export default function HRProposalsPage() {
         {selectedProposal && <ProposalPdfTemplate ref={pdfRef} proposal={selectedProposal} />}
       </div>
       <HRLayout orgName={session?.user?.name || "Organization"}>
-      <div className="space-y-10 relative z-10 pb-20">
-        {/* Header */}
-        <motion.div 
-          initial={{ opacity: 0, y: -20 }}
+      <div className="relative z-10 space-y-6 pb-16 sm:space-y-8">
+        <motion.div
+          initial={{ opacity: 0, y: -12 }}
           animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row md:items-end md:justify-between gap-6"
+          className="flex flex-col gap-4 md:flex-row md:items-end md:justify-between"
         >
           <div>
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 mb-3">
-              <Zap className="w-3 h-3 text-blue-400" />
-              <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Member submissions</span>
-            </div>
-            <h1 className="text-5xl font-black text-white tracking-tighter uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              Ideas <span className="text-blue-500">inbox</span>
+            <h1 className="text-2xl font-semibold tracking-tight text-[#1e302d] sm:text-3xl">
+              Ideas inbox
             </h1>
-            <p className="text-white/40 font-medium tracking-wide mt-2 max-w-xl">
-              Review ideas, events, and initiatives from members. Approve to share with the organization or reject with a short note.
+            <p className="mt-1 max-w-xl text-sm text-[#737c74]">
+              Read ideas from members. Approve them, or reject with a short note.
             </p>
           </div>
-          
-          <div className="flex gap-4 p-1.5 bg-white/[0.03] border border-white/[0.08] backdrop-blur-xl rounded-2xl">
-            {["all", "submitted", "approved", "rejected"].map((s) => (
+
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                { id: "all", label: "All" },
+                { id: "submitted", label: "Pending" },
+                { id: "approved", label: "Approved" },
+                { id: "rejected", label: "Rejected" },
+              ] as const
+            ).map((s) => (
               <button
-                key={s}
-                onClick={() => setStatusFilter(s)}
-                className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
-                  statusFilter === s ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" : "text-white/40 hover:text-white"
+                key={s.id}
+                type="button"
+                onClick={() => setStatusFilter(s.id)}
+                className={`h-10 rounded-xl border px-4 text-xs font-semibold transition-all ${
+                  statusFilter === s.id
+                    ? "border-[#203b36] bg-[#203b36] text-white"
+                    : "border-[#deddd3] bg-white text-[#53635a]"
                 }`}
               >
-                {s}
+                {s.label}
               </button>
             ))}
           </div>
         </motion.div>
 
-        {/* Intelligence Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-           {[
-             { label: "Total", value: proposals.length, icon: Layers, color: "text-blue-400", bg: "bg-blue-500/10", border: "border-blue-500/20" },
-             { label: "Pending", value: proposals.filter(p => p.status === "submitted").length, icon: Clock, color: "text-amber-400", bg: "bg-amber-500/10", border: "border-amber-500/20" },
-             { label: "Approved", value: proposals.filter(p => p.status === "approved").length, icon: Shield, color: "text-emerald-400", bg: "bg-emerald-500/10", border: "border-emerald-500/20" },
-             { label: "Rejected", value: proposals.filter(p => p.status === "rejected").length, icon: X, color: "text-rose-400", bg: "bg-rose-500/10", border: "border-rose-500/20" },
-           ].map((stat, i) => (
-             <motion.div key={i} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.1 }}>
-               <Card className="border border-white/[0.08] shadow-2xl bg-white/[0.02] backdrop-blur-3xl rounded-3xl overflow-hidden group">
-                 <CardContent className="p-6">
-                    <div className="flex items-center justify-between mb-4">
-                       <span className="text-[10px] font-black text-white/20 uppercase tracking-widest">{stat.label}</span>
-                       <div className={`p-2 rounded-xl ${stat.bg} border ${stat.border}`}>
-                          <stat.icon className={`w-4 h-4 ${stat.color}`} />
-                       </div>
-                    </div>
-                    <div className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{stat.value}</div>
-                 </CardContent>
-               </Card>
-             </motion.div>
-           ))}
+        <div className="grid grid-cols-2 gap-3 lg:grid-cols-4 lg:gap-4">
+          {[
+            { label: "Total", value: proposals.length, icon: Layers },
+            { label: "Pending", value: proposals.filter((p) => p.status === "submitted").length, icon: Clock },
+            { label: "Approved", value: proposals.filter((p) => p.status === "approved").length, icon: Shield },
+            { label: "Rejected", value: proposals.filter((p) => p.status === "rejected").length, icon: X },
+          ].map((stat, i) => (
+            <motion.div key={stat.label} initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }}>
+              <div className="rounded-2xl border border-[#e7e5dc] bg-white p-4 shadow-sm sm:p-5">
+                <div className="mb-2 flex items-center justify-between">
+                  <span className="text-[10px] font-bold uppercase tracking-[0.16em] text-[#8b938a]">{stat.label}</span>
+                  <div className="rounded-xl bg-[#f5f4ef] p-2 text-[#53635a]">
+                    <stat.icon className="h-4 w-4" />
+                  </div>
+                </div>
+                <div className="text-3xl font-semibold tracking-tight text-[#1e302d]">{stat.value}</div>
+              </div>
+            </motion.div>
+          ))}
         </div>
 
-        {/* Proposals Feed */}
-        <div className="space-y-4">
+        <div className="space-y-3">
            {isLoading ? (
-             <div className="py-24 text-center">
-                <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto mb-4" />
-                <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Syncing Feed Matrix...</p>
+             <div className="py-20 text-center">
+                <div className="mx-auto mb-4 h-12 w-12 animate-spin rounded-full border-4 border-[#203b36]/15 border-t-[#203b36]" />
+                <p className="text-sm text-[#737c74]">Loading ideas…</p>
              </div>
            ) : filteredProposals.length === 0 ? (
-             <div className="py-24 text-center border border-dashed border-white/[0.1] rounded-[3rem]">
-                <Lightbulb className="w-12 h-12 text-white/10 mx-auto mb-4" />
-                <h3 className="text-xl font-black text-white/40 uppercase tracking-tight">Feed Terminated</h3>
-                <p className="text-white/20 text-sm font-medium mt-1">No operational proposals detected in current filter segment.</p>
+             <div className="rounded-2xl border border-[#e7e5dc] bg-white py-16 text-center">
+                <Lightbulb className="mx-auto mb-4 h-12 w-12 text-[#cfcfc4]" />
+                <h3 className="text-lg font-semibold text-[#1e302d]">No ideas here</h3>
+                <p className="mt-1 text-sm text-[#737c74]">Nothing matches this filter yet.</p>
              </div>
            ) : (
              <AnimatePresence>
@@ -485,58 +486,45 @@ export default function HRProposalsPage() {
 function ProposalCard({ proposal, idx, onClick }: { proposal: any; idx: number; onClick: () => void }) {
   const theme = statusTheme[proposal.status] || statusTheme.submitted
   const type = typeTheme[proposal.type] || typeTheme.idea
-  const authorInitials = proposal.submittedBy?.name?.slice(0, 2).toUpperCase() || "UN"
 
   return (
     <motion.div
-      initial={{ opacity: 0, x: -20 }}
-      animate={{ opacity: 1, x: 0 }}
-      transition={{ delay: idx * 0.05 }}
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: idx * 0.03 }}
       onClick={onClick}
-      className="group relative cursor-pointer"
+      className="group cursor-pointer"
     >
-      <Card className="border border-white/[0.08] shadow-2xl bg-white/[0.02] backdrop-blur-3xl rounded-[2rem] overflow-hidden transition-all duration-500 hover:border-blue-500/30 hover:bg-white/[0.04] group-hover:-translate-y-1">
-        <div className={`absolute top-0 bottom-0 left-0 w-1.5 ${theme.bg} brightness-125 opacity-20 group-hover:opacity-100 transition-opacity`} />
-        <CardContent className="p-8 flex flex-col md:flex-row md:items-center gap-8">
-           <div className="flex items-center gap-4 flex-1">
-              <div className="w-14 h-14 rounded-2xl bg-white/[0.03] border border-white/[0.08] flex items-center justify-center p-3 text-white/40 group-hover:text-blue-400 group-hover:border-blue-500/20 group-hover:bg-blue-500/5 transition-all">
-                 {React.createElement(type.icon, { className: "w-full h-full" })}
-              </div>
-              <div className="min-w-0">
-                 <h3 className="text-xl font-black text-white uppercase tracking-tight group-hover:text-blue-400 transition-colors truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                   {proposal.title}
-                 </h3>
-                 <div className="flex items-center gap-3 mt-1 text-white/30 font-bold text-[10px] uppercase tracking-widest">
-                    <span className="text-white/60">{proposal.submittedBy?.name}</span>
-                    <span className="w-1 h-1 rounded-full bg-white/10" />
-                    <span>{new Date(proposal.createdAt).toLocaleDateString()}</span>
-                 </div>
-              </div>
-           </div>
+      <div className="rounded-2xl border border-[#e7e5dc] bg-white p-4 shadow-sm transition hover:border-[#203b36]/25 sm:p-5">
+        <div className="flex flex-col gap-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 flex-1 items-center gap-3">
+            <div className={`flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[#f5f4ef] ${type.color}`}>
+              {React.createElement(type.icon, { className: "h-5 w-5" })}
+            </div>
+            <div className="min-w-0">
+              <h3 className="truncate text-base font-semibold text-[#1e302d] sm:text-lg">
+                {proposal.title}
+              </h3>
+              <p className="mt-0.5 text-sm text-[#737c74]">
+                {proposal.submittedBy?.name || "Member"} ·{" "}
+                {new Date(proposal.createdAt).toLocaleDateString()}
+              </p>
+            </div>
+          </div>
 
-           <div className="flex items-center gap-6">
-              <div className="hidden lg:flex items-center gap-4 text-white/20">
-                 <div className="flex flex-col items-center">
-                    <MessageSquare className="w-4 h-4 mb-1" />
-                    <span className="text-[8px] font-black">{proposal._count?.comments ?? proposal.comments?.length ?? 0}</span>
-                 </div>
-                 <div className="w-px h-6 bg-white/5" />
-                 <div className="flex flex-col items-center">
-                    <Eye className="w-4 h-4 mb-1" />
-                    <span className="text-[8px] font-black uppercase">Review</span>
-                 </div>
-              </div>
-
-              <div className={`px-4 py-2 rounded-xl text-[8px] font-black uppercase tracking-[0.2em] ${theme.bg} ${theme.color} border ${theme.border} group-hover:brightness-125 transition-all`}>
-                 {proposal.status}
-              </div>
-
-              <button className="h-12 w-12 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white flex items-center justify-center shadow-lg shadow-blue-600/20 opacity-0 group-hover:opacity-100 transition-all scale-90 group-hover:scale-100">
-                 <ArrowRight className="w-5 h-5 font-black" />
-              </button>
-           </div>
-        </CardContent>
-      </Card>
+          <div className="flex items-center justify-between gap-3 sm:justify-end">
+            <span className="text-xs text-[#8b938a]">
+              {proposal._count?.comments ?? proposal.comments?.length ?? 0} comments
+            </span>
+            <span className={`rounded-lg border px-2.5 py-1 text-[10px] font-semibold ${theme.bg} ${theme.color} ${theme.border}`}>
+              {theme.label || proposal.status}
+            </span>
+            <span className="inline-flex h-10 w-10 items-center justify-center rounded-xl bg-[#203b36] text-white">
+              <ArrowRight className="h-4 w-4" />
+            </span>
+          </div>
+        </div>
+      </div>
     </motion.div>
   )
 }

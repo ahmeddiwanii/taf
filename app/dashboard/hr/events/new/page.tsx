@@ -296,12 +296,12 @@ export default function CreateEventPage() {
                   <div className="w-20 h-20 bg-blue-600/20 border border-blue-500/20 rounded-3xl flex items-center justify-center mx-auto mb-6 text-blue-500">
                     <Sparkles className="w-10 h-10" />
                   </div>
-                  <h2 className="text-3xl font-black text-white mb-3 tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>MISSION LOGGED</h2>
+                  <h2 className="text-3xl font-black text-white mb-3 tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Event saved</h2>
                   <p className="text-white/40 text-sm font-medium">Your operational directive has been synchronized. Initialize squad allocation now?</p>
                 </div>
                 <div className="space-y-3">
                   <Button onClick={handleGoToSetup} className="w-full bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest text-[10px] h-14 rounded-2xl shadow-xl shadow-blue-600/20 border border-blue-500/50">
-                    <Users className="w-4 h-4 mr-2" /> Initialize Squad Deployment
+                    <Users className="w-4 h-4 mr-2" /> Set up teams
                   </Button>
                   <Button onClick={handleSkipSetup} variant="ghost" className="w-full h-14 rounded-2xl font-black uppercase tracking-widest text-[10px] text-white/40 hover:text-white hover:bg-white/5 transition-all">
                     Stand By / Skip Archive
@@ -315,12 +315,12 @@ export default function CreateEventPage() {
         {/* Header Action Bar */}
         <div className="flex flex-col md:flex-row md:items-center justify-between mb-12 gap-6">
             <Button variant="ghost" onClick={() => router.push("/dashboard/hr/events")} className="text-white/40 hover:text-white transition-colors w-fit -ml-4">
-              <ArrowLeft className="w-4 h-4 mr-2" /> Back to Intelligence Deck
+              <ArrowLeft className="w-4 h-4 mr-2" /> Back to events
             </Button>
             <div className="flex gap-4">
                <Button onClick={handleSubmit} disabled={loading} className="h-12 px-10 bg-blue-600 hover:bg-blue-700 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-600/20 transition-all border border-blue-500/50">
                   {loading ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
-                  {loading ? "Transmitting..." : isEditMode ? "Sync Override" : "Deploy Operation"}
+                  {loading ? "Saving…" : isEditMode ? "Save changes" : "Create event"}
                </Button>
             </div>
         </div>
@@ -356,29 +356,29 @@ export default function CreateEventPage() {
               <div className="space-y-10">
                 {/* Sector 1 */}
                 <div className="space-y-8">
-                  <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Sector 01: General Intelligence</h3>
+                  <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>1. Basics</h3>
                   <div className="space-y-6">
                     <div className="group">
-                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-1">Operation Designation <span className="text-blue-500">*</span></p>
+                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-1">Event name <span className="text-blue-500">*</span></p>
                       <Input value={formData.title} onChange={e => handleChange("title", e.target.value)} placeholder="e.g., TECH INNOVATION SUMMIT 2026" className="h-16 bg-white/[0.03] border-white/[0.08] focus:border-blue-500/50 text-xl font-black rounded-2xl transition-all" />
                     </div>
                     <div className="group">
-                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-1">Operational Mandate</p>
+                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-1">Details</p>
                       <Textarea value={formData.description} onChange={e => handleChange("description", e.target.value)} placeholder="Describe the mission objectives..." className="min-h-[160px] bg-white/[0.03] border-white/[0.08] focus:border-blue-500/50 text-base font-medium rounded-2xl resize-none p-6" />
                     </div>
                     <div className="space-y-4">
-                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-1">Visual Signal (Poster)</p>
+                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-1">Poster image</p>
                       <div className="relative group/poster">
                         <Input type="file" accept="image/*" onChange={(e) => handleChange("posterFile", e.target.files?.[0] || null)} className="h-16 bg-white/[0.03] border-dashed border-2 border-white/10 hover:border-blue-500/50 rounded-2xl cursor-pointer file:hidden text-center flex items-center justify-center text-white/40 font-black uppercase tracking-widest text-[10px]" />
                         <div className="absolute inset-0 flex items-center justify-center pointer-events-none text-[10px] font-black text-white/20 uppercase tracking-widest group-hover/poster:text-blue-400">
-                           {formData.posterFile ? "SIGNAL CAPTURED: " + formData.posterFile.name : "Uplink Static Image Payload"}
+                           {formData.posterFile ? "Image added: " + formData.posterFile.name : "Upload a poster"}
                         </div>
                       </div>
                       {(formData.posterFile || posterUrl) && (
                         <div className="mt-4 p-4 rounded-2xl bg-white/[0.03] border border-white/10 flex items-center gap-6">
                           <img src={formData.posterFile ? URL.createObjectURL(formData.posterFile) : (posterUrl || "/placeholder.svg")} className="w-32 h-20 object-cover rounded-xl border border-white/10" />
                           <div className="flex-1">
-                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Signal Verified</p>
+                            <p className="text-[10px] font-black text-emerald-400 uppercase tracking-widest">Image ready</p>
                             <p className="text-xs text-white/40">Ready for deployment.</p>
                           </div>
                           <Button variant="ghost" onClick={() => { handleChange("posterFile", null); setPosterUrl(null); }} className="text-red-500/40 hover:text-red-500 hover:bg-transparent">
@@ -392,7 +392,7 @@ export default function CreateEventPage() {
 
                 {/* Sector 2 */}
                 <div className="pt-10 border-t border-white/5 space-y-8">
-                  <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Sector 02: Operational Parameters</h3>
+                  <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>2. Format and size</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                     <div className="space-y-4">
                       <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1 flex items-center gap-2"><Zap className="w-3 h-3" /> Event Modality</p>
@@ -401,7 +401,7 @@ export default function CreateEventPage() {
                       </select>
                     </div>
                     <div className="space-y-4">
-                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1 flex items-center gap-2"><Target className="w-3 h-3" /> Deployment Format</p>
+                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1 flex items-center gap-2"><Target className="w-3 h-3" /> Event format</p>
                       <select value={formData.format} onChange={(e) => handleChange("format", e.target.value)} className="w-full h-16 bg-white/[0.03] border border-white/[0.08] rounded-2xl px-6 text-xs font-black uppercase tracking-widest text-white outline-none focus:border-blue-500/50 appearance-none bg-no-repeat bg-[length:16px] bg-[center_right_16px] bg-[url('data:image/svg+xml;charset=UTF-8,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20width%3D%2224%22%20height%3D%2224%22%20viewBox%3D%220%200%2024%2024%22%20fill%3D%22none%22%20stroke%3D%22%233b82f6%22%20stroke-width%3D%222%22%3E%3Cpolyline%20points%3D%226%209%2012%2015%2018%209%22%3E%3C%2Fpolyline%3E%3C%2Fsvg%3E')]">
                         <option value="IN_PERSON" className="bg-slate-900">🏢 IN PERSON</option>
                         <option value="ONLINE" className="bg-slate-900">💻 ONLINE</option>
@@ -420,7 +420,7 @@ export default function CreateEventPage() {
                       </select>
                     </div>
                     <div className="space-y-4">
-                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Personnel Capacity</p>
+                      <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Max people</p>
                       <Input type="number" value={formData.maxParticipants} onChange={e => handleChange("maxParticipants", e.target.value)} placeholder="UNLIMITED" className="h-16 bg-white/[0.03] border-white/[0.08] focus:border-blue-500/50 text-base font-black rounded-2xl" />
                     </div>
                   </div>
@@ -428,7 +428,7 @@ export default function CreateEventPage() {
 
                 {/* Sector 3 */}
                 <div className="pt-10 border-t border-white/5 space-y-8">
-                  <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Sector 03: Pricing Intelligence</h3>
+                  <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>3. Price</h3>
                   <div className="flex items-center gap-4 bg-white/[0.03] p-6 rounded-[2rem] border border-white/10">
                     <Checkbox id="isFree" checked={isFree} onCheckedChange={(val) => setIsFree(val as boolean)} className="w-6 h-6 border-2 border-white/20" />
                     <Label htmlFor="isFree" className="text-sm font-black text-white/60 cursor-pointer uppercase tracking-widest">Non-Monetary / Volunteering Operation 🤝</Label>
@@ -453,7 +453,7 @@ export default function CreateEventPage() {
 
                 {/* Sector 4 */}
                 <div className="pt-10 border-t border-white/5 space-y-10">
-                  <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Sector 04: Deployment Horizon</h3>
+                  <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Sector 04: Due date</h3>
                   <div className="flex items-center gap-4 bg-white/[0.03] p-6 rounded-[2rem] border border-white/10">
                     <Checkbox id="isComingSoon" checked={isComingSoon} onCheckedChange={(val) => setIsComingSoon(val as boolean)} className="w-6 h-6 border-2 border-white/20" />
                     <Label htmlFor="isComingSoon" className="text-sm font-black text-white/60 cursor-pointer uppercase tracking-widest">Horizon Pending (Coming Soon) ⏳</Label>
@@ -525,7 +525,7 @@ export default function CreateEventPage() {
           <div className="lg:col-span-4 space-y-8">
             <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] p-8 space-y-10 sticky top-12 backdrop-blur-xl">
                <div className="space-y-6">
-                  <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Operational Checklist</h4>
+                  <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Next steps</h4>
                   <div className="space-y-4">
                      <div className="flex items-center gap-4 p-5 rounded-3xl bg-blue-600/5 border border-blue-500/10 scale-105 transition-all">
                         <div className="w-8 h-8 rounded-xl bg-blue-500/20 flex items-center justify-center text-blue-500 font-bold text-xs shadow-xl shadow-blue-500/20">01</div>
@@ -542,7 +542,7 @@ export default function CreateEventPage() {
                        className={`flex items-center gap-4 p-5 rounded-3xl border transition-all ${(createdEventId || editEventId) ? "bg-white/[0.02] border-white/10 hover:border-blue-500/30 cursor-pointer group" : "bg-white/[0.01] border-white/5 opacity-40 cursor-not-allowed"}`}
                      >
                         <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${(createdEventId || editEventId) ? "bg-white/10 text-white/60 group-hover:bg-blue-500/20 group-hover:text-blue-500 transition-all" : "bg-white/5 text-white/20"}`}>02</div>
-                        <p className={`text-xs font-black uppercase tracking-widest ${(createdEventId || editEventId) ? "text-white/60 group-hover:text-white transition-all" : "text-white/40"}`}>Squad Deployment</p>
+                        <p className={`text-xs font-black uppercase tracking-widest ${(createdEventId || editEventId) ? "text-white/60 group-hover:text-white transition-all" : "text-white/40"}`}>Set up teams</p>
                      </div>
                      <div 
                        onClick={() => {
@@ -555,7 +555,7 @@ export default function CreateEventPage() {
                        className={`flex items-center gap-4 p-5 rounded-3xl border transition-all ${(createdEventId || editEventId) ? "bg-white/[0.02] border-white/10 hover:border-blue-500/30 cursor-pointer group" : "bg-white/[0.01] border-white/5 opacity-40 cursor-not-allowed"}`}
                      >
                         <div className={`w-8 h-8 rounded-xl flex items-center justify-center font-bold text-xs ${(createdEventId || editEventId) ? "bg-white/10 text-white/60 group-hover:bg-blue-500/20 group-hover:text-blue-500 transition-all" : "bg-white/5 text-white/20"}`}>03</div>
-                        <p className={`text-xs font-black uppercase tracking-widest ${(createdEventId || editEventId) ? "text-white/60 group-hover:text-white transition-all" : "text-white/40"}`}>Command Board</p>
+                        <p className={`text-xs font-black uppercase tracking-widest ${(createdEventId || editEventId) ? "text-white/60 group-hover:text-white transition-all" : "text-white/40"}`}>Directors</p>
                      </div>
                   </div>
                </div>
@@ -572,7 +572,7 @@ export default function CreateEventPage() {
 
                {isEditMode && (eventTeams.length > 0 || eventDirectors.length > 0) && (
                  <div className="pt-10 border-t border-white/5 space-y-6">
-                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Current Deployment</h4>
+                    <h4 className="text-[10px] font-black text-white/40 uppercase tracking-[0.3em]">Current setup</h4>
                     <div className="grid grid-cols-2 gap-4">
                        <div className="p-5 bg-white/[0.02] rounded-3xl border border-white/5 text-center">
                           <p className="text-[9px] font-black text-white/20 uppercase mb-2">Squads</p>

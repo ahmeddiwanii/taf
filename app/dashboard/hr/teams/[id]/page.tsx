@@ -116,8 +116,8 @@ export default function SquadronIntelPage() {
   const handleAlarm = async (taskId: string, userId: string, userName: string) => {
     // In a real system, this would call an API like POST /api/teams/tasks/${taskId}/alarm
     // For now, we simulate the notification dispatch
-    toast.success(`Priority alarm transmitted to ${userName}`, {
-      description: "Asset will receive an immediate ping regarding their objectives.",
+    toast.success(`Priority updated to ${userName}`, {
+      description: "will receive an immediate ping regarding their objectives.",
       icon: <Zap className="w-4 h-4 text-amber-500" />
     })
   }
@@ -141,7 +141,7 @@ export default function SquadronIntelPage() {
             onClick={() => router.push("/dashboard/hr/teams")}
             className="text-white/40 hover:text-white transition-colors -ml-4"
           >
-            <ArrowLeft className="w-4 h-4 mr-2" /> Operational Grid
+            <ArrowLeft className="w-4 h-4 mr-2" /> Back to teams
           </Button>
           
           <Button 
@@ -200,7 +200,7 @@ export default function SquadronIntelPage() {
            <div className="lg:col-span-1 space-y-6">
               <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2rem] p-8">
                  <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Operational Command</h3>
+                    <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Team leads</h3>
                     <Shield className="w-4 h-4 text-blue-500" />
                  </div>
                  <div className="space-y-4">
@@ -211,7 +211,7 @@ export default function SquadronIntelPage() {
                           </div>
                           <div>
                              <p className="text-sm font-black text-white">{dir.user.name}</p>
-                             <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Squad Director</p>
+                             <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Team lead</p>
                           </div>
                        </div>
                     ))}
@@ -225,7 +225,7 @@ export default function SquadronIntelPage() {
 
               <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2rem] p-8">
                  <div className="flex items-center justify-between mb-8">
-                    <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Unit Personnel</h3>
+                    <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Members</h3>
                     <Users className="w-4 h-4 text-white/10" />
                  </div>
                  <div className="space-y-3">
@@ -251,8 +251,8 @@ export default function SquadronIntelPage() {
               <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] p-10 min-h-[500px]">
                  <div className="flex items-center justify-between mb-10">
                     <div>
-                       <h2 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>OBJECTIVE MATRIX</h2>
-                       <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em] mt-1 text-emerald-400/60">Tactical Synchronization Active</p>
+                       <h2 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Tasks</h2>
+                       <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em] mt-1 text-emerald-400/60">Team is active</p>
                     </div>
                     <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
                        <Zap className="w-6 h-6" />
@@ -317,7 +317,7 @@ export default function SquadronIntelPage() {
                                       )}
 
                                       <div>
-                                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Assigned Assets</p>
+                                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Members</p>
                                          <div className="space-y-3">
                                             {task.assignments.map((as, i) => (
                                                <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
@@ -378,7 +378,7 @@ export default function SquadronIntelPage() {
                     {team.tasks.length === 0 && (
                       <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[2rem]">
                          <Target className="w-12 h-12 text-white/5 mx-auto mb-4" />
-                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Zero Active Objectives</p>
+                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">No tasks yet</p>
                       </div>
                     )}
                  </div>

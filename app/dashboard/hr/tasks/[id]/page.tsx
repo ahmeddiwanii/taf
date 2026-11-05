@@ -146,7 +146,7 @@ export default function MissionIntelligencePage() {
   const fetchTask = async () => {
     try {
       const res = await fetch(`/api/teams/tasks/${id}`)
-      if (!res.ok) throw new Error("Mission Data Missing")
+      if (!res.ok) throw new Error("Task not found")
       const data = await res.json()
       setTask(data.task)
       setFormData({
@@ -174,7 +174,7 @@ export default function MissionIntelligencePage() {
       })
 
       if (res.ok) {
-        toast.success("Objective Parameters Calibrated")
+        toast.success("Task saved")
         fetchTask()
       } else {
         toast.error("Transmission Error")
@@ -196,13 +196,13 @@ export default function MissionIntelligencePage() {
       })
 
       if (res.ok) {
-        toast.success(action === "approve" ? "Asset Deconfliction Complete" : "Objective Revision Required")
+        toast.success(action === "approve" ? "Approveion Complete" : "Sent back for changes")
         fetchTask()
       } else {
         toast.error("Audit Protocol Failed")
       }
     } catch (e) {
-      toast.error("Command Link Interrupted")
+      toast.error("Could not update")
     } finally {
       setReviewingId(null)
     }
@@ -213,7 +213,7 @@ export default function MissionIntelligencePage() {
     try {
       const res = await fetch(`/api/teams/tasks/${id}`, { method: "DELETE" })
       if (res.ok) {
-        toast.success("Mission Terminated")
+        toast.success("Task deleted")
         router.push("/dashboard/hr/tasks")
       }
     } catch (error) {
@@ -230,7 +230,7 @@ export default function MissionIntelligencePage() {
   )
 
   if (!task) return (
-    <HRLayout orgName="Unknown Objective">
+    <HRLayout orgName="Task">
       <div className="text-center py-32 bg-white/[0.02] border border-white/[0.08] rounded-[3rem] max-w-2xl mx-auto">
         <AlertCircle className="w-20 h-20 text-white/5 mx-auto mb-6" />
         <h2 className="text-3xl font-black text-white mb-4 tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SIGNAL LOST</h2>
@@ -251,7 +251,7 @@ export default function MissionIntelligencePage() {
                 onClick={() => router.push("/dashboard/hr/tasks")}
                 className="text-white/40 hover:text-white transition-colors -ml-4"
               >
-                <ArrowLeft className="w-4 h-4 mr-2" /> Mission Repository
+                <ArrowLeft className="w-4 h-4 mr-2" /> Back to tasks
             </Button>
 
             <div className="flex gap-4">
@@ -260,7 +260,7 @@ export default function MissionIntelligencePage() {
                  onClick={handleDelete}
                  className="h-11 px-6 border border-red-500/10 hover:bg-red-500/10 text-red-500/40 hover:text-red-500 rounded-xl font-black uppercase tracking-widest text-[10px] transition-all"
                >
-                  <Trash2 className="w-4 h-4 mr-2" /> Terminate Objective
+                  <Trash2 className="w-4 h-4 mr-2" /> Delete task
                </Button>
                <Button 
                  onClick={handleUpdate}
@@ -270,7 +270,7 @@ export default function MissionIntelligencePage() {
                   {saving ? (
                     <div className="w-4 h-4 border-2 border-white/20 border-t-white rounded-full animate-spin mr-2" />
                   ) : <Save className="w-4 h-4 mr-2" />}
-                  {saving ? "Transmitting..." : "Sync Parameters"}
+                  {saving ? "Saving…" : "Save changes"}
                </Button>
             </div>
         </div>
@@ -289,7 +289,7 @@ export default function MissionIntelligencePage() {
                     <Badge className="bg-white/5 text-white/40 border-none py-1.5 px-3 rounded-lg uppercase font-black tracking-widest text-[9px]">
                        OBJ-{task.id.slice(-4).toUpperCase()}
                     </Badge>
-                    <span className="text-[10px] text-white/10 font-bold uppercase tracking-[0.4em]">Strategic Mission Intel</span>
+                    <span className="text-[10px] text-white/10 font-bold uppercase tracking-[0.4em]">Task details</span>
                  </div>
                  <h1 className="text-6xl font-black text-white tracking-tighter mb-4" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
                     {task.title.toUpperCase()}
@@ -318,7 +318,7 @@ export default function MissionIntelligencePage() {
            <div className="lg:col-span-8 space-y-8">
               <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] p-10 backdrop-blur-xl space-y-10">
                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Objective Synthesis</h3>
+                    <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Edit task</h3>
                     <div className="flex items-center gap-2">
                        <div className="w-1.5 h-1.5 rounded-full bg-blue-500 animate-pulse" />
                        <span className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Active Editing</span>
@@ -336,18 +336,18 @@ export default function MissionIntelligencePage() {
                     </div>
                     
                     <div className="group">
-                       <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-1">Operational Mandate</p>
+                       <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4 ml-1">Details</p>
                        <Textarea 
                           value={formData.description}
                           onChange={e => setFormData({...formData, description: e.target.value})}
                           className="min-h-[220px] bg-white/[0.03] border-white/[0.08] focus:border-blue-500/50 text-base font-medium leading-relaxed rounded-2xl transition-all resize-none p-8"
-                          placeholder="Zero mandates defined. Asset instructions required."
+                          placeholder="Add clear steps for the team…"
                        />
                     </div>
 
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
                        <div className="space-y-4">
-                          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Mission Status</p>
+                          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Status</p>
                           <div className="relative">
                              <select 
                                value={formData.status}
@@ -362,7 +362,7 @@ export default function MissionIntelligencePage() {
                           </div>
                        </div>
                        <div className="space-y-4">
-                          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Deployment Horizon</p>
+                          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Due date</p>
                           <Input 
                              type="date"
                              value={formData.dueDate}
@@ -383,7 +383,7 @@ export default function MissionIntelligencePage() {
                        </div>
                        <h3 className="text-2xl font-black text-white tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>PERSONNEL AUDIT</h3>
                     </div>
-                    <Badge className="bg-white/5 text-white/20 border-none uppercase text-[9px] font-black tracking-widest">{task.assignments.length} Assets Deployed</Badge>
+                    <Badge className="bg-white/5 text-white/20 border-none uppercase text-[9px] font-black tracking-widest">{task.assignments.length} people assigned</Badge>
                  </div>
 
                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -420,7 +420,7 @@ export default function MissionIntelligencePage() {
 
                             {as.status === "SUBMITTED" && (
                                 <div className="pt-6 border-t border-white/5 space-y-4">
-                                  <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] italic mb-1">Incoming Signal Data:</p>
+                                  <p className="text-[9px] font-black text-white/20 uppercase tracking-[0.2em] italic mb-1">Their note:</p>
                                   <div className="p-4 rounded-xl bg-amber-500/[0.03] border border-amber-500/10 mb-4">
                                      <p className="text-xs text-amber-500/60 font-medium italic">"{as.approvalComment || "No submission intelligence provided by asset."}"</p>
                                   </div>
@@ -428,7 +428,7 @@ export default function MissionIntelligencePage() {
                                   {as.memberDocumentUrl && (
                                      <a href={as.memberDocumentUrl} download={as.memberDocumentName} className="flex items-center gap-2 p-3 rounded-xl bg-blue-500/10 text-blue-400 border border-blue-500/20 w-fit hover:bg-blue-500/20 transition-all">
                                         <Paperclip className="w-3.5 h-3.5" />
-                                        <span className="text-[10px] font-black uppercase tracking-widest">{as.memberDocumentName || "Download Intelligence"}</span>
+                                        <span className="text-[10px] font-black uppercase tracking-widest">{as.memberDocumentName || "Download file"}</span>
                                      </a>
                                   )}
 
@@ -438,7 +438,7 @@ export default function MissionIntelligencePage() {
                                        disabled={reviewingId === as.id}
                                        className="flex-1 bg-emerald-600 hover:bg-emerald-700 h-10 rounded-xl font-black uppercase text-[9px] tracking-widest text-white transition-all shadow-lg shadow-emerald-600/10"
                                      >
-                                        <ClipboardCheck className="w-3.5 h-3.5 mr-2" /> Deconflict
+                                        <ClipboardCheck className="w-3.5 h-3.5 mr-2" /> Approve
                                      </Button>
                                      <Button 
                                        onClick={() => handleReviewAssignment(as.id, "reject")}
@@ -471,7 +471,7 @@ export default function MissionIntelligencePage() {
                  <div className="p-2.5 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400">
                     <MessageSquare className="w-5 h-5" />
                  </div>
-                 <h3 className="text-2xl font-black text-white tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>COMMS TERMINAL</h3>
+                 <h3 className="text-2xl font-black text-white tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Messages</h3>
               </div>
               <div className="bg-white/[0.02] border border-white/[0.08] backdrop-blur-xl rounded-[2.5rem] p-6 lg:p-8 flex flex-col h-[500px]">
                  <div className="flex-1 overflow-y-auto pr-4 space-y-6 custom-scrollbar">
@@ -499,7 +499,7 @@ export default function MissionIntelligencePage() {
                        value={newComment}
                        onChange={e => setNewComment(e.target.value)}
                        onKeyDown={e => e.key === 'Enter' && handlePostComment()}
-                       placeholder="Transmit message to objective assets..."
+                       placeholder="Write a message to the team…"
                        className="flex-1 bg-white/[0.03] border-white/10 focus:border-blue-500 h-14 rounded-xl px-6 text-sm transition-all"
                     />
                     <Button onClick={handlePostComment} className="h-14 w-14 bg-blue-600 hover:bg-blue-500 rounded-xl flex items-center justify-center shrink-0 disabled:opacity-50">
@@ -516,7 +516,7 @@ export default function MissionIntelligencePage() {
                  {/* Team Link */}
                  <div className="space-y-6">
                     <div className="flex items-center justify-between">
-                       <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Operational Sector</h4>
+                       <h4 className="text-[10px] font-black text-white/20 uppercase tracking-[0.3em]">Team</h4>
                        <Shield className="w-4 h-4 text-white/10" />
                     </div>
                     <div 
@@ -529,7 +529,7 @@ export default function MissionIntelligencePage() {
                           <ChevronRight className="w-4 h-4 text-blue-400 group-hover:translate-x-1 transition-transform" />
                        </div>
                        <p className="text-[10px] text-white/30 font-medium italic line-clamp-2 leading-relaxed">
-                          "{task.team.purpose || "Squad purpose mission data missing."}"
+                          "{task.team.purpose || "No team description yet."}"
                        </p>
                     </div>
                  </div>
@@ -538,7 +538,7 @@ export default function MissionIntelligencePage() {
                  <div className="pt-10 border-t border-white/5 space-y-6">
                     {task.hrDocumentUrl && (
                        <div className="mb-6">
-                           <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Linked Intelligence</p>
+                           <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Linked file</p>
                            <a href={task.hrDocumentUrl} download={task.hrDocumentName} className="flex items-center gap-3 p-4 rounded-2xl bg-white/[0.02] border border-white/10 hover:bg-white/[0.05] transition-all group/doc">
                               <div className="p-2 rounded-lg bg-blue-500/20 text-blue-400 group-hover:scale-110 transition-transform">
                                  <Paperclip className="w-4 h-4" />
@@ -549,7 +549,7 @@ export default function MissionIntelligencePage() {
                     )}
 
                     <div>
-                       <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Objective Lead</p>
+                       <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-3">Created by</p>
                        <div className="flex items-center gap-3">
                           <div className="w-7 h-7 rounded-lg bg-white/5 flex items-center justify-center text-[10px] font-black text-white/40">
                              {task.createdBy.name[0]}
@@ -560,7 +560,7 @@ export default function MissionIntelligencePage() {
                     
                     <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl">
                        <div>
-                          <p className="text-[9px] font-black text-white/10 uppercase tracking-widest mb-1">Asset Yield</p>
+                          <p className="text-[9px] font-black text-white/10 uppercase tracking-widest mb-1">Points</p>
                           <p className="text-md font-black text-blue-400">10 Credits</p>
                        </div>
                        <Zap className="w-5 h-5 text-amber-500/40" />
