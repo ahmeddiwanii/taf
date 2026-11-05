@@ -17,7 +17,7 @@ import {
 } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { UserAvatar } from "../user-avatar"
-import { LogoMark } from "@/components/brand/logo"
+import { LogoWordmark } from "@/components/brand/logo"
 
 interface AdminSidebarProps {
   isOpen: boolean
@@ -67,17 +67,15 @@ export function AdminSidebar({ isOpen, setIsOpen }: AdminSidebarProps) {
     <>
       {/* Logo & Org */}
       <div className="px-4 py-8 border-b border-white/[0.06]">
-        <Link href="/dashboard/admin" className="flex items-center gap-3 group" onClick={() => setIsOpen(false)}>
-          <div className="h-11 w-11 overflow-hidden rounded-xl">
-            <LogoMark className="h-11 w-11" />
-          </div>
-          <div className="min-w-0">
-            <p className="font-bold text-sm text-jasmine/90 truncate" style={{ fontFamily: "Fraunces, serif" }}>
+        <Link href="/dashboard/admin" className="group flex flex-col gap-1.5" onClick={() => setIsOpen(false)}>
+          <LogoWordmark href={null} compact className="h-9" />
+          <div className="min-w-0 pl-0.5">
+            <p className="truncate text-sm font-semibold text-jasmine/90">
               Platform admin
             </p>
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[9px] text-white/40 tracking-[0.2em] uppercase font-bold">System Core</p>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">System</p>
             </div>
           </div>
         </Link>

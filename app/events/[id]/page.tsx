@@ -7,6 +7,7 @@ import { motion, AnimatePresence } from "framer-motion"
 import { Button } from "../../../components/ui/button"
 import { Badge } from "../../../components/ui/badge"
 import { UserNav } from "../../../components/user-nav"
+import { LogoWordmark } from "@/components/brand/logo"
 import {
   Calendar,
   MapPin,
@@ -42,15 +43,7 @@ function PublicNav() {
     <motion.header initial={{ y: -20, opacity: 0 }} animate={{ y: 0, opacity: 1 }} transition={{ duration: 0.6 }} className="fixed top-0 left-0 right-0 z-50">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 pt-4">
         <nav className="flex items-center justify-between rounded-2xl border border-white/[0.06] bg-white/[0.03] backdrop-blur-xl px-4 sm:px-6 py-3">
-          <Link href="/" className="flex items-center gap-2.5">
-            <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 via-amber-400 to-blue-500 flex items-center justify-center shadow-lg shadow-purple-500/20">
-              <span className="font-bold text-white text-sm" style={{ fontFamily: "'Space Grotesk'" }}>T</span>
-            </div>
-            <div>
-              <span className="font-bold text-base text-white tracking-tight" style={{ fontFamily: "'Space Grotesk'" }}>TAFSULA</span>
-              <p className="text-[10px] text-white/40 -mt-0.5 tracking-widest uppercase">Events & Training</p>
-            </div>
-          </Link>
+          <LogoWordmark href="/" compact className="h-9" />
           <div className="hidden md:flex items-center gap-1">
             {links.map((l) => (<Link key={l.href} href={l.href}><button className="px-3.5 py-2 text-sm text-white/60 hover:text-white rounded-lg hover:bg-white/[0.06] transition-all">{l.label}</button></Link>))}
           </div>

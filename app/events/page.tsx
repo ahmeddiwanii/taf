@@ -5,7 +5,7 @@ import { Search } from "lucide-react"
 import { EventCard } from "../../components/event-card"
 import { PublicShell } from "@/components/brand/public-shell"
 import { BrandFigure } from "@/components/brand/figures"
-import { LogoMark } from "@/components/brand/logo"
+import { LogoWordmark } from "@/components/brand/logo"
 import { landingCopy } from "@/lib/landing-copy"
 import { useLocale } from "@/lib/i18n/locale-context"
 
@@ -160,7 +160,7 @@ export default function EventsPage() {
 
       <footer className="border-t-[3px] border-soot/10 py-8">
         <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 sm:px-6">
-          <LogoMark className="h-8 w-8" />
+          <LogoWordmark href={null} compact className="h-8" />
           <p className="text-sm text-soot/45">{copy.footer}</p>
         </div>
       </footer>

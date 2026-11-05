@@ -3,53 +3,63 @@
 import Link from "next/link"
 import Image from "next/image"
 
+const LOGO_SRC = "/brand/logo-nav.png"
+
+/** Compact brand mark — always the latest Tafsula wordmark + mascot */
 export function LogoMark({
-  className = "h-9 w-9",
+  className = "h-10",
   title = "Tafsula",
-  animated = true,
+  animated = false,
 }: {
   className?: string
   title?: string
+  /** kept for API compat; spin removed for the wordmark */
   animated?: boolean
 }) {
+  void animated
   return (
-    <span className={`relative inline-flex ${className}`} title={title}>
-      <span className="pointer-events-none absolute inset-0 rounded-[22%] bg-saffron/30 blur-[6px] taf-logo-glow" />
+    <span className={`relative inline-flex items-center ${className}`} title={title}>
       <Image
-        src="/brand/logo.png"
+        src={LOGO_SRC}
         alt={title}
-        width={128}
-        height={128}
+        width={888}
+        height={341}
         priority
-        className={`relative h-full w-full rounded-[22%] object-cover shadow-[2px_3px_0_0_#9C1C28] ${
-          animated ? "taf-logo-spin" : ""
-        }`}
+        className="h-full w-auto max-w-none object-contain"
       />
     </span>
   )
 }
 
+/** Full wordmark for navbars and sidebars */
 export function LogoWordmark({
   href = "/",
   compact = false,
+  className = "",
 }: {
-  href?: string
+  href?: string | null
   light?: boolean
   compact?: boolean
+  className?: string
 }) {
+  const sizeClass = className.includes("h-")
+    ? ""
+    : compact
+      ? "h-9 sm:h-11"
+      : "h-11 sm:h-14"
   const word = (
     <Image
-      src="/brand/logo-nav.png"
+      src={LOGO_SRC}
       alt="Tafsula"
       width={888}
       height={341}
       priority
-      className={`w-auto object-contain ${compact ? "h-10" : "h-12 sm:h-14"}`}
+      className={`w-auto object-contain ${sizeClass} ${className}`.trim()}
     />
   )
   if (!href) return word
   return (
-    <Link href={href} className="inline-flex no-underline hover:opacity-90">
+    <Link href={href} className="inline-flex shrink-0 no-underline hover:opacity-90">
       {word}
     </Link>
   )

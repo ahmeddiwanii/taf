@@ -7,7 +7,7 @@ import { signIn } from "next-auth/react"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, Eye, EyeOff, Mail, Lock, Sparkles } from "lucide-react"
-import { LogoMark } from "@/components/brand/logo"
+import { LogoWordmark } from "@/components/brand/logo"
 import { BrandFigure } from "@/components/brand/figures"
 
 function LoginForm() {
@@ -97,10 +97,9 @@ function LoginForm() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <Link href="/" className="mb-10 inline-flex items-center gap-2.5">
-              <LogoMark className="h-12 w-12" />
-              <span className="font-display text-2xl text-soot" style={{ fontFamily: "Fraunces, serif" }}>Tafsula</span>
-            </Link>
+            <div className="mb-10">
+              <LogoWordmark href="/" className="h-12 sm:h-14" />
+            </div>
 
             <h1 className="mb-4 font-display text-4xl leading-tight text-soot" style={{ fontFamily: "Fraunces, serif" }}>
               Walk back in.{" "}
@@ -123,11 +122,8 @@ function LoginForm() {
           className="w-full max-w-md"
         >
           {/* Mobile logo */}
-          <div className="lg:hidden mb-8 text-center">
-            <Link href="/" className="inline-flex items-center gap-2.5">
-              <LogoMark className="h-10 w-10" />
-              <span className="font-display text-lg text-soot" style={{ fontFamily: "Fraunces, serif" }}>Tafsula</span>
-            </Link>
+          <div className="mb-8 flex justify-center lg:hidden">
+            <LogoWordmark href="/" compact />
           </div>
 
           <div className="rounded-[1.8rem] border-[3px] border-soot bg-jasmine p-8 shadow-[5px_7px_0_0_#161210]">

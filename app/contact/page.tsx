@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { PublicShell } from "@/components/brand/public-shell"
-import { LogoMark } from "@/components/brand/logo"
+import { LogoWordmark } from "@/components/brand/logo"
 import { BrandFigure } from "@/components/brand/figures"
 
 export default function ContactPage() {
@@ -10,9 +10,9 @@ export default function ContactPage() {
     <PublicShell>
       <article className="mx-auto grid max-w-5xl items-center gap-10 px-4 py-16 sm:px-6 md:grid-cols-2">
         <div>
-          <div className="mb-6 flex items-center gap-3">
-            <LogoMark className="h-10 w-10" />
-            <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-pomegranate">Contact</p>
+          <div className="mb-6">
+            <LogoWordmark href={null} compact className="h-11" />
+            <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-pomegranate">Contact</p>
           </div>
           <h1 className="font-display text-4xl text-soot" style={{ fontFamily: "Fraunces, serif" }}>
             A human on the other side of the door.

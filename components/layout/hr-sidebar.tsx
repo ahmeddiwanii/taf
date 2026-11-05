@@ -27,6 +27,7 @@ import {
 } from "lucide-react"
 import { signOut, useSession } from "next-auth/react"
 import { UserAvatar } from "../user-avatar"
+import { LogoWordmark } from "@/components/brand/logo"
 
 interface HRSidebarProps {
   organizationName: string
@@ -90,17 +91,15 @@ export function HRSidebar({ organizationName, isOpen, setIsOpen }: HRSidebarProp
     <>
       {/* Logo & Org */}
       <div className="px-4 py-8 border-b border-white/[0.06]">
-        <Link href="/dashboard/hr" className="flex items-center gap-3 group" onClick={() => setIsOpen(false)}>
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
-            <span className="font-black text-white text-base" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>T</span>
-          </div>
-          <div className="min-w-0">
-            <p className="font-bold text-sm text-white/90 truncate group-hover:text-blue-400 transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+        <Link href="/dashboard/hr" className="group flex flex-col gap-1.5" onClick={() => setIsOpen(false)}>
+          <LogoWordmark href={null} compact className="h-9" />
+          <div className="min-w-0 pl-0.5">
+            <p className="truncate text-sm font-semibold text-white/90 transition-colors group-hover:text-blue-300">
               {organizationName || "Organization"}
             </p>
-            <div className="flex items-center gap-1.5">
-              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-              <p className="text-[9px] text-white/40 tracking-[0.2em] uppercase font-bold">Live Core</p>
+            <div className="mt-0.5 flex items-center gap-1.5">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-emerald-500" />
+              <p className="text-[9px] font-bold uppercase tracking-[0.2em] text-white/40">Bureau</p>
             </div>
           </div>
         </Link>

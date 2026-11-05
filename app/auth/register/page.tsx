@@ -6,7 +6,7 @@ import { useRouter } from "next/navigation"
 import Link from "next/link"
 import { motion } from "framer-motion"
 import { ArrowRight, Eye, EyeOff, Mail, Lock, User, Sparkles, CheckCircle2 } from "lucide-react"
-import { LogoMark } from "@/components/brand/logo"
+import { LogoWordmark } from "@/components/brand/logo"
 import { BrandFigure } from "@/components/brand/figures"
 
 export default function RegisterPage() {
@@ -107,10 +107,9 @@ export default function RegisterPage() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
           >
-            <Link href="/" className="mb-10 inline-flex items-center gap-2.5">
-              <LogoMark className="h-12 w-12" />
-              <span className="font-display text-2xl text-soot" style={{ fontFamily: "Fraunces, serif" }}>Tafsula</span>
-            </Link>
+            <div className="mb-10">
+              <LogoWordmark href="/" className="h-12 sm:h-14" />
+            </div>
             <h1 className="mb-4 font-display text-4xl leading-tight text-soot" style={{ fontFamily: "Fraunces, serif" }}>
               Start looking.{" "}
               <em className="italic" style={{ color: "#C45C4A" }}>A door is waiting.</em>
@@ -131,14 +130,8 @@ export default function RegisterPage() {
           transition={{ duration: 0.6, delay: 0.2 }}
           className="w-full max-w-md"
         >
-          {/* Mobile logo */}
-          <div className="lg:hidden mb-8 text-center">
-            <Link href="/" className="inline-flex items-center gap-2.5">
-              <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-red-500 via-amber-400 to-blue-500 flex items-center justify-center shadow-lg">
-                <span className="font-bold text-white text-sm" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>T</span>
-              </div>
-              <span className="font-bold text-lg text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>TAFSULA</span>
-            </Link>
+          <div className="mb-8 flex justify-center lg:hidden">
+            <LogoWordmark href="/" compact />
           </div>
 
           {/* Form Card */}

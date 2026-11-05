@@ -2,7 +2,7 @@
 
 import Link from "next/link"
 import { PublicShell } from "@/components/brand/public-shell"
-import { LogoMark } from "@/components/brand/logo"
+import { LogoWordmark } from "@/components/brand/logo"
 import { BRAND } from "@/lib/brand"
 import { landingCopy } from "@/lib/landing-copy"
 import { useLocale } from "@/lib/i18n/locale-context"
@@ -15,9 +15,9 @@ export default function About() {
   return (
     <PublicShell>
       <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
-        <div className="mb-6 flex items-center gap-3">
-          <LogoMark className="h-10 w-10" />
-          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-pomegranate">About</p>
+        <div className="mb-6">
+          <LogoWordmark href={null} compact className="h-11" />
+          <p className="mt-3 text-[11px] font-semibold uppercase tracking-[0.24em] text-pomegranate">About</p>
         </div>
         <h1 className="font-display text-4xl text-soot sm:text-5xl" style={display}>
           {BRAND.name}

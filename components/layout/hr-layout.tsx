@@ -23,7 +23,7 @@ import {
 } from "lucide-react"
 import { UserAvatar } from "../user-avatar"
 import { OnboardingTour } from "@/components/onboarding-tour"
-import { LogoMark } from "@/components/brand/logo"
+import { LogoWordmark } from "@/components/brand/logo"
 
 interface HRLayoutProps {
   children: ReactNode
@@ -52,11 +52,8 @@ const navigation = [
     label: "Club life",
     items: [
       { label: "Tasks", href: "/dashboard/hr/tasks", icon: ClipboardCheck },
-      { label: "Review tasks", href: "/dashboard/hr/tasks/review", icon: ClipboardCheck },
-      { label: "Create a task", href: "/dashboard/hr/tasks/create", icon: ClipboardCheck },
       { label: "Events", href: "/dashboard/hr/events", icon: CalendarDays },
       { label: "Ideas", href: "/dashboard/hr/proposals", icon: Lightbulb },
-      { label: "Create a post", href: "/dashboard/hr/posts/new", icon: MessageSquareText },
     ],
   },
   {
@@ -81,6 +78,7 @@ function getPageTitle(pathname: string) {
   if (pathname.includes("/events/new")) return "Create event"
   if (pathname.includes("/tasks/create")) return "Create task"
   if (pathname.includes("/tasks/review")) return "Review tasks"
+  if (pathname.includes("/posts/") && pathname.endsWith("/edit")) return "Edit post"
   if (pathname.startsWith("/dashboard/hr/posts/")) return "Create a post"
   if (pathname.includes("/attendance")) return "Event attendance"
   if (pathname.includes("/feedback")) return "Event feedback"
@@ -170,19 +168,12 @@ function HRLayoutFrame({
         <div className="flex h-[76px] items-center justify-between border-b border-white/[0.08] px-5">
           <Link
             href="/dashboard/hr"
-            className="flex min-w-0 items-center gap-3"
+            className="flex min-w-0 flex-col gap-1"
             onClick={() => setMobileNavOpen(false)}
           >
-            <span className="flex h-11 w-11 shrink-0 overflow-hidden rounded-xl">
-              <LogoMark className="h-11 w-11" />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-sm font-bold tracking-tight text-white">
-                Tafsula
-              </span>
-              <span className="block truncate text-xs text-[#b6c6bd]">
-                {activeOrganization}
-              </span>
+            <LogoWordmark href={null} compact className="h-9" />
+            <span className="truncate pl-0.5 text-[11px] text-[#b6c6bd]">
+              {activeOrganization}
             </span>
           </Link>
           <button
