@@ -1,7 +1,8 @@
 import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../../../lib/auth"
 import { prisma } from "../../../../lib/db"
-import { HRSidebar } from "../../../../components/layout/hr-sidebar"
+import { HRLayout } from "../../../../components/layout/hr-layout"
+import { getHRSessionUser } from "../../../../lib/hr-session-user"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card"
 import { Button } from "../../../../components/ui/button"
 import Link from "next/link"
@@ -9,27 +10,27 @@ import { Calendar, Heart, MessageCircle, Share2, Plus } from "lucide-react"
 import { formatDistanceToNow } from "date-fns"
 
 export default async function HomePageFeed() {
-  const session = await getServerSession(authOptions)
+  const user = getHRSessionUser(await getServerSession(authOptions))
 
-  if (!session) {
+  if (!user) {
     return <div className="p-8 text-center text-red-500">Not authenticated</div>
   }
 
-  if (!session.user.startupId) {
-    return <div className="p-8 text-center text-red-500">No startup assigned</div>
+  if (!user.organizationId) {
+    return <div className="p-8 text-center text-red-500">No organization assigned</div>
   }
 
-  let startup = null
+  let organization = null
   let posts: any[] = []
 
   try {
-    startup = await prisma.startup.findUnique({
-      where: { id: session.user.startupId },
+    organization = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
     })
 
     posts = await prisma.organizationPost.findMany({
       where: {
-        startupId: session.user.startupId,
+        organizationId: user.organizationId,
         status: "published",
       },
       include: {
@@ -53,7 +54,7 @@ export default async function HomePageFeed() {
   try {
     upcomingEvents = await prisma.event.findMany({
       where: {
-        startupId: session.user.startupId,
+        organizationId: user.organizationId,
         status: "UPCOMING",
       },
       select: {
@@ -75,13 +76,8 @@ export default async function HomePageFeed() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-      {/* Sidebar */}
-      <HRSidebar organizationName={startup?.name || "Organization"} />
-
-      {/* Main Content */}
-      <main className="md:ml-64 pt-20 md:pt-0">
-        <div className="max-w-4xl mx-auto px-6 py-8">
+    <HRLayout orgName={organization?.name || "Your workspace"}>
+        <div className="mx-auto max-w-4xl space-y-8">
           {/* Header */}
           <div className="mb-8">
             <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
@@ -91,7 +87,7 @@ export default async function HomePageFeed() {
           </div>
 
           {/* Create Post / Event Section */}
-          {session.user.role === "HR" && (
+          {user.role === "HR" && (
             <Card className="mb-8 border-2 border-blue-200 bg-gradient-to-br from-blue-50 to-white">
               <CardContent className="pt-6">
                 <div className="flex gap-4">
@@ -162,9 +158,9 @@ export default async function HomePageFeed() {
                 <CardContent className="pt-12 text-center pb-12">
                   <p className="text-gray-500 font-medium mb-3">No posts yet</p>
                   <p className="text-sm text-gray-400 mb-4">Be the first to share an update</p>
-                  {session.user.role === "HR" && (
+                  {user.role === "HR" && (
                     <Button asChild className="gap-2 bg-blue-600 hover:bg-blue-700">
-                      <Link href="/api/posts/new">
+                      <Link href="/dashboard/hr/posts/new">
                         <Plus className="w-4 h-4" />
                         Create Post
                       </Link>
@@ -229,7 +225,6 @@ export default async function HomePageFeed() {
             )}
           </div>
         </div>
-      </main>
-    </div>
+    </HRLayout>
   )
 }

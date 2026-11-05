@@ -150,7 +150,7 @@ export function NotificationCenter() {
 
           <div className="p-3 border-t border-gray-200 text-center">
             <Link
-              href="/dashboard/employee/notifications"
+              href="/dashboard/member/notifications"
               className="text-sm text-blue-600 hover:text-blue-700 font-medium"
             >
               View all notifications

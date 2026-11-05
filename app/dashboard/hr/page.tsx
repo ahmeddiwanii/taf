@@ -1,390 +1,424 @@
-import type React from "react"
-import { HRInviteEmployee } from "../../../components/hr-invite-employee"
-import { getServerSession } from "next-auth/next"
 import Link from "next/link"
-import { UserRole } from "../../../types/user"
-import { authOptions } from "../../../lib/auth"
-import { prisma } from "../../../lib/db"
-import { HRSidebar } from "../../../components/layout/hr-sidebar"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../components/ui/card"
-import { Button } from "../../../components/ui/button"
-import { Badge } from "../../../components/ui/badge"
-import {
-  Calendar,
-  Users,
-  Zap,
-  TrendingUp,
-  Plus,
-  ArrowRight,
-  CheckCircle2,
-  AlertCircle,
-  BarChart3,
-  Clock,
-  Target,
-  Briefcase,
-} from "lucide-react"
+import { getServerSession } from "next-auth/next"
+import { ArrowUpRight, CalendarDays, CheckCheck, ClipboardList, Plus, Sparkles, UsersRound } from "lucide-react"
+
+import { HRAnalytics, type DISCPoint, type HRTrendPoint } from "@/components/hr/hr-analytics"
+import { KPICard } from "@/components/hr/dashboard-client"
+import { HRLayout } from "@/components/layout/hr-layout"
+import { authOptions } from "@/lib/auth"
+import { prisma } from "@/lib/db"
+import { getHRSessionUser } from "@/lib/hr-session-user"
+import { UserRole } from "@/types/user"
 
 export default async function HRDashboardPage() {
-  const session = await getServerSession(authOptions)
+  const user = getHRSessionUser(await getServerSession(authOptions))
 
-  if (!session) {
-    return <div className="p-8 text-center text-red-500">Not authenticated</div>
+  if (!user) {
+    return <div className="p-8 text-center text-rose-600">Please sign in to continue.</div>
   }
-  if (session.user.role !== UserRole.HR) {
-    return <div className="p-8 text-center text-red-500">Not authorized</div>
+  if (user.role !== UserRole.HR) {
+    return <div className="p-8 text-center text-rose-600">You do not have access to this workspace.</div>
   }
-  if (!session.user.startupId) {
-    return <div className="p-8 text-center text-red-500">No startup assigned to your HR user. Please contact admin.</div>
+  if (!user.organizationId) {
+    return <div className="p-8 text-center text-rose-600">No organization is assigned to your account.</div>
   }
 
-  let startup = null,
-    employeeCount = 0,
-    testCompletionCount = 0,
-    discDistribution = [],
-    dCount = 0,
-    iCount = 0,
-    sCount = 0,
-    cCount = 0,
-    totalEvents = 0,
-    totalRegistrations = 0,
-    approvedRegistrations = 0,
-    upcomingEvents = []
+  const organizationId = user.organizationId
+  const now = new Date()
+  const trendStart = new Date(now.getFullYear(), now.getMonth() - 5, 1)
+
+  let organization
+  let memberCount = 0
+  let testCompletionCount = 0
+  let totalEvents = 0
+  let totalRegistrations = 0
+  let approvedRegistrations = 0
+  let pendingTasks = 0
+  let pendingProposals = 0
+  let discResults: DISCPoint[] = []
+  let upcomingEvents: {
+    id: string
+    title: string
+    startAt: Date
+    format: string
+    type: string
+    _count: { registrations: number }
+  }[] = []
+  let recentTasks: {
+    id: string
+    title: string
+    status: string
+    priority: string
+    team: { name: string }
+  }[] = []
+  let membersCreated: Date[] = []
+  let registrationsCreated: Date[] = []
+
   try {
-    startup = await prisma.startup.findUnique({
-      where: { id: session.user.startupId },
-    })
-    employeeCount = await prisma.user.count({
-      where: { startupId: session.user.startupId, role: "EMPLOYEE" },
-    })
-    testCompletionCount = await prisma.user.count({
-      where: { startupId: session.user.startupId, role: "EMPLOYEE", result: { some: {} } },
-    })
-    discDistribution = await prisma.user.findMany({
-      where: { startupId: session.user.startupId, role: "EMPLOYEE", result: { some: {} } },
-      include: { result: { orderBy: { createdAt: "desc" }, take: 1 } },
-    })
-    dCount = discDistribution.filter((user: any) => user.result[0]?.dominantType === "D").length
-    iCount = discDistribution.filter((user: any) => user.result[0]?.dominantType === "I").length
-    sCount = discDistribution.filter((user: any) => user.result[0]?.dominantType === "S").length
-    cCount = discDistribution.filter((user: any) => user.result[0]?.dominantType === "C").length
-
-    // Fetch event statistics
-    totalEvents = await prisma.event.count({
-      where: { startupId: session.user.startupId },
-    })
-
-    totalRegistrations = await prisma.eventRegistration.count({
-      where: {
-        event: {
-          startupId: session.user.startupId,
+    const [
+      organizationRecord,
+      members,
+      assessedMembers,
+      latestResults,
+      eventCount,
+      registrationCount,
+      approvedCount,
+      events,
+      taskReviewCount,
+      proposalReviewCount,
+      tasks,
+      memberActivity,
+      eventActivity,
+    ] = await Promise.all([
+      prisma.organization.findUnique({ where: { id: organizationId } }),
+      prisma.user.count({ where: { organizationId, role: "MEMBER" } }),
+      prisma.user.count({
+        where: { organizationId, role: "MEMBER", result: { some: {} } },
+      }),
+      prisma.user.findMany({
+        where: { organizationId, role: "MEMBER", result: { some: {} } },
+        select: {
+          result: {
+            orderBy: { createdAt: "desc" },
+            take: 1,
+            select: { dominantType: true },
+          },
         },
-      },
-    })
-
-    approvedRegistrations = await prisma.eventRegistration.count({
-      where: {
-        event: {
-          startupId: session.user.startupId,
+      }),
+      prisma.event.count({ where: { organizationId } }),
+      prisma.eventRegistration.count({
+        where: { event: { organizationId } },
+      }),
+      prisma.eventRegistration.count({
+        where: { event: { organizationId }, status: "APPROVED" },
+      }),
+      prisma.event.findMany({
+        where: {
+          organizationId,
+          startAt: { gte: now },
+          status: { not: "CANCELLED" },
         },
-        status: "APPROVED",
-      },
-    })
-
-    upcomingEvents = await prisma.event.findMany({
-      where: {
-        startupId: session.user.startupId,
-        status: "UPCOMING",
-      },
-      select: {
-        id: true,
-        title: true,
-        startAt: true,
-        format: true,
-        type: true,
-        _count: {
-          select: { registrations: true },
+        select: {
+          id: true,
+          title: true,
+          startAt: true,
+          format: true,
+          type: true,
+          _count: { select: { registrations: true } },
         },
-      },
-      orderBy: { startAt: "asc" },
-      take: 4,
-    })
-  } catch (err: any) {
-    return <div className="p-8 text-center text-red-500">Error loading dashboard: {err.message || String(err)}</div>
+        orderBy: { startAt: "asc" },
+        take: 4,
+      }),
+      prisma.teamTaskAssignment.count({
+        where: {
+          task: { team: { organizationId } },
+          status: "SUBMITTED",
+        },
+      }),
+      prisma.proposal.count({
+        where: { organizationId, status: "PENDING" },
+      }),
+      prisma.teamTask.findMany({
+        where: { team: { organizationId } },
+        select: {
+          id: true,
+          title: true,
+          status: true,
+          priority: true,
+          team: { select: { name: true } },
+        },
+        orderBy: { createdAt: "desc" },
+        take: 5,
+      }),
+      prisma.user.findMany({
+        where: {
+          organizationId,
+          role: "MEMBER",
+          createdAt: { gte: trendStart },
+        },
+        select: { createdAt: true },
+      }),
+      prisma.eventRegistration.findMany({
+        where: {
+          event: { organizationId },
+          appliedAt: { gte: trendStart },
+        },
+        select: { appliedAt: true },
+      }),
+    ])
+
+    organization = organizationRecord
+    memberCount = members
+    testCompletionCount = assessedMembers
+    totalEvents = eventCount
+    totalRegistrations = registrationCount
+    approvedRegistrations = approvedCount
+    pendingTasks = taskReviewCount
+    pendingProposals = proposalReviewCount
+    upcomingEvents = events
+    recentTasks = tasks
+    membersCreated = memberActivity.map(({ createdAt }) => createdAt)
+    registrationsCreated = eventActivity.map(({ appliedAt }) => appliedAt)
+
+    const counts: Record<string, number> = { D: 0, I: 0, S: 0, C: 0 }
+    for (const member of latestResults) {
+      const type = member.result[0]?.dominantType
+      if (type && type in counts) counts[type] += 1
+    }
+    discResults = Object.entries(counts).map(([type, count]) => ({ type, count }))
+  } catch (error) {
+    console.error("HR dashboard data load failed:", error)
+    return (
+      <div className="rounded-2xl border border-rose-200 bg-white p-8 text-sm text-rose-700 shadow-sm">
+        We couldn&apos;t load your dashboard right now. Please refresh the page or try again later.
+      </div>
+    )
   }
 
-  const completionRate = employeeCount > 0 ? Math.round((testCompletionCount / employeeCount) * 100) : 0
+  const completionRate =
+    memberCount > 0 ? Math.round((testCompletionCount / memberCount) * 100) : 0
+
+  const trend: HRTrendPoint[] = Array.from({ length: 6 }, (_, index) => {
+    const date = new Date(now.getFullYear(), now.getMonth() - 5 + index, 1)
+    const countInMonth = (dates: Date[]) =>
+      dates.filter(
+        (activityDate) =>
+          activityDate.getFullYear() === date.getFullYear() &&
+          activityDate.getMonth() === date.getMonth(),
+      ).length
+
+    return {
+      month: new Intl.DateTimeFormat("en", { month: "short" }).format(date),
+      members: countInMonth(membersCreated),
+      registrations: countInMonth(registrationsCreated),
+    }
+  })
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-      {/* Sidebar */}
-      <HRSidebar organizationName={startup?.name || "Organization"} />
+    <HRLayout orgName={organization?.name}>
+      <div className="space-y-6">
+        <section className="hr-hero relative isolate overflow-hidden rounded-[26px] bg-[#19332f] p-6 text-white shadow-xl sm:p-8">
+          <div className="pointer-events-none absolute -right-10 -top-32 -z-10 h-80 w-80 rounded-full border-[44px] border-[#c4e46a]/10" />
+          <div className="pointer-events-none absolute -bottom-40 right-1/4 -z-10 h-72 w-72 rounded-full bg-[#c4e46a]/[0.07] blur-3xl" />
+          <div className="flex flex-col justify-between gap-6 lg:flex-row lg:items-end">
+          <div className="max-w-2xl">
+            <p className="mb-3 inline-flex items-center gap-1.5 rounded-full border border-white/15 bg-white/[0.08] px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.16em] text-white">
+              <Sparkles className="h-3.5 w-3.5 text-[#c4e46a]" />
+              People &amp; culture
+            </p>
+            <h2 className="text-3xl font-semibold tracking-tight text-white sm:text-4xl">
+              Good to see you, {user.name?.split(" ")[0] || "there"}.
+            </h2>
+            <p className="mt-2 max-w-xl text-sm leading-6 text-[#c2d0c8]">
+              A clearer picture of your people, priorities and what&apos;s coming up at{" "}
+              <span className="font-medium text-white">{organization?.name || "your organization"}</span>.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            <Link
+              href="/dashboard/hr/members/invite"
+              className="inline-flex h-10 items-center gap-2 rounded-xl border border-white/20 bg-white/[0.08] px-3.5 text-sm font-medium text-white shadow-sm transition-colors hover:bg-white/[0.14]"
+            >
+              <UsersRound className="h-4 w-4" />
+              Invite member
+            </Link>
+            <Link
+              href="/dashboard/hr/events/new"
+              className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#c4e46a] px-3.5 text-sm font-semibold text-[#19332f] shadow-sm shadow-black/10 transition-colors hover:bg-[#d3ed88]"
+            >
+              <Plus className="h-4 w-4" />
+              New event
+            </Link>
+          </div>
+          </div>
+        </section>
 
-      {/* Main Content */}
-      <main className="md:ml-64 pt-20 md:pt-0">
-        <div className="max-w-7xl mx-auto px-6 py-8">
-          {/* Welcome Section */}
-          <div className="mb-8 flex flex-col md:flex-row md:items-end md:justify-between gap-6">
-            <div>
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-gray-900 to-gray-700 bg-clip-text text-transparent mb-2">
-                Welcome back, {session.user.name}
-              </h1>
-              <p className="text-gray-600">Here's an overview of your organization and upcoming events</p>
+        <section aria-label="Club metrics" className="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+          <KPICard
+            iconName="users"
+            label="Members"
+            value={memberCount}
+            sub="People in your club"
+            color="blue"
+          />
+          <KPICard
+            iconName="check"
+            label="Ideas to review"
+            value={pendingProposals}
+            sub="Member ideas waiting on the bureau"
+            color="emerald"
+          />
+          <KPICard
+            iconName="calendar"
+            label="Upcoming events"
+            value={upcomingEvents.length}
+            sub={`${totalEvents} events created in total`}
+            color="purple"
+          />
+          <KPICard
+            iconName="zap"
+            label="Event sign-ups"
+            value={totalRegistrations}
+            sub={`${approvedRegistrations} approved`}
+            color="amber"
+          />
+        </section>
+
+        <HRAnalytics trend={trend} disc={[]} />
+
+        <section className="grid gap-5 xl:grid-cols-[minmax(0,1.35fr)_minmax(320px,0.9fr)]">
+          <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Upcoming events</h3>
+                <p className="mt-1 text-xs text-slate-500">What&apos;s next for your team</p>
+              </div>
+              <Link
+                href="/dashboard/hr/events"
+                className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+              >
+                All events <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
             </div>
-            <div className="flex gap-3">
-              <Button asChild className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg">
-                <Link href="/dashboard/hr/events/new">
-                  <Plus className="w-4 h-4" />
-                  Create Event
+            {upcomingEvents.length ? (
+              <div className="divide-y divide-slate-100">
+                {upcomingEvents.map((event) => (
+                  <Link
+                    key={event.id}
+                    href={`/dashboard/hr/events/${event.id}`}
+                    className="group flex items-center gap-3 py-3.5 first:pt-1 last:pb-1"
+                  >
+                    <span className="flex h-11 w-11 shrink-0 flex-col items-center justify-center rounded-xl bg-indigo-50 text-indigo-700">
+                      <span className="text-[9px] font-bold uppercase">
+                        {new Intl.DateTimeFormat("en", { month: "short" }).format(event.startAt)}
+                      </span>
+                      <span className="text-sm font-semibold leading-4">{event.startAt.getDate()}</span>
+                    </span>
+                    <span className="min-w-0 flex-1">
+                      <span className="block truncate text-sm font-medium text-slate-800 group-hover:text-indigo-700">
+                        {event.title}
+                      </span>
+                      <span className="mt-1 block text-xs text-slate-500">
+                        {event.format.replaceAll("_", " ")} · {event._count.registrations} registered
+                      </span>
+                    </span>
+                    <ArrowUpRight className="h-4 w-4 text-slate-300 transition-colors group-hover:text-indigo-500" />
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-5 py-8 text-center">
+                <CalendarDays className="mx-auto h-6 w-6 text-slate-400" />
+                <p className="mt-2 text-sm font-medium text-slate-700">No upcoming events</p>
+                <p className="mt-1 text-xs text-slate-500">Create an event to bring your team together.</p>
+                <Link
+                  href="/dashboard/hr/events/new"
+                  className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600"
+                >
+                  Create an event <ArrowUpRight className="h-3.5 w-3.5" />
                 </Link>
-              </Button>
-              <HRInviteEmployee />
+              </div>
+            )}
+          </article>
+
+          <article className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+            <div className="mb-4 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-semibold text-slate-900">Needs your attention</h3>
+                <p className="mt-1 text-xs text-slate-500">Items waiting for HR review</p>
+              </div>
+              <span className="flex h-9 w-9 items-center justify-center rounded-xl bg-amber-50 text-amber-600">
+                <ClipboardList className="h-4 w-4" />
+              </span>
             </div>
-          </div>
-
-          {/* Main Grid - Key Metrics */}
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            {/* Total Employees */}
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center justify-between">
-                  <span>Total Employees</span>
-                  <Users className="w-5 h-5 text-blue-600" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{employeeCount}</div>
-                <p className="text-xs text-gray-500 mt-1">Active team members</p>
-              </CardContent>
-            </Card>
-
-            {/* Tests Completed */}
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center justify-between">
-                  <span>Tests Completed</span>
-                  <CheckCircle2 className="w-5 h-5 text-green-600" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{testCompletionCount}</div>
-                <div className="flex items-center gap-1 mt-1">
-                  <div className="text-xs text-gray-500">{completionRate}% completion</div>
-                  <TrendingUp className="w-3 h-3 text-green-600" />
-                </div>
-              </CardContent>
-            </Card>
-
-            {/* Total Events */}
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center justify-between">
-                  <span>Total Events</span>
-                  <Calendar className="w-5 h-5 text-purple-600" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{totalEvents}</div>
-                <p className="text-xs text-gray-500 mt-1">Organized events</p>
-              </CardContent>
-            </Card>
-
-            {/* Event Registrations */}
-            <Card className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white/50 backdrop-blur-sm">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-sm font-medium flex items-center justify-between">
-                  <span>Registrations</span>
-                  <Zap className="w-5 h-5 text-amber-600" />
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-gray-900">{totalRegistrations}</div>
-                <div className="flex items-center gap-1 mt-1">
-                  <div className="text-xs text-gray-500">{approvedRegistrations} approved</div>
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* Content Grid */}
-          <div className="grid gap-8 lg:grid-cols-3 mb-8">
-            {/* Upcoming Events - Featured */}
-            <div className="lg:col-span-2 space-y-6">
-              {/* Upcoming Events Card */}
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white/50 backdrop-blur-sm overflow-hidden">
-                <CardHeader className="bg-gradient-to-r from-blue-50 to-transparent pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Calendar className="w-5 h-5 text-blue-600" />
-                      <CardTitle>Upcoming Events</CardTitle>
-                    </div>
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href="/dashboard/hr/events">
-                        View All
-                        <ArrowRight className="w-3 h-3 ml-1" />
-                      </Link>
-                    </Button>
-                  </div>
-                  <CardDescription>Your next scheduled events</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {upcomingEvents.length === 0 ? (
-                    <div className="text-center py-12">
-                      <Calendar className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500 font-medium">No upcoming events</p>
-                      <p className="text-sm text-gray-400">Create your first event to get started</p>
-                    </div>
-                  ) : (
-                    <div className="space-y-3">
-                      {upcomingEvents.map((event, index) => (
-                        <Link
-                          key={event.id}
-                          href={`/dashboard/hr/events/${event.id}`}
-                          className="group block p-4 rounded-lg border border-slate-200 hover:border-blue-300 hover:bg-blue-50/30 transition-all duration-200"
-                        >
-                          <div className="flex items-start justify-between mb-2">
-                            <div className="flex-1">
-                              <h4 className="font-semibold text-gray-900 group-hover:text-blue-600 transition-colors">
-                                {event.title}
-                              </h4>
-                              <p className="text-sm text-gray-600 mt-1 flex items-center gap-2">
-                                <Clock className="w-4 h-4" />
-                                {new Date(event.startAt).toLocaleDateString("en-US", {
-                                  month: "short",
-                                  day: "numeric",
-                                  year: "numeric",
-                                })}
-                              </p>
-                            </div>
-                            <div className="text-right">
-                              <Badge className="bg-blue-100 text-blue-700 mb-2">{event.format.replace("_", " ")}</Badge>
-                              <p className="text-sm font-medium text-gray-900">{event._count.registrations}</p>
-                              <p className="text-xs text-gray-500">registered</p>
-                            </div>
-                          </div>
-                        </Link>
-                      ))}
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-
-              {/* Team Personality Distribution */}
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white/50 backdrop-blur-sm">
-                <CardHeader className="bg-gradient-to-r from-green-50 to-transparent pb-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <BarChart3 className="w-5 h-5 text-green-600" />
-                      <CardTitle>Team Composition</CardTitle>
-                    </div>
-                    <Button asChild variant="ghost" size="sm">
-                      <Link href="/dashboard/hr/compatibility">
-                        Analyze
-                        <ArrowRight className="w-3 h-3 ml-1" />
-                      </Link>
-                    </Button>
-                  </div>
-                  <CardDescription>DISC personality distribution</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="grid grid-cols-4 gap-4">
-                    {[
-                      { letter: "D", count: dCount, color: "text-red-600", bg: "bg-red-50", label: "Dominant" },
-                      { letter: "I", count: iCount, color: "text-yellow-600", bg: "bg-yellow-50", label: "Influencer" },
-                      { letter: "S", count: sCount, color: "text-green-600", bg: "bg-green-50", label: "Steadfast" },
-                      { letter: "C", count: cCount, color: "text-blue-600", bg: "bg-blue-50", label: "Conscientious" },
-                    ].map((disc) => (
-                      <div key={disc.letter} className={`${disc.bg} rounded-lg p-4 text-center border border-gray-200`}>
-                        <div className={`text-2xl font-bold ${disc.color}`}>{disc.letter}</div>
-                        <div className="text-xl font-semibold text-gray-900 mt-1">{disc.count}</div>
-                        <p className="text-xs text-gray-600 mt-1">{disc.label}</p>
-                      </div>
-                    ))}
-                  </div>
-                  {testCompletionCount > 0 && (
-                    <div className="mt-4 p-3 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm text-gray-600">
-                        <span className="font-medium text-gray-900">{completionRate}%</span> of your team has completed the
-                        personality assessment
-                      </p>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+            <div className="space-y-2">
+              <Link
+                href="/dashboard/hr/tasks/review"
+                className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition-colors hover:border-indigo-100 hover:bg-indigo-50/50"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-50 text-indigo-600">
+                  <CheckCheck className="h-4 w-4" />
+                </span>
+                <span className="flex-1">
+                  <span className="block text-xs font-semibold text-slate-800">Task submissions</span>
+                  <span className="mt-0.5 block text-[11px] text-slate-500">Review member work</span>
+                </span>
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                  {pendingTasks}
+                </span>
+              </Link>
+              <Link
+                href="/dashboard/hr/proposals"
+                className="flex items-center gap-3 rounded-xl border border-slate-100 p-3 transition-colors hover:border-indigo-100 hover:bg-indigo-50/50"
+              >
+                <span className="flex h-9 w-9 items-center justify-center rounded-lg bg-amber-50 text-amber-600">
+                  <ClipboardList className="h-4 w-4" />
+                </span>
+                <span className="flex-1">
+                  <span className="block text-xs font-semibold text-slate-800">Team proposals</span>
+                  <span className="mt-0.5 block text-[11px] text-slate-500">Share feedback with your team</span>
+                </span>
+                <span className="rounded-full bg-slate-100 px-2 py-1 text-xs font-semibold text-slate-700">
+                  {pendingProposals}
+                </span>
+              </Link>
             </div>
+          </article>
+        </section>
 
-            {/* Sidebar - Quick Actions */}
-            <div className="space-y-6">
-              {/* Quick Actions */}
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white/50 backdrop-blur-sm sticky top-24">
-                <CardHeader className="bg-gradient-to-r from-purple-50 to-transparent pb-4">
-                  <CardTitle className="flex items-center gap-2">
-                    <Target className="w-5 h-5 text-purple-600" />
-                    Quick Actions
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <Button asChild className="w-full justify-start bg-blue-600 hover:bg-blue-700 text-white">
-                    <Link href="/dashboard/hr/events/new">
-                      <Plus className="w-4 h-4 mr-2" />
-                      Create New Event
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full justify-start">
-                    <Link href="/dashboard/hr/employees">
-                      <Users className="w-4 h-4 mr-2" />
-                      Manage Team
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full justify-start">
-                    <Link href="/dashboard/hr/training-planner">
-                      <Target className="w-4 h-4 mr-2" />
-                      Training Plans
-                    </Link>
-                  </Button>
-                  <Button asChild variant="outline" className="w-full justify-start">
-                    <Link href="/dashboard/hr/compatibility">
-                      <TrendingUp className="w-4 h-4 mr-2" />
-                      Team Analysis
-                    </Link>
-                  </Button>
-                </CardContent>
-              </Card>
-
-              {/* Stats Summary */}
-              <Card className="border-0 shadow-sm hover:shadow-md transition-shadow bg-white/50 backdrop-blur-sm">
-                <CardHeader className="bg-gradient-to-r from-amber-50 to-transparent pb-4">
-                  <CardTitle className="flex items-center gap-2">
-                    <AlertCircle className="w-5 h-5 text-amber-600" />
-                    Summary
-                  </CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-3">
-                  <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold text-blue-600">{employeeCount}</span> employees in your organization
-                    </p>
-                  </div>
-                  <div className="p-3 bg-green-50 rounded-lg border border-green-200">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold text-green-600">{totalEvents}</span> events created this year
-                    </p>
-                  </div>
-                  <div className="p-3 bg-purple-50 rounded-lg border border-purple-200">
-                    <p className="text-sm text-gray-600">
-                      <span className="font-semibold text-purple-600">{totalRegistrations}</span> total registrations
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
+        <section className="rounded-2xl border border-slate-200/80 bg-white p-5 shadow-sm sm:p-6">
+          <div className="mb-4 flex items-center justify-between gap-3">
+            <div>
+              <h3 className="text-sm font-semibold text-slate-900">Recent team tasks</h3>
+              <p className="mt-1 text-xs text-slate-500">Latest work across your teams</p>
             </div>
+            <Link
+              href="/dashboard/hr/tasks"
+              className="inline-flex items-center gap-1 text-xs font-semibold text-indigo-600 hover:text-indigo-700"
+            >
+              Manage tasks <ArrowUpRight className="h-3.5 w-3.5" />
+            </Link>
           </div>
+          {recentTasks.length ? (
+            <div className="grid gap-3 md:grid-cols-2">
+              {recentTasks.map((task) => (
+                <Link
+                  key={task.id}
+                  href="/dashboard/hr/tasks"
+                  className="flex min-w-0 items-center gap-3 rounded-xl border border-slate-100 p-3 transition-colors hover:border-indigo-100 hover:bg-slate-50"
+                >
+                  <span className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-slate-100 text-slate-500">
+                    <ClipboardList className="h-4 w-4" />
+                  </span>
+                  <span className="min-w-0 flex-1">
+                    <span className="block truncate text-xs font-semibold text-slate-800">{task.title}</span>
+                    <span className="mt-1 block truncate text-[11px] text-slate-500">{task.team.name}</span>
+                  </span>
+                  <span className="shrink-0 rounded-full bg-slate-100 px-2 py-1 text-[10px] font-medium capitalize text-slate-600">
+                    {task.status.replaceAll("_", " ").toLowerCase()}
+                  </span>
+                </Link>
+              ))}
+            </div>
+          ) : (
+            <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/70 px-5 py-8 text-center">
+              <p className="text-sm font-medium text-slate-700">No team tasks yet</p>
+              <p className="mt-1 text-xs text-slate-500">Create a task to get your team moving.</p>
+              <Link
+                href="/dashboard/hr/tasks/create"
+                className="mt-3 inline-flex items-center gap-1 text-xs font-semibold text-indigo-600"
+              >
+                Create a task <ArrowUpRight className="h-3.5 w-3.5" />
+              </Link>
+            </div>
+          )}
+        </section>
 
-          {/* Footer */}
-          <div className="text-center text-sm text-gray-500 pt-8 border-t border-slate-200">
-            <p>TAFSULA HR Dashboard • Last updated {new Date().toLocaleDateString()}</p>
-          </div>
-        </div>
-      </main>
-    </div>
+        <footer className="flex flex-wrap items-center justify-between gap-2 px-1 pb-2 text-[11px] text-slate-400">
+          <span>{organization?.name || "Tafsula"} · HR workspace</span>
+          <span>Metrics are based on current organization records.</span>
+        </footer>
+      </div>
+    </HRLayout>
   )
 }

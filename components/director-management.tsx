@@ -47,13 +47,13 @@ export function DirectorManagement({
   const [loading, setLoading] = useState(false)
   const [selectedUserId, setSelectedUserId] = useState("")
   const [role, setRole] = useState("DIRECTOR")
-  const [employees, setEmployees] = useState<any[]>([])
-  const [loadingEmployees, setLoadingEmployees] = useState(false)
+  const [members, setMembers] = useState<any[]>([])
+  const [loadingMembers, setLoadingMembers] = useState(false)
 
   // Fetch directors
   useEffect(() => {
     fetchDirectors()
-    fetchEmployees()
+    fetchMembers()
   }, [resourceId, type])
 
   const fetchDirectors = async () => {
@@ -68,16 +68,16 @@ export function DirectorManagement({
     }
   }
 
-  const fetchEmployees = async () => {
+  const fetchMembers = async () => {
     try {
-      setLoadingEmployees(true)
-      const res = await fetch("/api/employees")
+      setLoadingMembers(true)
+      const res = await fetch("/api/members")
       const data = await res.json()
-      setEmployees(data.employees || [])
+      setMembers(data.members || [])
     } catch (error) {
-      console.error("Error fetching employees:", error)
+      console.error("Error fetching members:", error)
     } finally {
-      setLoadingEmployees(false)
+      setLoadingMembers(false)
     }
   }
 
@@ -87,7 +87,7 @@ export function DirectorManagement({
     if (!selectedUserId) {
       toast({
         title: "Error",
-        description: "Please select an employee",
+        description: "Please select an member",
         variant: "destructive",
       })
       return
@@ -177,10 +177,10 @@ export function DirectorManagement({
           <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
             <Select value={selectedUserId} onValueChange={setSelectedUserId}>
               <SelectTrigger>
-                <SelectValue placeholder="Select employee" />
+                <SelectValue placeholder="Select member" />
               </SelectTrigger>
               <SelectContent>
-                {employees.map((emp) => (
+                {members.map((emp) => (
                   <SelectItem key={emp.id} value={emp.id}>
                     {emp.name} ({emp.email})
                   </SelectItem>

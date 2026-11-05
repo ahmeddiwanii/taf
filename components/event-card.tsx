@@ -15,8 +15,8 @@ interface EventCardProps {
   description?: string
   startAt: Date | string
   location?: string
-  startupName: string
-  startupProfileImage?: string
+  organizationName: string
+  organizationProfileImage?: string
   posterUrl?: string
   registrationCount?: number
   index?: number
@@ -43,8 +43,8 @@ export function EventCard({
   description,
   startAt,
   location,
-  startupName,
-  startupProfileImage,
+  organizationName,
+  organizationProfileImage,
   posterUrl,
   registrationCount = 0,
   index = 0,
@@ -88,14 +88,14 @@ export function EventCard({
       whileHover={{ y: -8 }}
       className="h-full"
     >
-      <Card className="h-full hover:shadow-2xl transition-all duration-300 overflow-hidden group bg-white">
+      <Card className="h-full overflow-hidden rounded-[1.5rem] border-[2.5px] border-soot bg-jasmine text-soot shadow-[4px_5px_0_0_#161210] group">
         <div className={`h-48 bg-gradient-to-br ${colors.bg} relative overflow-hidden`}>
           <div className="absolute inset-0 bg-black/20 group-hover:bg-black/30 transition-colors duration-300" />
 
-          {posterUrl || startupProfileImage ? (
+          {posterUrl || organizationProfileImage ? (
             <div className="absolute inset-0 overflow-hidden">
               <Image
-                src={posterUrl || startupProfileImage || ""}
+                src={posterUrl || organizationProfileImage || ""}
                 alt={title}
                 fill
                 className="object-cover group-hover:scale-110 transition-transform duration-500 ease-out"
@@ -147,7 +147,7 @@ export function EventCard({
           </div>
 
           <div className="absolute top-4 left-4 z-10">
-            <Badge className="bg-white/95 text-gray-900 shadow-lg font-semibold">{startupName}</Badge>
+            <Badge className="bg-white/95 text-gray-900 shadow-lg font-semibold">{organizationName}</Badge>
           </div>
 
           <div className="absolute bottom-4 left-4 z-10">
@@ -158,7 +158,7 @@ export function EventCard({
         <CardHeader className="pb-3 pt-5">
           <div className="space-y-2">
             <motion.div whileHover={{ x: 4 }} transition={{ type: "spring", stiffness: 400, damping: 10 }}>
-              <CardTitle className="text-xl font-bold line-clamp-2 group-hover:text-transparent group-hover:bg-gradient-to-r group-hover:from-blue-600 group-hover:to-purple-600 group-hover:bg-clip-text transition-all duration-300">
+              <CardTitle className="text-xl font-bold line-clamp-2 text-soot" style={{ fontFamily: "Fraunces, serif" }}>
                 {title}
               </CardTitle>
             </motion.div>
@@ -207,7 +207,7 @@ export function EventCard({
           <div className="w-full space-y-2">
             <Link href={`/events/${id}`} className="w-full">
               <motion.div whileHover={{ scale: 1.02 }} whileTap={{ scale: 0.98 }}>
-                <Button className={`w-full bg-gradient-to-r ${colors.bg} text-white font-semibold shadow-lg hover:shadow-xl transition-all duration-300`}>
+                <Button className="w-full rounded-full bg-soot font-semibold text-jasmine hover:bg-soot">
                   <span className="flex items-center justify-center gap-2">
                     View Event
                     <Zap className="w-4 h-4" />
@@ -220,10 +220,8 @@ export function EventCard({
                 onClick={handleRegister}
                 disabled={registering}
                 variant={registered ? "secondary" : "default"}
-                className={`w-full font-semibold shadow-lg transition-all duration-300 ${
-                  registered
-                    ? "bg-green-600 hover:bg-green-700 text-white"
-                    : "bg-blue-600 hover:bg-blue-700 text-white"
+                className={`w-full rounded-full font-semibold ${
+                  registered ? "bg-tile text-jasmine hover:bg-tile" : "border-[2px] border-soot bg-jasmine text-soot hover:bg-plaster"
                 }`}
               >
                 {registering ? (

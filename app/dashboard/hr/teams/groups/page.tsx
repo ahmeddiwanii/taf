@@ -3,37 +3,38 @@ import { getServerSession } from "next-auth/next"
 import { UserRole } from "../../../../../types/user"
 import { authOptions } from "../../../../../lib/auth"
 import { prisma } from "../../../../../lib/db"
-import { HRSidebar } from "../../../../../components/layout/hr-sidebar"
+import { HRLayout } from "../../../../../components/layout/hr-layout"
+import { getHRSessionUser } from "../../../../../lib/hr-session-user"
 import TeamGroupsClient from "../../../../../components/team-groups-client"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../../components/ui/card"
 import { Alert, AlertDescription } from "../../../../../components/ui/alert"
 import { AlertCircle } from "lucide-react"
 
 export default async function TeamGroupsPage() {
-  const session = await getServerSession(authOptions)
+  const user = getHRSessionUser(await getServerSession(authOptions))
 
-  if (!session) {
+  if (!user) {
     return <div className="p-8 text-center text-red-500">Not authenticated</div>
   }
-  if (session.user.role !== UserRole.HR) {
+  if (user.role !== UserRole.HR) {
     return <div className="p-8 text-center text-red-500">Not authorized</div>
   }
-  if (!session.user.startupId) {
-    return <div className="p-8 text-center text-red-500">No startup assigned</div>
+  if (!user.organizationId) {
+    return <div className="p-8 text-center text-red-500">No organization assigned</div>
   }
 
-  let startup = null
-  let employees: any[] = []
+  let organization = null
+  let members: any[] = []
 
   try {
-    startup = await prisma.startup.findUnique({
-      where: { id: session.user.startupId },
+    organization = await prisma.organization.findUnique({
+      where: { id: user.organizationId },
     })
 
-    employees = await prisma.user.findMany({
+    members = await prisma.user.findMany({
       where: {
-        startupId: session.user.startupId,
-        role: "EMPLOYEE",
+        organizationId: user.organizationId,
+        role: "MEMBER",
       },
       select: {
         id: true,
@@ -59,12 +60,7 @@ export default async function TeamGroupsPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30">
-      {/* Sidebar */}
-      <HRSidebar organizationName={startup?.name || "Organization"} />
-
-      {/* Main Content */}
-      <main className="md:ml-64 pt-20 md:pt-0">
+    <HRLayout orgName={organization?.name || "Your workspace"}>
         <div className="max-w-7xl mx-auto px-6 py-8">
           {/* Header */}
           <div className="mb-8">
@@ -78,14 +74,13 @@ export default async function TeamGroupsPage() {
           <Alert className="mb-8 border-blue-200 bg-blue-50">
             <AlertCircle className="h-4 w-4 text-blue-600" />
             <AlertDescription className="text-blue-800">
-              Drag and drop employees between groups. Each group needs at least one <strong>Chef d'équipe</strong> (team leader).
+              Drag and drop members between groups. Each group needs at least one <strong>Chef d'équipe</strong> (team leader).
             </AlertDescription>
           </Alert>
 
           {/* Team Groups Component */}
-          <TeamGroupsClient employees={employees} startupId={session.user.startupId} />
+          <TeamGroupsClient members={members} organizationId={user.organizationId} />
         </div>
-      </main>
-    </div>
+    </HRLayout>
   )
 }

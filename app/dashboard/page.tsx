@@ -16,10 +16,9 @@ export default async function DashboardPage() {
   } else if (session.user.role === "HR") {
     redirect("/dashboard/hr")
   } else if (session.user.role === "REGULAR_USER") {
-    // Redirect regular users to test page instead of dashboard
-    redirect("/test")
+    redirect("/organizations")
   } else {
-    redirect("/dashboard/employee")
+    redirect("/dashboard/member")
   }
 
   return null

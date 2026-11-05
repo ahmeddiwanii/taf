@@ -235,7 +235,7 @@ export default function SetupTeamsAndDirectorsPage() {
           body: JSON.stringify({
             name: team.name,
             purpose: `Team for event`,
-            startupId: session?.user.startupId,
+            organizationId: session?.user.organizationId,
             eventId,
           }),
         })

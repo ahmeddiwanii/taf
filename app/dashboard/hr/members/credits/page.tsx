@@ -103,7 +103,7 @@ export default function MemberCreditsPage() {
         {/* Header */}
         <div className="mb-8">
           <h1 className="text-4xl font-bold text-slate-900 mb-2">
-            Member Performance & Credits
+            Member points
           </h1>
           <p className="text-lg text-slate-600">
             Track team member achievements and task completion rates
@@ -125,7 +125,7 @@ export default function MemberCreditsPage() {
           <Card className="p-6 border-l-4 border-l-blue-500 bg-gradient-to-br from-blue-50 to-white">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-slate-600">Total Credits Awarded</p>
+                <p className="text-sm font-medium text-slate-600">Total points awarded</p>
                 <p className="text-3xl font-bold text-blue-600 mt-2">
                   {Math.round(totalCreditsDistributed)}
                 </p>
@@ -193,7 +193,7 @@ export default function MemberCreditsPage() {
                       <p className="text-3xl font-bold text-amber-600">
                         {Math.round(member.totalCredits)}
                       </p>
-                      <p className="text-xs text-slate-600">Credits</p>
+                      <p className="text-xs text-slate-600">Points</p>
                     </div>
                     <div>
                       <p className="text-2xl font-bold text-green-600">
@@ -219,7 +219,7 @@ export default function MemberCreditsPage() {
                 <TableRow className="bg-slate-50 border-b-2 border-slate-200">
                   <TableHead className="font-bold text-slate-900">Member</TableHead>
                   <TableHead className="text-right font-bold text-slate-900">
-                    Total Credits
+                    Total points
                   </TableHead>
                   <TableHead className="text-center font-bold text-slate-900">
                     Tasks Completed
@@ -297,7 +297,7 @@ export default function MemberCreditsPage() {
                               {/* Summary Stats */}
                               <div className="grid grid-cols-2 gap-4">
                                 <div className="p-4 bg-amber-50 rounded-lg border border-amber-200">
-                                  <p className="text-sm text-slate-600">Total Credits</p>
+                                  <p className="text-sm text-slate-600">Total points</p>
                                   <p className="text-2xl font-bold text-amber-600 mt-2">
                                     {Math.round(member.totalCredits)}
                                   </p>
@@ -326,7 +326,7 @@ export default function MemberCreditsPage() {
                               {member.creditsJson && (
                                 <div>
                                   <h4 className="font-bold text-slate-900 mb-3">
-                                    Credit History
+                                    Points history
                                   </h4>
                                   <div className="space-y-2 max-h-64 overflow-y-auto">
                                     {JSON.parse(member.creditsJson).map(
@@ -337,7 +337,7 @@ export default function MemberCreditsPage() {
                                         >
                                           <div>
                                             <p className="font-medium text-slate-900">
-                                              +{transaction.amount} credits
+                                              +{transaction.amount} points
                                             </p>
                                             <p className="text-sm text-slate-600">
                                               {transaction.reason}

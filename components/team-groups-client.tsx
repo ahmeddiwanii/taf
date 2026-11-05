@@ -16,7 +16,7 @@ import {
 import { Plus, Trash2, Save, Crown, User, Mail, Award } from "lucide-react"
 import { useToast } from "./ui/use-toast"
 
-interface Employee {
+interface Member {
   id: string
   name: string
   email: string
@@ -32,8 +32,8 @@ interface Employee {
 interface TeamGroup {
   id: string
   name: string
-  chef?: Employee
-  members: Employee[]
+  chef?: Member
+  members: Member[]
 }
 
 const INITIAL_GROUPS: TeamGroup[] = [
@@ -43,22 +43,22 @@ const INITIAL_GROUPS: TeamGroup[] = [
 ]
 
 interface TeamGroupsClientProps {
-  employees: Employee[]
-  startupId: string
+  members: Member[]
+  organizationId: string
 }
 
-export default function TeamGroupsClient({ employees: initialEmployees, startupId }: TeamGroupsClientProps) {
+export default function TeamGroupsClient({ members: initialMembers, organizationId }: TeamGroupsClientProps) {
   const [groups, setGroups] = useState<TeamGroup[]>(INITIAL_GROUPS)
-  const [unassignedEmployees, setUnassignedEmployees] = useState<Employee[]>(initialEmployees)
-  const [draggedEmployee, setDraggedEmployee] = useState<Employee | null>(null)
+  const [unassignedMembers, setUnassignedMembers] = useState<Member[]>(initialMembers)
+  const [draggedMember, setDraggedMember] = useState<Member | null>(null)
   const [newGroupName, setNewGroupName] = useState("")
   const [showNewGroupDialog, setShowNewGroupDialog] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
   const { toast } = useToast()
 
   // Drag & Drop Handlers
-  const handleDragStart = (employee: Employee, source: string) => {
-    setDraggedEmployee(employee)
+  const handleDragStart = (member: Member, source: string) => {
+    setDraggedMember(member)
   }
 
   const handleDragOver = (e: React.DragEvent) => {
@@ -66,77 +66,77 @@ export default function TeamGroupsClient({ employees: initialEmployees, startupI
   }
 
   const handleDropOnGroup = (groupId: string) => {
-    if (!draggedEmployee) return
+    if (!draggedMember) return
 
     setGroups((prev) =>
       prev.map((group) => {
         if (group.id === groupId) {
-          // Check if employee is already in this group
-          if (group.members.some((m) => m.id === draggedEmployee.id)) {
+          // Check if member is already in this group
+          if (group.members.some((m) => m.id === draggedMember.id)) {
             return group
           }
           return {
             ...group,
-            members: [...group.members, draggedEmployee],
+            members: [...group.members, draggedMember],
           }
         }
         // Remove from other groups
         return {
           ...group,
-          members: group.members.filter((m) => m.id !== draggedEmployee.id),
-          chef: group.chef?.id === draggedEmployee.id ? undefined : group.chef,
+          members: group.members.filter((m) => m.id !== draggedMember.id),
+          chef: group.chef?.id === draggedMember.id ? undefined : group.chef,
         }
       })
     )
 
     // Remove from unassigned
-    setUnassignedEmployees((prev) => prev.filter((e) => e.id !== draggedEmployee.id))
-    setDraggedEmployee(null)
+    setUnassignedMembers((prev) => prev.filter((e) => e.id !== draggedMember.id))
+    setDraggedMember(null)
   }
 
   const handleDropOnUnassigned = () => {
-    if (!draggedEmployee) return
+    if (!draggedMember) return
 
     setGroups((prev) =>
       prev.map((group) => ({
         ...group,
-        members: group.members.filter((m) => m.id !== draggedEmployee.id),
-        chef: group.chef?.id === draggedEmployee.id ? undefined : group.chef,
+        members: group.members.filter((m) => m.id !== draggedMember.id),
+        chef: group.chef?.id === draggedMember.id ? undefined : group.chef,
       }))
     )
 
-    if (!unassignedEmployees.some((e) => e.id === draggedEmployee.id)) {
-      setUnassignedEmployees((prev) => [...prev, draggedEmployee])
+    if (!unassignedMembers.some((e) => e.id === draggedMember.id)) {
+      setUnassignedMembers((prev) => [...prev, draggedMember])
     }
-    setDraggedEmployee(null)
+    setDraggedMember(null)
   }
 
-  const setChef = (groupId: string, employee: Employee) => {
+  const setChef = (groupId: string, member: Member) => {
     setGroups((prev) =>
       prev.map((group) =>
         group.id === groupId
-          ? { ...group, chef: group.chef?.id === employee.id ? undefined : employee }
+          ? { ...group, chef: group.chef?.id === member.id ? undefined : member }
           : group
       )
     )
   }
 
-  const removeEmployeeFromGroup = (groupId: string, employeeId: string) => {
+  const removeMemberFromGroup = (groupId: string, memberId: string) => {
     setGroups((prev) =>
       prev.map((group) =>
         group.id === groupId
           ? {
               ...group,
-              members: group.members.filter((m) => m.id !== employeeId),
-              chef: group.chef?.id === employeeId ? undefined : group.chef,
+              members: group.members.filter((m) => m.id !== memberId),
+              chef: group.chef?.id === memberId ? undefined : group.chef,
             }
           : group
       )
     )
 
-    const employee = initialEmployees.find((e) => e.id === employeeId)
-    if (employee && !unassignedEmployees.some((e) => e.id === employeeId)) {
-      setUnassignedEmployees((prev) => [...prev, employee])
+    const member = initialMembers.find((e) => e.id === memberId)
+    if (member && !unassignedMembers.some((e) => e.id === memberId)) {
+      setUnassignedMembers((prev) => [...prev, member])
     }
   }
 
@@ -160,7 +160,7 @@ export default function TeamGroupsClient({ employees: initialEmployees, startupI
       const groupToDelete = prev.find((g) => g.id === groupId)
       if (groupToDelete) {
         // Move members back to unassigned
-        setUnassignedEmployees((current) => [...current, ...groupToDelete.members])
+        setUnassignedMembers((current) => [...current, ...groupToDelete.members])
       }
       return prev.filter((g) => g.id !== groupId)
     })
@@ -185,7 +185,7 @@ export default function TeamGroupsClient({ employees: initialEmployees, startupI
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          startupId,
+          organizationId,
           groups: groups.map((g) => ({
             id: g.id,
             name: g.name,
@@ -214,11 +214,11 @@ export default function TeamGroupsClient({ employees: initialEmployees, startupI
 
   return (
     <div className="space-y-8">
-      {/* Unassigned Employees */}
+      {/* Unassigned Members */}
       <Card className="border-2 border-dashed border-gray-300 hover:border-gray-400 transition-colors">
         <CardHeader className="bg-gradient-to-r from-gray-50 to-transparent">
-          <CardTitle className="text-lg">Unassigned Employees</CardTitle>
-          <CardDescription>Drag employees from here to groups below</CardDescription>
+          <CardTitle className="text-lg">Unassigned Members</CardTitle>
+          <CardDescription>Drag members from here to groups below</CardDescription>
         </CardHeader>
         <CardContent>
           <div
@@ -226,17 +226,17 @@ export default function TeamGroupsClient({ employees: initialEmployees, startupI
             onDrop={handleDropOnUnassigned}
             className="min-h-32 bg-gray-50 rounded-lg border-2 border-dashed border-gray-300 p-4 transition-colors hover:bg-gray-100"
           >
-            {unassignedEmployees.length === 0 ? (
+            {unassignedMembers.length === 0 ? (
               <div className="text-center py-8">
                 <User className="w-12 h-12 text-gray-300 mx-auto mb-2" />
-                <p className="text-gray-500 font-medium">All employees assigned!</p>
+                <p className="text-gray-500 font-medium">All members assigned!</p>
               </div>
             ) : (
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
-                {unassignedEmployees.map((employee) => (
-                  <EmployeeCard
-                    key={employee.id}
-                    employee={employee}
+                {unassignedMembers.map((member) => (
+                  <MemberCard
+                    key={member.id}
+                    member={member}
                     onDragStart={handleDragStart}
                     isUnassigned
                   />
@@ -288,7 +288,7 @@ export default function TeamGroupsClient({ employees: initialEmployees, startupI
               onDrop={() => handleDropOnGroup(group.id)}
               onDragStart={handleDragStart}
               onSetChef={(emp) => setChef(group.id, emp)}
-              onRemoveEmployee={(empId) => removeEmployeeFromGroup(group.id, empId)}
+              onRemoveMember={(empId) => removeMemberFromGroup(group.id, empId)}
               onDelete={() => deleteGroup(group.id)}
             />
           ))}
@@ -313,29 +313,29 @@ export default function TeamGroupsClient({ employees: initialEmployees, startupI
   )
 }
 
-function EmployeeCard({
-  employee,
+function MemberCard({
+  member,
   onDragStart,
   isUnassigned,
 }: {
-  employee: Employee
-  onDragStart: (emp: Employee, source: string) => void
+  member: Member
+  onDragStart: (emp: Member, source: string) => void
   isUnassigned?: boolean
 }) {
-  const discType = employee.result?.[0]?.dominantType
+  const discType = member.result?.[0]?.dominantType
 
   return (
     <div
       draggable
-      onDragStart={() => onDragStart(employee, isUnassigned ? "unassigned" : "group")}
+      onDragStart={() => onDragStart(member, isUnassigned ? "unassigned" : "group")}
       className="p-3 bg-white border border-gray-200 rounded-lg cursor-move hover:shadow-md hover:border-blue-300 transition-all group"
     >
       <div className="flex items-start gap-2">
         <div className="flex-1 min-w-0">
-          <p className="font-medium text-sm text-gray-900 truncate">{employee.name}</p>
-          <p className="text-xs text-gray-500 truncate">{employee.email}</p>
-          {employee.profile?.headline && (
-            <p className="text-xs text-gray-600 mt-1 truncate">{employee.profile.headline}</p>
+          <p className="font-medium text-sm text-gray-900 truncate">{member.name}</p>
+          <p className="text-xs text-gray-500 truncate">{member.email}</p>
+          {member.profile?.headline && (
+            <p className="text-xs text-gray-600 mt-1 truncate">{member.profile.headline}</p>
           )}
         </div>
         {discType && (
@@ -354,15 +354,15 @@ function GroupCard({
   onDrop,
   onDragStart,
   onSetChef,
-  onRemoveEmployee,
+  onRemoveMember,
   onDelete,
 }: {
   group: TeamGroup
   onDragOver: (e: React.DragEvent) => void
   onDrop: () => void
-  onDragStart: (emp: Employee, source: string) => void
-  onSetChef: (emp: Employee) => void
-  onRemoveEmployee: (empId: string) => void
+  onDragStart: (emp: Member, source: string) => void
+  onSetChef: (emp: Member) => void
+  onRemoveMember: (empId: string) => void
   onDelete: () => void
 }) {
   return (
@@ -392,7 +392,7 @@ function GroupCard({
           {group.members.length === 0 ? (
             <div className="text-center py-8">
               <User className="w-12 h-12 text-blue-200 mx-auto mb-2" />
-              <p className="text-blue-600 font-medium text-sm">Drag employees here</p>
+              <p className="text-blue-600 font-medium text-sm">Drag members here</p>
             </div>
           ) : (
             <div className="space-y-2">
@@ -428,7 +428,7 @@ function GroupCard({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => onRemoveEmployee(member.id)}
+                      onClick={() => onRemoveMember(member.id)}
                       className="text-red-600 hover:text-red-700 hover:bg-red-50"
                     >
                       <Trash2 className="w-4 h-4" />

@@ -1,163 +1,317 @@
 "use client"
 
-import React, { useState } from "react"
+import { createContext, useContext, type ReactNode } from "react"
 import Link from "next/link"
 import { usePathname } from "next/navigation"
+import { signOut, useSession } from "next-auth/react"
+import { useState } from "react"
 import {
+  Activity,
+  BarChart3,
+  Building2,
+  CalendarDays,
+  ChevronRight,
+  ClipboardCheck,
   LayoutDashboard,
-  Users,
-  CheckSquare,
-  TrendingUp,
-  Settings,
+  Lightbulb,
   LogOut,
   Menu,
+  MessageSquareText,
+  Settings2,
+  UsersRound,
   X,
-  Briefcase,
-  ChevronRight,
-  Link as LinkIcon,
 } from "lucide-react"
-import { signOut } from "next-auth/react"
-import { Button } from "../ui/button"
+import { UserAvatar } from "../user-avatar"
+import { OnboardingTour } from "@/components/onboarding-tour"
+import { LogoMark } from "@/components/brand/logo"
 
 interface HRLayoutProps {
-  children: React.ReactNode
+  children: ReactNode
+  orgName?: string
   organizationName?: string
 }
 
-export function HRLayout({ children, organizationName = "Organization" }: HRLayoutProps) {
-  const pathname = usePathname()
-  const [sidebarOpen, setSidebarOpen] = useState(true)
+const navigation = [
+  {
+    label: "Overview",
+    items: [
+      { label: "Dashboard", href: "/dashboard/hr", icon: LayoutDashboard },
+      { label: "Club news", href: "/dashboard/hr/home", icon: MessageSquareText },
+    ],
+  },
+  {
+    label: "People",
+    items: [
+      { label: "Members", href: "/dashboard/hr/members", icon: UsersRound },
+      { label: "Teams", href: "/dashboard/hr/teams", icon: Activity },
+      { label: "Points", href: "/dashboard/hr/members/credits", icon: BarChart3 },
+      { label: "Invite a member", href: "/dashboard/hr/members/invite", icon: UsersRound },
+    ],
+  },
+  {
+    label: "Club life",
+    items: [
+      { label: "Tasks", href: "/dashboard/hr/tasks", icon: ClipboardCheck },
+      { label: "Review tasks", href: "/dashboard/hr/tasks/review", icon: ClipboardCheck },
+      { label: "Create a task", href: "/dashboard/hr/tasks/create", icon: ClipboardCheck },
+      { label: "Events", href: "/dashboard/hr/events", icon: CalendarDays },
+      { label: "Ideas", href: "/dashboard/hr/proposals", icon: Lightbulb },
+      { label: "Create a post", href: "/dashboard/hr/posts/new", icon: MessageSquareText },
+    ],
+  },
+  {
+    label: "Club",
+    items: [
+      { label: "Club profile", href: "/dashboard/hr/organization", icon: Building2 },
+      { label: "Settings", href: "/dashboard/hr/settings", icon: Settings2 },
+    ],
+  },
+]
 
-  const isActive = (href: string) => pathname === href || pathname.startsWith(href + "/")
+function getPageTitle(pathname: string) {
+  const allItems = navigation.flatMap((section) => section.items)
+  const matchingItem = allItems
+    .filter((item) =>
+      item.href === "/dashboard/hr"
+        ? pathname === item.href
+        : pathname === item.href || pathname.startsWith(`${item.href}/`),
+    )
+    .sort((a, b) => b.href.length - a.href.length)[0]
 
-  const navItems = [
-    {
-      label: "Dashboard",
-      href: "/dashboard/hr",
-      icon: LayoutDashboard,
-      description: "Overview & statistics",
-    },
-    {
-      label: "Employees",
-      href: "/dashboard/hr/employees",
-      icon: Users,
-      description: "Manage your team",
-    },
-    {
-      label: "Task Management",
-      href: "/dashboard/hr/tasks",
-      icon: CheckSquare,
-      description: "Create & review tasks",
-      children: [
-        { label: "Create Tasks", href: "/dashboard/hr/tasks/create" },
-        { label: "Review Tasks", href: "/dashboard/hr/tasks/review" },
-      ],
-    },
-    {
-      label: "Member Credits",
-      href: "/dashboard/hr/members/credits",
-      icon: TrendingUp,
-      description: "Performance tracking",
-    },
-    {
-      label: "Events",
-      href: "/dashboard/hr/events",
-      icon: Briefcase,
-      description: "Event management",
-    },
-    {
-      label: "Collaborators",
-      href: "/dashboard/hr/collaborators",
-      icon: LinkIcon,
-      description: "Manage collaborations",
-    },
-  ]
+  if (pathname.includes("/events/new")) return "Create event"
+  if (pathname.includes("/tasks/create")) return "Create task"
+  if (pathname.includes("/tasks/review")) return "Review tasks"
+  if (pathname.startsWith("/dashboard/hr/posts/")) return "Create a post"
+  if (pathname.includes("/attendance")) return "Event attendance"
+  if (pathname.includes("/feedback")) return "Event feedback"
+  if (pathname.includes("/gallery")) return "Event gallery"
+  if (pathname.includes("/qr")) return "Event check-in"
+  if (pathname.includes("/members/credits")) return "Points"
+  if (pathname.includes("/members/invite")) return "Invite a member"
+  if (pathname.includes("/events/setup-teams-and-directors")) return "Event team setup"
+  return matchingItem?.label ?? "Workspace"
+}
+
+const HRWorkspaceContext = createContext(false)
+
+export function HRLayout({
+  children,
+  orgName,
+  organizationName,
+}: HRLayoutProps) {
+  const alreadyInWorkspace = useContext(HRWorkspaceContext)
+
+  if (alreadyInWorkspace) {
+    return <>{children}</>
+  }
 
   return (
-    <div className="flex min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50">
-      {/* Sidebar */}
-      <aside
-        className={`fixed left-0 top-0 h-screen bg-white border-r border-gray-200 shadow-lg transition-all duration-300 z-40 ${
-          sidebarOpen ? "w-64" : "w-20"
-        }`}
+    <HRWorkspaceContext.Provider value>
+      <HRLayoutFrame
+        orgName={orgName}
+        organizationName={organizationName}
       >
-        {/* Logo */}
-        <div className="h-20 flex items-center justify-between px-4 border-b border-gray-100">
-          <Link href="/" className="flex items-center gap-2">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center shadow-md">
-              <span className="font-bold text-white text-lg">T</span>
-            </div>
-            {sidebarOpen && (
-              <div>
-                <p className="font-bold text-gray-900 text-sm">TAFSULA</p>
-                <p className="text-xs text-gray-500">HR Suite</p>
-              </div>
-            )}
+        {children}
+      </HRLayoutFrame>
+    </HRWorkspaceContext.Provider>
+  )
+}
+
+function HRLayoutFrame({
+  children,
+  orgName,
+  organizationName,
+}: HRLayoutProps) {
+  const pathname = usePathname()
+  const { data: session } = useSession()
+  const [mobileNavOpen, setMobileNavOpen] = useState(false)
+  const activeOrganization = orgName || organizationName || "Your workspace"
+  const pageTitle = getPageTitle(pathname)
+
+  const isActive = (href: string) =>
+    href === "/dashboard/hr"
+      ? pathname === href
+      : pathname === href ||
+        (pathname.startsWith(`${href}/`) &&
+          !navigation
+            .flatMap((section) => section.items)
+            .some(
+              (item) =>
+                item.href !== href &&
+                item.href.startsWith(`${href}/`) &&
+                (pathname === item.href || pathname.startsWith(`${item.href}/`)),
+            ))
+
+  return (
+    <div className="hr-workspace min-h-screen bg-[#f5f4ef] text-slate-800">
+      <OnboardingTour role="hr" />
+      <a
+        href="#hr-main-content"
+        className="sr-only z-[70] rounded-lg bg-white px-4 py-2 text-sm font-semibold text-slate-900 focus:not-sr-only focus:fixed focus:left-4 focus:top-4"
+      >
+        Skip to content
+      </a>
+
+      {mobileNavOpen && (
+        <button
+          type="button"
+          aria-label="Close navigation"
+          className="fixed inset-0 z-40 bg-[#132b2a]/50 backdrop-blur-sm md:hidden"
+          onClick={() => setMobileNavOpen(false)}
+        />
+      )}
+
+      <aside
+        className={`fixed inset-y-0 left-0 z-50 flex w-[264px] flex-col border-r border-white/[0.08] bg-[#162b2a] text-white transition-transform duration-200 md:translate-x-0 ${
+          mobileNavOpen ? "translate-x-0 shadow-2xl" : "-translate-x-full"
+        }`}
+        aria-label="HR workspace navigation"
+      >
+        <div className="flex h-[76px] items-center justify-between border-b border-white/[0.08] px-5">
+          <Link
+            href="/dashboard/hr"
+            className="flex min-w-0 items-center gap-3"
+            onClick={() => setMobileNavOpen(false)}
+          >
+            <span className="flex h-11 w-11 shrink-0 overflow-hidden rounded-xl">
+              <LogoMark className="h-11 w-11" />
+            </span>
+            <span className="min-w-0">
+              <span className="block text-sm font-bold tracking-tight text-white">
+                Tafsula
+              </span>
+              <span className="block truncate text-xs text-[#b6c6bd]">
+                {activeOrganization}
+              </span>
+            </span>
           </Link>
           <button
-            onClick={() => setSidebarOpen(!sidebarOpen)}
-            className="p-1.5 hover:bg-gray-100 rounded-lg transition-colors lg:hidden"
+            type="button"
+            aria-label="Close navigation"
+            className="rounded-lg p-2 text-[#b6c6bd] hover:bg-white/10 md:hidden"
+            onClick={() => setMobileNavOpen(false)}
           >
-            {sidebarOpen ? <X size={18} /> : <Menu size={18} />}
+            <X className="h-5 w-5" />
           </button>
         </div>
 
-        {/* Organization Info */}
-        {sidebarOpen && (
-          <div className="px-4 py-4 border-b border-gray-100">
-            <p className="text-xs text-gray-500 uppercase tracking-widest font-semibold">Organization</p>
-            <p className="text-sm font-semibold text-gray-900 mt-2 truncate">{organizationName}</p>
-          </div>
-        )}
-
-        {/* Navigation */}
-        <nav className="flex-1 overflow-y-auto px-3 py-6 space-y-2">
-          {navItems.map((item) => {
-            const Icon = item.icon
-            const active = isActive(item.href)
-
-            return (
-              <div key={item.href}>
-                <Link href={item.href}>
-                  <div
-                    className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200 ${
-                      active
-                        ? "bg-blue-50 text-blue-600 border-l-4 border-blue-600"
-                        : "text-gray-700 hover:bg-gray-50"
-                    }`}
-                  >
-                    <Icon size={20} />
-                    {sidebarOpen && (
-                      <div className="flex-1">
-                        <p className="font-medium text-sm">{item.label}</p>
-                        <p className="text-xs text-gray-500">{item.description}</p>
-                      </div>
-                    )}
-                    {sidebarOpen && active && <ChevronRight size={18} className="text-blue-600" />}
-                  </div>
-                </Link>
+        <nav className="flex-1 space-y-6 overflow-y-auto px-3 py-5">
+          {navigation.map((section) => (
+            <section key={section.label} aria-label={section.label}>
+              <h2 className="mb-2 px-3 text-[10px] font-bold uppercase tracking-[0.16em] text-[#91a59a]">
+                {section.label}
+              </h2>
+              <div className="space-y-1">
+                {section.items.map(({ label, href, icon: Icon }) => {
+                  const active = isActive(href)
+                  return (
+                    <Link
+                      key={href}
+                      href={href}
+                      aria-current={active ? "page" : undefined}
+                      onClick={() => setMobileNavOpen(false)}
+                      className={`group flex items-center gap-3 rounded-xl px-3 py-2.5 text-[13px] font-medium transition-colors ${
+                        active
+                          ? "bg-[#c4e46a] font-semibold text-[#162b2a] shadow-sm"
+                          : "text-[#d1dcd5] hover:bg-white/[0.08] hover:text-white"
+                      }`}
+                    >
+                      <Icon
+                        className={`h-[18px] w-[18px] shrink-0 ${
+                          active
+                            ? "text-[#162b2a]"
+                            : "text-[#91a59a] group-hover:text-white"
+                        }`}
+                      />
+                      <span className="flex-1">{label}</span>
+                      {active && <ChevronRight className="h-4 w-4 text-[#42592a]" />}
+                    </Link>
+                  )
+                })}
               </div>
-            )
-          })}
+            </section>
+          ))}
         </nav>
 
-        {/* Logout Button */}
-        <div className="border-t border-gray-200 p-4">
-          <Button
+        <div className="border-t border-white/[0.08] p-3">
+          <div className="mb-2 flex items-center gap-3 rounded-xl px-2 py-2">
+            <UserAvatar
+              avatarId={(session?.user as { avatarId?: number } | undefined)?.avatarId}
+              name={session?.user?.name}
+              size="sm"
+            />
+            <div className="min-w-0 flex-1">
+              <p className="truncate text-xs font-semibold text-white">
+                {session?.user?.name || "Workspace user"}
+              </p>
+              <p className="truncate text-[11px] text-[#91a59a]">HR administrator</p>
+            </div>
+          </div>
+          <button
+            type="button"
             onClick={() => signOut({ callbackUrl: "/auth/login" })}
-            variant="outline"
-            className="w-full justify-start"
+            className="flex w-full items-center gap-3 rounded-xl px-3 py-2.5 text-left text-xs font-medium text-[#b6c6bd] transition-colors hover:bg-rose-500/10 hover:text-rose-200"
           >
-            <LogOut size={18} />
-            {sidebarOpen && <span className="ml-2">Sign Out</span>}
-          </Button>
+            <LogOut className="h-4 w-4" />
+            Sign out
+          </button>
         </div>
       </aside>
 
-      {/* Main Content */}
-      <main className={`transition-all duration-300 ${sidebarOpen ? "ml-64" : "ml-20"} flex-1`}>
-        <div className="min-h-screen p-6 md:p-8">{children}</div>
-      </main>
+      <div className="min-h-screen md:pl-[264px]">
+        <header className="sticky top-0 z-30 border-b border-[#e7e5dc] bg-[#fbfaf7]/90 backdrop-blur-xl">
+          <div className="flex h-[76px] items-center justify-between gap-4 px-4 sm:px-7">
+            <div className="flex min-w-0 items-center gap-3">
+              <button
+                type="button"
+                aria-label="Open navigation"
+                aria-expanded={mobileNavOpen}
+                className="rounded-xl border border-[#deddd3] p-2 text-[#53635a] hover:bg-white md:hidden"
+                onClick={() => setMobileNavOpen(true)}
+              >
+                <Menu className="h-5 w-5" />
+              </button>
+              <div className="min-w-0">
+                <div className="hidden items-center gap-2 text-[11px] font-medium text-[#8b938a] sm:flex">
+                  <span>PEOPLE OPERATIONS</span>
+                  <ChevronRight className="h-3 w-3" />
+                  <span className="truncate text-[#57635a]">{activeOrganization}</span>
+                </div>
+                <h1 className="truncate text-lg font-semibold tracking-tight text-[#1e302d]">
+                  {pageTitle}
+                </h1>
+              </div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+              <span className="hidden text-xs font-medium text-[#737c74] lg:inline">
+                People operations
+              </span>
+              <Link
+                href="/dashboard/hr/events/new"
+                className="inline-flex h-10 items-center gap-2 rounded-xl bg-[#203b36] px-3 text-xs font-semibold text-white shadow-sm shadow-[#203b36]/20 transition-colors hover:bg-[#2d5148] sm:px-4 sm:text-sm"
+              >
+                <CalendarDays className="h-4 w-4" />
+                <span className="hidden sm:inline">Create event</span>
+                <span className="sm:hidden">Create</span>
+              </Link>
+              <Link
+                href="/dashboard/hr/organization"
+                aria-label="Organization profile"
+                className="hidden rounded-xl border border-[#deddd3] p-2 text-[#637168] transition-colors hover:bg-white sm:inline-flex"
+              >
+                <Building2 className="h-4 w-4" />
+              </Link>
+            </div>
+          </div>
+        </header>
+
+        <main
+          id="hr-main-content"
+          className="mx-auto w-full max-w-[1600px] px-4 py-6 sm:px-7 sm:py-8"
+        >
+          {children}
+        </main>
+      </div>
     </div>
   )
 }

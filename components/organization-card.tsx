@@ -2,10 +2,7 @@
 
 import { motion } from "framer-motion"
 import Link from "next/link"
-import { Card, CardContent, CardFooter, CardHeader } from "./ui/card"
-import { Button } from "./ui/button"
-import { Badge } from "./ui/badge"
-import { MapPin, Users, Zap, ExternalLink } from "lucide-react"
+import { MapPin } from "lucide-react"
 import Image from "next/image"
 
 interface OrganizationCardProps {
@@ -26,76 +23,34 @@ interface OrganizationCardProps {
 
 export function OrganizationCard({ id, name, profile, _count, index = 0 }: OrganizationCardProps) {
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.5, delay: index * 0.1 }}
-    >
-      <Link href={`/organizations/${id}`}>
-        <Card className="h-full hover:shadow-lg transition-all duration-300 cursor-pointer group overflow-hidden">
-          {/* Cover Image Area */}
-          <div className="h-32 bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 opacity-80 overflow-hidden relative">
-            {profile?.profileImageUrl && (
-              <Image
-                src={profile.profileImageUrl}
-                alt={name}
-                fill
-                className="object-cover group-hover:scale-110 transition-transform duration-300"
-              />
-            )}
-          </div>
-
-          <CardHeader className="pb-2 -mt-8 relative z-10">
-            <div className="flex items-end space-x-3">
-              {profile?.profileImageUrl && (
-                <div className="w-16 h-16 bg-white rounded-lg shadow-md border border-gray-200 overflow-hidden">
-                  <Image
-                    src={profile.profileImageUrl}
-                    alt={name}
-                    width={64}
-                    height={64}
-                    className="w-full h-full object-cover"
-                  />
-                </div>
-              )}
-              <div className="flex-1">
-                <h3 className="font-bold text-lg text-gray-900 truncate">{name}</h3>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="space-y-3">
-            {profile?.bio && <p className="text-sm text-gray-600 line-clamp-2">{profile.bio}</p>}
-
-            {profile?.location && (
-              <div className="flex items-center space-x-1 text-sm text-gray-500">
-                <MapPin className="w-4 h-4" />
-                <span>{profile.location}</span>
-              </div>
-            )}
-
-            {_count && (
-              <div className="flex gap-2">
-                <Badge variant="secondary" className="bg-blue-50 text-blue-700 border-blue-200">
-                  <Users className="w-3 h-3 mr-1" />
-                  {_count.user} Members
-                </Badge>
-                <Badge variant="secondary" className="bg-purple-50 text-purple-700 border-purple-200">
-                  <Zap className="w-3 h-3 mr-1" />
-                  {_count.event} Events
-                </Badge>
-              </div>
-            )}
-          </CardContent>
-
-          <CardFooter>
-            <Button className="w-full bg-gray-900 hover:bg-gray-800 text-white group transition-all">
-              <span>View Profile</span>
-              <ExternalLink className="w-4 h-4 ml-2 group-hover:translate-x-1 transition-transform" />
-            </Button>
-          </CardFooter>
-        </Card>
+    <motion.div initial={{ opacity: 0, y: 16 }} whileInView={{ opacity: 1, y: 0 }} viewport={{ once: true }} transition={{ delay: index * 0.06 }}>
+      <Link
+        href={`/organizations/${id}`}
+        className="block h-full overflow-hidden rounded-[1.5rem] border-[2.5px] border-soot bg-jasmine text-soot no-underline shadow-[4px_5px_0_0_#161210] transition hover:-translate-y-0.5"
+      >
+        <div className="relative h-28 bg-[#F3C4B0]">
+          {profile?.profileImageUrl ? (
+            <Image src={profile.profileImageUrl} alt="" fill className="object-cover" />
+          ) : (
+            <div className="absolute inset-0 bg-[linear-gradient(135deg,#9C1C28_0%,#C9891A_50%,#1F5C57_100%)] opacity-80" />
+          )}
+        </div>
+        <div className="p-5">
+          <h3 className="font-display text-xl" style={{ fontFamily: "Fraunces, serif" }}>
+            {name}
+          </h3>
+          {profile?.bio && <p className="mt-2 line-clamp-2 text-sm text-soot/60">{profile.bio}</p>}
+          {profile?.location && (
+            <p className="mt-3 flex items-center gap-1 text-xs text-soot/50">
+              <MapPin className="h-3.5 w-3.5" /> {profile.location}
+            </p>
+          )}
+          {_count && (
+            <p className="mt-3 text-xs font-semibold uppercase tracking-wider text-soot/40">
+              {_count.user} youth · {_count.event} nights
+            </p>
+          )}
+        </div>
       </Link>
     </motion.div>
   )

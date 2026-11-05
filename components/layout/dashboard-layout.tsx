@@ -1,3 +1,5 @@
+"use client"
+
 import type { ReactNode } from "react"
 import Link from "next/link"
 import { UserNav } from "../../components/user-nav"
@@ -12,6 +14,7 @@ import {
   LogOut,
   ChevronDown,
   Menu,
+  Building2,
 } from "lucide-react"
 import { Button } from "../ui/button"
 import { useState } from "react"
@@ -36,23 +39,24 @@ export function DashboardLayout({ children, role }: DashboardLayoutProps) {
       case UserRole.SUPERADMIN:
         return [
           { label: "Dashboard", href: "/dashboard/admin", icon: <LayoutDashboard className="w-5 h-5" /> },
-          { label: "Startups", href: "/dashboard/admin/startups", icon: <Users className="w-5 h-5" /> },
-          { label: "Users", href: "/dashboard/admin/users", icon: <BarChart3 className="w-5 h-5" /> },
-          { label: "Settings", href: "/dashboard/admin/settings", icon: <Settings className="w-5 h-5" /> },
+          { label: "Club requests", href: "/dashboard/admin/join-requests", icon: <Users className="w-5 h-5" /> },
+          { label: "Clubs", href: "/dashboard/admin/organizations", icon: <Building2 className="w-5 h-5" /> },
+          { label: "Users", href: "/dashboard/admin/users", icon: <Users className="w-5 h-5" /> },
+          { label: "All events", href: "/dashboard/admin/events", icon: <Calendar className="w-5 h-5" /> },
         ]
       case UserRole.HR:
         return [
           { label: "Dashboard", href: "/dashboard/hr", icon: <LayoutDashboard className="w-5 h-5" /> },
-          { label: "Employees", href: "/dashboard/hr/employees", icon: <Users className="w-5 h-5" /> },
+          { label: "Members", href: "/dashboard/hr/members", icon: <Users className="w-5 h-5" /> },
           { label: "Teams", href: "/dashboard/hr/teams", icon: <Users className="w-5 h-5" /> },
           { label: "Events", href: "/dashboard/hr/events", icon: <Calendar className="w-5 h-5" /> },
-          { label: "Team Compatibility", href: "/dashboard/hr/compatibility", icon: <Zap className="w-5 h-5" /> },
+          { label: "Ideas", href: "/dashboard/hr/proposals", icon: <Zap className="w-5 h-5" /> },
         ]
-      case UserRole.EMPLOYEE:
+      case UserRole.MEMBER:
         return [
-          { label: "Dashboard", href: "/dashboard/employee", icon: <LayoutDashboard className="w-5 h-5" /> },
-          { label: "Events", href: "/events", icon: <Calendar className="w-5 h-5" /> },
-          { label: "My Results", href: "/dashboard/employee/results", icon: <BarChart3 className="w-5 h-5" /> },
+          { label: "Dashboard", href: "/dashboard/member", icon: <LayoutDashboard className="w-5 h-5" /> },
+          { label: "Events", href: "/dashboard/member/events", icon: <Calendar className="w-5 h-5" /> },
+          { label: "Teams", href: "/dashboard/member/teams", icon: <Users className="w-5 h-5" /> },
         ]
       default:
         return []

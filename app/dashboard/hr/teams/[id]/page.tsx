@@ -3,364 +3,390 @@
 import { useState, useEffect } from "react"
 import { useParams, useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../../components/ui/card"
-import { Button } from "../../../../../components/ui/button"
-import { Input } from "../../../../../components/ui/input"
-import { Badge } from "../../../../../components/ui/badge"
-import { Alert, AlertDescription } from "../../../../../components/ui/alert"
-import {
-  ArrowLeft,
-  Users,
-  UserPlus,
-  Edit2,
-  Trash2,
+import { HRLayout } from "@/components/layout/hr-layout"
+import { 
+  ArrowLeft, 
+  Users, 
+  Shield, 
+  Target, 
+  Zap,
   Calendar,
+  Briefcase,
+  CheckCircle2,
   AlertCircle,
-  Loader2,
-  CheckCircle,
-  Clock,
-  Target,
+  Rocket,
+  ChevronRight,
+  Edit3
 } from "lucide-react"
-import Link from "next/link"
+import { motion, AnimatePresence } from "framer-motion"
+import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
 
 interface TeamMember {
   id: string
+  userId: string
   user: {
     id: string
     name: string
     email: string
+    avatarId: number
+    role: string
   }
-  role: string
-  joinedAt: string
+}
+
+interface TeamDirector {
+  userId: string
+  user: { id: string, name: string }
+}
+
+interface TeamTask {
+  id: string
+  title: string
+  status: string
+  priority: string
+  assignments: { userId: string, acceptanceStatus: string, status: string, user: { name: string } }[]
+  description?: string
+  dueDate?: string
 }
 
 interface Team {
   id: string
   name: string
   purpose?: string
-  description?: string
   status: string
-  eventId?: string | null
+  eventId?: string
   members: TeamMember[]
-  taskCount: number
-  createdBy: string
-  createdAt?: string
-  visibility?: string
+  directors: TeamDirector[]
+  tasks: TeamTask[]
+  project?: { title: string }
 }
 
-interface Event {
-  id: string
-  title: string
-  startAt: string
-}
-
-export default function TeamDetailPage() {
-  const params = useParams()
+export default function SquadronIntelPage() {
   const router = useRouter()
+  const { id: teamId } = useParams()
   const { data: session } = useSession()
-  const teamId = params.id as string
-
+  
   const [team, setTeam] = useState<Team | null>(null)
-  const [event, setEvent] = useState<Event | null>(null)
   const [loading, setLoading] = useState(true)
-  const [error, setError] = useState<string | null>(null)
-  const [showAddMember, setShowAddMember] = useState(false)
-  const [newMemberEmail, setNewMemberEmail] = useState("")
-  const [addingMember, setAddingMember] = useState(false)
+  const [expandedTaskId, setExpandedTaskId] = useState<string | null>(null)
+  const [isUpdatingTask, setIsUpdatingTask] = useState<string | null>(null)
 
   useEffect(() => {
-    const fetchTeamDetails = async () => {
-      try {
-        setLoading(true)
-        const res = await fetch(`/api/teams?id=${teamId}`)
-        if (!res.ok) throw new Error("Failed to fetch team")
-
-        const data = await res.json()
-        const teamData = Array.isArray(data) ? data[0] : data
-        setTeam(teamData)
-
-        if (teamData.eventId) {
-          const eventRes = await fetch(`/api/events/${teamData.eventId}`)
-          if (eventRes.ok) {
-            const eventData = await eventRes.json()
-            setEvent(eventData)
-          }
-        }
-      } catch (err: any) {
-        setError(err.message)
-      } finally {
-        setLoading(false)
-      }
-    }
-
-    if (teamId) {
-      fetchTeamDetails()
-    }
+    if (teamId) fetchData()
   }, [teamId])
 
-  const handleAddMember = async () => {
-    if (!newMemberEmail.trim()) {
-      alert("Please enter an email address")
-      return
-    }
-
-    setAddingMember(true)
+  const fetchData = async () => {
     try {
-      const res = await fetch(`/api/teams/${teamId}/members`, {
-        method: "POST",
+      const res = await fetch(`/api/teams/${teamId}`)
+      const teamData = await res.json()
+      setTeam(teamData)
+      setLoading(false)
+    } catch (error) {
+      console.error("Error fetching squad intel:", error)
+      setLoading(false)
+    }
+  }
+
+  const handleUpdateTaskStatus = async (taskId: string, newStatus: string) => {
+    setIsUpdatingTask(taskId)
+    try {
+      const res = await fetch(`/api/teams/tasks/${taskId}`, {
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email: newMemberEmail }),
+        body: JSON.stringify({ status: newStatus }),
       })
-
-      if (!res.ok) throw new Error("Failed to add member")
-
-      setNewMemberEmail("")
-      setShowAddMember(false)
-      const teamRes = await fetch(`/api/teams?id=${teamId}`)
-      if (teamRes.ok) {
-        const data = await teamRes.json()
-        setTeam(Array.isArray(data) ? data[0] : data)
-      }
-    } catch (err: any) {
-      alert(err.message)
+      if (!res.ok) throw new Error("Failed to update status")
+      
+      setTeam(prev => {
+        if (!prev) return prev
+        return {
+          ...prev,
+          tasks: prev.tasks.map(t => t.id === taskId ? { ...t, status: newStatus } : t)
+        }
+      })
+      toast.success(`Task status updated to ${newStatus}`)
+    } catch (error) {
+      toast.error("Failed to sync status update")
     } finally {
-      setAddingMember(false)
+      setIsUpdatingTask(null)
     }
   }
 
-  const handleRemoveMember = async (memberId: string) => {
-    if (!confirm("Remove this member from the team?")) return
-
-    try {
-      const res = await fetch(`/api/teams/${teamId}/members/${memberId}`, {
-        method: "DELETE",
-      })
-
-      if (!res.ok) throw new Error("Failed to remove member")
-
-      const teamRes = await fetch(`/api/teams?id=${teamId}`)
-      if (teamRes.ok) {
-        const data = await teamRes.json()
-        setTeam(Array.isArray(data) ? data[0] : data)
-      }
-    } catch (err: any) {
-      alert(err.message)
-    }
+  const handleAlarm = async (taskId: string, userId: string, userName: string) => {
+    // In a real system, this would call an API like POST /api/teams/tasks/${taskId}/alarm
+    // For now, we simulate the notification dispatch
+    toast.success(`Priority alarm transmitted to ${userName}`, {
+      description: "Asset will receive an immediate ping regarding their objectives.",
+      icon: <Zap className="w-4 h-4 text-amber-500" />
+    })
   }
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 flex items-center justify-center">
-        <div className="text-center">
-          <Loader2 className="w-12 h-12 text-blue-500 animate-spin mx-auto mb-4" />
-          <p className="text-gray-600">Loading team...</p>
+  if (loading || !team) return (
+     <HRLayout orgName="Loading...">
+        <div className="flex items-center justify-center h-[60vh]">
+          <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin" />
         </div>
-      </div>
-    )
-  }
-
-  if (error || !team) {
-    return (
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4">
-        <div className="max-w-4xl mx-auto">
-          <Link href="/dashboard/hr/teams" className="inline-flex items-center text-sm text-blue-600 hover:text-blue-700 mb-6">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Teams
-          </Link>
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>{error || "Team not found"}</AlertDescription>
-          </Alert>
-        </div>
-      </div>
-    )
-  }
+     </HRLayout>
+  )
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 p-4 md:p-8">
-      <div className="max-w-6xl mx-auto">
-        <div className="mb-6 flex items-center justify-between flex-wrap gap-3">
-          <Link href="/dashboard/hr/teams" className="inline-flex items-center text-sm text-muted-foreground hover:text-foreground transition">
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back
-          </Link>
-          <Button variant="outline" size="sm" onClick={() => router.push(`/dashboard/hr/teams/${teamId}/edit`)}>
-            <Edit2 className="mr-2 h-4 w-4" />
-            Edit
+    <HRLayout orgName={session?.user.name || "Organization"}>
+      <div className="max-w-7xl mx-auto pb-20 relative z-10">
+        
+        {/* Navigation & Actions */}
+        <div className="flex items-center justify-between mb-12">
+          <Button 
+            variant="ghost" 
+            onClick={() => router.push("/dashboard/hr/teams")}
+            className="text-white/40 hover:text-white transition-colors -ml-4"
+          >
+            <ArrowLeft className="w-4 h-4 mr-2" /> Operational Grid
+          </Button>
+          
+          <Button 
+            onClick={() => router.push(`/dashboard/hr/teams/${teamId}/edit`)}
+            className="bg-white/5 hover:bg-white/10 text-white border border-white/10 rounded-xl h-10 px-6 font-black uppercase text-[10px] tracking-widest transition-all"
+          >
+            <Edit3 className="w-4 h-4 mr-2 text-blue-400" /> Modify Parameters
           </Button>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          <div className="lg:col-span-2 space-y-6">
-            <Card className="shadow-lg border-0 overflow-hidden">
-              <div className="h-32 bg-gradient-to-r from-blue-600 to-blue-700"></div>
-              <CardContent className="pt-0 relative">
-                <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-4 -mt-16 mb-6 relative z-10">
-                  <div className="flex-1">
-                    <div className="w-24 h-24 bg-gradient-to-br from-blue-500 to-blue-600 rounded-xl shadow-lg flex items-center justify-center border-4 border-white">
-                      <Users className="w-12 h-12 text-white" />
+        {/* Squad Signature Header */}
+        <div className="bg-white/[0.02] border border-white/[0.08] rounded-[3rem] p-12 mb-12 relative overflow-hidden backdrop-blur-xl">
+           <div className="absolute top-0 right-0 w-[40%] h-full bg-gradient-to-l from-blue-600/5 to-transparent" />
+           <div className="absolute -bottom-24 -left-24 w-64 h-64 bg-blue-600/10 blur-[100px]" />
+           
+           <div className="flex flex-col md:flex-row items-center gap-10 relative z-10">
+              <div className="w-32 h-32 rounded-[2.5rem] bg-gradient-to-br from-blue-600 to-indigo-700 flex items-center justify-center text-white shadow-2xl shadow-blue-500/20 border-4 border-white/5">
+                 <Rocket className="w-16 h-16" />
+              </div>
+              
+              <div className="flex-1 text-center md:text-left">
+                 <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 mb-4">
+                    <h1 className="text-6xl font-black text-white tracking-tighter" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+                       {team.name.toUpperCase()}
+                    </h1>
+                    <Badge className="bg-emerald-500/10 text-emerald-400 border-emerald-500/20 py-1.5 px-3 rounded-lg uppercase font-black tracking-widest text-[10px]">
+                       Operational
+                    </Badge>
+                 </div>
+                 <p className="text-xl text-white/40 font-medium italic max-w-2xl leading-relaxed">
+                    "{team.purpose || "No operational summary defined for this squad signature."}"
+                 </p>
+                 
+                 <div className="flex flex-wrap justify-center md:justify-start gap-6 mt-8 border-t border-white/5 pt-8">
+                    <div className="flex items-center gap-3">
+                       <Users className="w-4 h-4 text-white/20" />
+                       <span className="text-sm font-black text-white tracking-widest uppercase">{team.members.length} Units</span>
                     </div>
-                  </div>
-                  <div className="flex-1">
-                    <h1 className="text-3xl md:text-4xl font-bold text-gray-900 mb-2">{team.name}</h1>
-                    <div className="flex flex-wrap gap-2">
-                      <Badge className={`${team.status === "active" ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-700 border-gray-300"} border`}>
-                        {team.status === "active" ? <CheckCircle className="w-3 h-3 mr-1" /> : <Clock className="w-3 h-3 mr-1" />}
-                        {team.status}
-                      </Badge>
-                      {team.eventId && <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200"><Calendar className="w-3 h-3 mr-1" />Linked</Badge>}
+                    <div className="flex items-center gap-3">
+                       <Target className="w-4 h-4 text-white/20" />
+                       <span className="text-sm font-black text-white tracking-widest uppercase">{team.tasks.length} Objectives</span>
                     </div>
-                  </div>
-                </div>
-                {team.purpose && <p className="text-gray-600">{team.purpose}</p>}
-              </CardContent>
-            </Card>
-
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <Card className="border-0 shadow-md hover:shadow-lg transition">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <Users className="w-8 h-8 text-blue-500 mx-auto mb-2" />
-                    <p className="text-3xl font-bold text-gray-900">{team.members?.length || 0}</p>
-                    <p className="text-sm text-gray-600">Members</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-md hover:shadow-lg transition">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <Target className="w-8 h-8 text-emerald-500 mx-auto mb-2" />
-                    <p className="text-3xl font-bold text-gray-900">{team.taskCount || 0}</p>
-                    <p className="text-sm text-gray-600">Tasks</p>
-                  </div>
-                </CardContent>
-              </Card>
-              <Card className="border-0 shadow-md hover:shadow-lg transition">
-                <CardContent className="pt-6">
-                  <div className="text-center">
-                    <Calendar className="w-8 h-8 text-orange-500 mx-auto mb-2" />
-                    <p className="text-lg font-bold text-gray-900">{team.createdAt ? new Date(team.createdAt).toLocaleDateString() : "N/A"}</p>
-                    <p className="text-sm text-gray-600">Created</p>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-
-            {team.eventId && event && (
-              <Card className="border-0 shadow-md bg-gradient-to-br from-purple-50 to-purple-100 border-l-4 border-purple-500">
-                <CardContent className="pt-6">
-                  <div className="flex items-start gap-4">
-                    <Calendar className="w-6 h-6 text-purple-600 flex-shrink-0 mt-1" />
-                    <div className="flex-1">
-                      <h3 className="font-semibold text-gray-900">Linked Event</h3>
-                      <p className="text-sm text-gray-700 mt-1">{event.title}</p>
-                      <p className="text-xs text-gray-600 mt-2">Start: {new Date(event.startAt).toLocaleDateString()}</p>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            <Card className="border-0 shadow-lg">
-              <CardHeader className="bg-gradient-to-r from-blue-600 to-blue-700 text-white rounded-t-xl pb-4">
-                <div className="flex items-center justify-between flex-wrap gap-4">
-                  <div className="flex items-center">
-                    <Users className="mr-2 h-5 w-5" />
-                    <div>
-                      <CardTitle>Members</CardTitle>
-                      <CardDescription className="text-blue-100 text-xs mt-1">{team.members?.length || 0} total</CardDescription>
-                    </div>
-                  </div>
-                  <Button onClick={() => setShowAddMember(!showAddMember)} className="bg-white text-blue-600 hover:bg-blue-50" size="sm">
-                    <UserPlus className="mr-2 h-4 w-4" />
-                    Add
-                  </Button>
-                </div>
-              </CardHeader>
-              <CardContent className="pt-6">
-                {showAddMember && (
-                  <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                    <div className="space-y-3">
-                      <Input type="email" value={newMemberEmail} onChange={(e) => setNewMemberEmail(e.target.value)} placeholder="email@example.com" className="focus:ring-2 focus:ring-blue-500" />
-                      <div className="flex gap-2">
-                        <Button onClick={handleAddMember} disabled={addingMember} className="flex-1 bg-blue-600 hover:bg-blue-700">
-                          {addingMember ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <UserPlus className="mr-2 h-4 w-4" />}
-                          {addingMember ? "Adding..." : "Add"}
-                        </Button>
-                        <Button variant="outline" onClick={() => { setShowAddMember(false); setNewMemberEmail("") }}>Cancel</Button>
+                    {team.eventId && (
+                      <div className="flex items-center gap-3">
+                         <Calendar className="w-4 h-4 text-purple-400" />
+                         <span className="text-sm font-black text-purple-400 tracking-widest uppercase">Event Linked</span>
                       </div>
-                    </div>
-                  </div>
-                )}
-
-                <div className="space-y-3">
-                  {team.members && team.members.length > 0 ? (
-                    team.members.map((member) => (
-                      <div key={member.id} className="flex items-center justify-between p-4 border border-gray-200 rounded-lg hover:bg-gray-50 transition">
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-3">
-                            <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-blue-600 rounded-full flex items-center justify-center text-white font-bold text-sm flex-shrink-0">
-                              {member.user.name?.charAt(0).toUpperCase()}
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <p className="font-semibold text-gray-900 truncate">{member.user.name}</p>
-                              <p className="text-sm text-gray-500 truncate">{member.user.email}</p>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="flex items-center gap-3 flex-shrink-0 ml-4">
-                          <Badge variant="outline" className="bg-blue-50 text-blue-700 border-blue-200">{member.role || "Member"}</Badge>
-                          <button onClick={() => handleRemoveMember(member.id)} className="p-2 text-red-500 hover:bg-red-50 rounded-lg transition" title="Remove">
-                            <Trash2 className="w-4 h-4" />
-                          </button>
-                        </div>
-                      </div>
-                    ))
-                  ) : (
-                    <div className="text-center py-8">
-                      <Users className="w-12 h-12 text-gray-300 mx-auto mb-3" />
-                      <p className="text-gray-500">No members</p>
-                      <Button variant="link" onClick={() => setShowAddMember(true)} className="text-blue-600 hover:text-blue-700 mt-2">
-                        Add first member
-                      </Button>
-                    </div>
-                  )}
-                </div>
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="lg:col-span-1">
-            <Card className="border-0 shadow-lg sticky top-6">
-              <CardHeader className="bg-gradient-to-r from-gray-800 to-gray-900 text-white rounded-t-xl">
-                <CardTitle className="text-lg">Info</CardTitle>
-              </CardHeader>
-              <CardContent className="pt-6 space-y-4">
-                <div>
-                  <p className="text-xs font-semibold text-gray-600 uppercase">ID</p>
-                  <code className="text-xs bg-gray-100 px-2 py-1 rounded block mt-1 font-mono break-all">{teamId}</code>
-                </div>
-                <div className="border-t pt-4">
-                  <p className="text-xs font-semibold text-gray-600 uppercase">Creator</p>
-                  <p className="text-sm text-gray-900 mt-1 font-medium">{team.createdBy || "N/A"}</p>
-                </div>
-                <div className="border-t pt-4">
-                  <p className="text-xs font-semibold text-gray-600 uppercase">Status</p>
-                  <Badge className={`mt-1 ${team.status === "active" ? "bg-emerald-100 text-emerald-700 border-emerald-300" : "bg-gray-100 text-gray-700 border-gray-300"} border`}>
-                    {team.status}
-                  </Badge>
-                </div>
-                {team.visibility && (
-                  <div className="border-t pt-4">
-                    <p className="text-xs font-semibold text-gray-600 uppercase">Visibility</p>
-                    <Badge variant="outline" className="mt-1">{team.visibility}</Badge>
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </div>
+                    )}
+                 </div>
+              </div>
+           </div>
         </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+           {/* Command Structure */}
+           <div className="lg:col-span-1 space-y-6">
+              <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2rem] p-8">
+                 <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Operational Command</h3>
+                    <Shield className="w-4 h-4 text-blue-500" />
+                 </div>
+                 <div className="space-y-4">
+                    {team.directors.map(dir => (
+                       <div key={dir.userId} className="flex items-center gap-4 p-4 rounded-2xl bg-blue-600/5 border border-blue-500/20">
+                          <div className="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white font-black text-xs">
+                             {dir.user.name[0]}
+                          </div>
+                          <div>
+                             <p className="text-sm font-black text-white">{dir.user.name}</p>
+                             <p className="text-[10px] font-black text-blue-400 uppercase tracking-widest">Squad Director</p>
+                          </div>
+                       </div>
+                    ))}
+                    {team.directors.length === 0 && (
+                       <div className="py-6 text-center border-2 border-dashed border-white/5 rounded-2xl">
+                          <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">De-centralized Unit</p>
+                       </div>
+                    )}
+                 </div>
+              </div>
+
+              <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2rem] p-8">
+                 <div className="flex items-center justify-between mb-8">
+                    <h3 className="text-sm font-black text-white/40 uppercase tracking-[0.3em]" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>Unit Personnel</h3>
+                    <Users className="w-4 h-4 text-white/10" />
+                 </div>
+                 <div className="space-y-3">
+                    {team.members.map(member => (
+                       <div key={member.id} className="flex items-center justify-between p-3 rounded-xl bg-white/[0.03] border border-white/5 group hover:bg-white/5 transition-all">
+                          <div className="flex items-center gap-4">
+                             <div className="w-8 h-8 rounded-lg bg-slate-700 flex items-center justify-center text-[10px] text-white/40 font-black">
+                                {member.user.name[0]}
+                             </div>
+                             <span className="text-xs font-black text-white/80">{member.user.name}</span>
+                          </div>
+                          {team.directors.some(d => d.userId === member.userId) && (
+                             <Shield className="w-3 h-3 text-blue-500" />
+                          )}
+                       </div>
+                    ))}
+                 </div>
+              </div>
+           </div>
+
+           {/* Objective Matrix */}
+           <div className="lg:col-span-2 space-y-6">
+              <div className="bg-white/[0.02] border border-white/[0.08] rounded-[2.5rem] p-10 min-h-[500px]">
+                 <div className="flex items-center justify-between mb-10">
+                    <div>
+                       <h2 className="text-3xl font-black text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>OBJECTIVE MATRIX</h2>
+                       <p className="text-white/20 text-[10px] font-black uppercase tracking-[0.3em] mt-1 text-emerald-400/60">Tactical Synchronization Active</p>
+                    </div>
+                    <div className="p-3 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400">
+                       <Zap className="w-6 h-6" />
+                    </div>
+                 </div>
+
+                 <div className="grid gap-4">
+                    {team.tasks.map(task => (
+                       <div key={task.id} className={`group rounded-[2rem] bg-white/[0.02] border transition-all duration-500 overflow-hidden ${expandedTaskId === task.id ? 'border-blue-500/50 bg-white/[0.04]' : 'border-white/5 hover:bg-white/[0.04] hover:border-blue-500/30'}`}>
+                          <div 
+                            onClick={() => setExpandedTaskId(expandedTaskId === task.id ? null : task.id)}
+                            className="p-6 flex flex-col md:flex-row md:items-center justify-between gap-6 cursor-pointer"
+                          >
+                             <div className="flex-1">
+                                <div className="flex items-center gap-3 mb-2">
+                                   <div className={`w-2 h-2 rounded-full ${
+                                      task.status === 'COMPLETED' ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]' : 
+                                      task.status === 'IN_PROGRESS' ? 'bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]' :
+                                      task.status === 'CANCELED' ? 'bg-red-500 shadow-[0_0_8px_rgba(239,68,68,0.5)]' :
+                                      'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.5)]'
+                                   }`} />
+                                   <h4 className="text-lg font-black text-white group-hover:text-blue-400 transition-colors">{task.title}</h4>
+                                </div>
+                                <div className="flex items-center gap-4">
+                                   <Badge className={`bg-white/5 text-white/40 text-[8px] font-black tracking-widest border-none`}>{task.priority}</Badge>
+                                   <span className="text-[10px] text-white/20 font-bold uppercase tracking-widest">{task.status.replace("_", " ")}</span>
+                                </div>
+                             </div>
+
+                             <div className="flex items-center gap-8">
+                                <div className="text-right hidden md:block">
+                                   <p className="text-[8px] font-black text-white/10 uppercase tracking-widest mb-1">Deployment</p>
+                                   <div className="flex -space-x-2 justify-end">
+                                      {task.assignments.map((as, i) => (
+                                         <div key={i} className="w-8 h-8 rounded-xl bg-blue-600 border-2 border-[#0a0a0f] flex items-center justify-center text-[10px] font-black text-white" title={as.user.name}>
+                                            {as.user.name[0]}
+                                         </div>
+                                      ))}
+                                   </div>
+                                </div>
+                                <button className={`p-3 rounded-xl bg-white/5 text-white/20 transition-all shadow-xl shadow-blue-600/0 ${expandedTaskId === task.id ? 'bg-blue-600 text-white shadow-blue-600/20' : 'group-hover:bg-blue-600 group-hover:text-white group-hover:shadow-blue-600/20'}`}>
+                                   <ChevronRight className={`w-4 h-4 transition-transform duration-300 ${expandedTaskId === task.id ? 'rotate-90' : ''}`} />
+                                </button>
+                             </div>
+                          </div>
+                          
+                          {/* Expanded Details */}
+                          <AnimatePresence>
+                             {expandedTaskId === task.id && (
+                                <motion.div 
+                                  initial={{ height: 0, opacity: 0 }}
+                                  animate={{ height: "auto", opacity: 1 }}
+                                  exit={{ height: 0, opacity: 0 }}
+                                  className="border-t border-white/10 bg-black/20"
+                                >
+                                   <div className="p-6 space-y-8">
+                                      {task.description && (
+                                         <div>
+                                            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-2">Objective Directive</p>
+                                            <p className="text-sm text-white/60 leading-relaxed font-medium">{task.description}</p>
+                                         </div>
+                                      )}
+
+                                      <div>
+                                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] mb-4">Assigned Assets</p>
+                                         <div className="space-y-3">
+                                            {task.assignments.map((as, i) => (
+                                               <div key={i} className="flex items-center justify-between p-4 bg-white/5 rounded-2xl border border-white/5">
+                                                  <div className="flex items-center gap-4">
+                                                     <div className="w-10 h-10 rounded-xl bg-blue-600/20 text-blue-400 flex items-center justify-center font-black">
+                                                        {as.user.name[0]}
+                                                     </div>
+                                                     <div>
+                                                        <p className="text-sm font-black text-white">{as.user.name}</p>
+                                                        <div className="flex items-center gap-2 mt-1">
+                                                           {as.acceptanceStatus === "ACCEPTED" && <Badge className="bg-emerald-500/10 text-emerald-400 border-none text-[8px] uppercase tracking-widest font-black shrink-0">Accepted</Badge>}
+                                                           {as.acceptanceStatus === "REJECTED" && <Badge className="bg-red-500/10 text-red-400 border-none text-[8px] uppercase tracking-widest font-black shrink-0">Rejected</Badge>}
+                                                           {as.acceptanceStatus === "PENDING" && <Badge className="bg-amber-500/10 text-amber-400 border-none text-[8px] uppercase tracking-widest font-black shrink-0">Pending</Badge>}
+                                                           <span className="text-[9px] text-white/30 uppercase tracking-widest">{as.status.replace("_", " ")}</span>
+                                                        </div>
+                                                     </div>
+                                                  </div>
+                                                  
+                                                  <Button 
+                                                    size="sm"
+                                                    variant="ghost"
+                                                    disabled={as.acceptanceStatus === "ACCEPTED" && as.status === "COMPLETED"}
+                                                    onClick={(e) => { e.stopPropagation(); handleAlarm(task.id, as.userId, as.user.name); }}
+                                                    className="h-10 px-4 bg-amber-500/10 hover:bg-amber-500/20 text-amber-500 hover:text-amber-400 font-black uppercase text-[9px] tracking-widest rounded-xl transition-all"
+                                                  >
+                                                     <AlertCircle className="w-3.5 h-3.5 mr-2" /> Alarm
+                                                  </Button>
+                                               </div>
+                                            ))}
+                                         </div>
+                                      </div>
+
+                                      <div className="pt-6 border-t border-white/5 flex flex-wrap items-center gap-4">
+                                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">Override Status:</p>
+                                         <div className="flex gap-2">
+                                            {["TODO", "IN_PROGRESS", "COMPLETED", "CANCELED"].map(status => (
+                                               <Button
+                                                 key={status}
+                                                 disabled={isUpdatingTask === task.id || task.status === status}
+                                                 onClick={(e) => { e.stopPropagation(); handleUpdateTaskStatus(task.id, status); }}
+                                                 className={`h-8 px-4 text-[9px] font-black uppercase tracking-widest rounded-lg transition-all ${
+                                                   task.status === status 
+                                                   ? 'bg-white/10 text-white cursor-default' 
+                                                   : 'bg-white/5 hover:bg-blue-600 hover:text-white border-none'
+                                                 }`}
+                                               >
+                                                  {isUpdatingTask === task.id && task.status !== status ? '...' : status.replace("_", " ")}
+                                               </Button>
+                                            ))}
+                                         </div>
+                                      </div>
+                                   </div>
+                                </motion.div>
+                             )}
+                          </AnimatePresence>
+                       </div>
+                    ))}
+                    {team.tasks.length === 0 && (
+                      <div className="py-24 text-center border-2 border-dashed border-white/5 rounded-[2rem]">
+                         <Target className="w-12 h-12 text-white/5 mx-auto mb-4" />
+                         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.4em]">Zero Active Objectives</p>
+                      </div>
+                    )}
+                 </div>
+              </div>
+           </div>
+        </div>
+
       </div>
-    </div>
+    </HRLayout>
   )
 }

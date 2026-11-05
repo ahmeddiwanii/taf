@@ -24,15 +24,15 @@ export default function NewUserPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [success, setSuccess] = useState(false)
   const [error, setError] = useState<string | null>(null)
-  const [startups, setStartups] = useState<any[]>([])
-  const [isLoadingStartups, setIsLoadingStartups] = useState(true)
-  const [selectedStartupId, setSelectedStartupId] = useState<string>("")
+  const [organizations, setOrganizations] = useState<any[]>([])
+  const [isLoadingOrganizations, setIsLoadingOrganizations] = useState(true)
+  const [selectedOrganizationId, setSelectedOrganizationId] = useState<string>("")
 
   useEffect(() => {
     if (status === "unauthenticated") router.push("/auth/login")
     if (status === "authenticated" && session.user.role === "SUPERADMIN") {
       fetchUsers()
-      fetchStartups()
+      fetchOrganizations()
     }
   }, [status, router, session])
 
@@ -47,16 +47,16 @@ export default function NewUserPage() {
     }
   }
 
-  const fetchStartups = async () => {
+  const fetchOrganizations = async () => {
     try {
-      const response = await fetch("/api/startups")
-      if (!response.ok) throw new Error("Failed to fetch startups")
+      const response = await fetch("/api/organizations")
+      if (!response.ok) throw new Error("Failed to fetch organizations")
       const data = await response.json()
-      setStartups(data)
+      setOrganizations(data)
     } catch {
-      setError("Failed to load startups. Please try again.")
+      setError("Failed to load organizations. Please try again.")
     } finally {
-      setIsLoadingStartups(false)
+      setIsLoadingOrganizations(false)
     }
   }
 
@@ -64,7 +64,7 @@ export default function NewUserPage() {
     setSelectedUserId(userId)
     const user = users.find((u) => u.id === userId)
     setSelectedRole(user?.role)
-    setSelectedStartupId(user?.startupId || "")
+    setSelectedOrganizationId(user?.organizationId || "")
     setSuccess(false)
     setError(null)
   }
@@ -75,14 +75,14 @@ export default function NewUserPage() {
       setError("Please select a user and a role.")
       return
     }
-    if ((selectedRole === "HR" || selectedRole === "EMPLOYEE") && !selectedStartupId) {
-      setError("Please select a startup for this role.")
+    if ((selectedRole === "HR" || selectedRole === "MEMBER") && !selectedOrganizationId) {
+      setError("Please select a organization for this role.")
       return
     }
     setIsLoading(true)
     setError(null)
     setSuccess(false)
-    const payload = { role: selectedRole, startupId: (selectedRole === "HR" || selectedRole === "EMPLOYEE") ? selectedStartupId : null }
+    const payload = { role: selectedRole, organizationId: (selectedRole === "HR" || selectedRole === "MEMBER") ? selectedOrganizationId : null }
     console.log("Submitting payload to /api/users/" + selectedUserId + "/role:", payload)
     try {
       const response = await fetch(`/api/users/${selectedUserId}/role`, {
@@ -164,18 +164,18 @@ export default function NewUserPage() {
                     <Label htmlFor="role-superadmin" className="mr-4">Super Admin</Label>
                     <RadioGroupItem value="HR" id="role-hr" />
                     <Label htmlFor="role-hr" className="mr-4">HR Manager</Label>
-                    <RadioGroupItem value="EMPLOYEE" id="role-employee" />
-                    <Label htmlFor="role-employee">Employee</Label>
+                    <RadioGroupItem value="MEMBER" id="role-member" />
+                    <Label htmlFor="role-member">Member</Label>
                   </RadioGroup>
                 </div>
-                {(selectedRole === "HR" || selectedRole === "EMPLOYEE") && (
+                {(selectedRole === "HR" || selectedRole === "MEMBER") && (
                   <div className="space-y-2">
-                    <Label htmlFor="startup">Startup</Label>
-                    <div className="text-xs text-gray-500 mb-1">Selected Startup ID: {JSON.stringify(selectedStartupId)}</div>
-                    {isLoadingStartups ? (
-                      <Input disabled value="Loading startups..." />
-                    ) : startups.length === 0 ? (
-                      <Input disabled value="No startups available" />
+                    <Label htmlFor="organization">Organization</Label>
+                    <div className="text-xs text-gray-500 mb-1">Selected Organization ID: {JSON.stringify(selectedOrganizationId)}</div>
+                    {isLoadingOrganizations ? (
+                      <Input disabled value="Loading organizations..." />
+                    ) : organizations.length === 0 ? (
+                      <Input disabled value="No organizations available" />
                     ) : (
                       <div className="overflow-x-auto">
                         <table className="min-w-full border text-sm">
@@ -186,17 +186,17 @@ export default function NewUserPage() {
                             </tr>
                           </thead>
                           <tbody>
-                            {startups.map((startup) => (
-                              <tr key={startup.id} className={selectedStartupId === startup.id ? "bg-blue-100" : ""}>
-                                <td className="px-2 py-1 border">{startup.name}</td>
+                            {organizations.map((organization) => (
+                              <tr key={organization.id} className={selectedOrganizationId === organization.id ? "bg-blue-100" : ""}>
+                                <td className="px-2 py-1 border">{organization.name}</td>
                                 <td className="px-2 py-1 border text-center">
                                   <Button 
                                     type="button" 
                                     size="sm" 
-                                    variant={selectedStartupId === startup.id ? "default" : "outline"}
-                                    onClick={() => setSelectedStartupId(startup.id)}
+                                    variant={selectedOrganizationId === organization.id ? "default" : "outline"}
+                                    onClick={() => setSelectedOrganizationId(organization.id)}
                                   >
-                                    {selectedStartupId === startup.id ? "Selected" : "Select"}
+                                    {selectedOrganizationId === organization.id ? "Selected" : "Select"}
                                   </Button>
                                 </td>
                               </tr>
@@ -209,7 +209,7 @@ export default function NewUserPage() {
                 )}
                 <Button 
                   type="submit" 
-                  disabled={isLoading || ((selectedRole === "HR" || selectedRole === "EMPLOYEE") && !selectedStartupId)} 
+                  disabled={isLoading || ((selectedRole === "HR" || selectedRole === "MEMBER") && !selectedOrganizationId)} 
                   className="w-full"
                 >
                   {isLoading ? "Updating..." : "Update Role"}

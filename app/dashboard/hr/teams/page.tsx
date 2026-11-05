@@ -4,23 +4,29 @@ import { useState, useEffect } from "react"
 import { useRouter } from "next/navigation"
 import { useSession } from "next-auth/react"
 import { UserRole } from "../../../../types/user"
-import { DashboardLayout } from "../../../../components/layout/dashboard-layout"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card"
-import { Button } from "../../../../components/ui/button"
-import { Input } from "../../../../components/ui/input"
-import { Badge } from "../../../../components/ui/badge"
-import {
-  Search,
-  Users,
-  Plus,
-  Calendar,
-  Briefcase,
-  Eye,
-  Edit,
-  CheckCircle,
-  Trash2,
+import { HRLayout } from "@/components/layout/hr-layout"
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card"
+import { Button } from "@/components/ui/button"
+import { Input } from "@/components/ui/input"
+import { Badge } from "@/components/ui/badge"
+import { toast } from "sonner"
+import { 
+  Search, 
+  Users, 
+  Plus, 
+  Calendar, 
+  Briefcase, 
+  Eye, 
+  Edit, 
+  CheckCircle, 
+  Trash2, 
   AlertCircle,
+  MoreVertical,
+  Target,
+  Rocket,
+  Zap
 } from "lucide-react"
+import { motion, AnimatePresence } from "framer-motion"
 
 interface Team {
   id: string
@@ -30,7 +36,8 @@ interface Team {
   status: string
   eventId?: string
   projectId?: string
-  members: number
+  members: any[]
+  memberCount: number
   taskCount: number
   createdBy: string
 }
@@ -58,6 +65,7 @@ export default function TeamsPage() {
   const [error, setError] = useState<string | null>(null)
   const [isCreating, setIsCreating] = useState(false)
   const [isDeleting, setIsDeleting] = useState<string | null>(null)
+  const [actionMenuId, setActionMenuId] = useState<string | null>(null)
 
   useEffect(() => {
     if (status === "unauthenticated") {
@@ -93,8 +101,8 @@ export default function TeamsPage() {
   const fetchTeamsAndEvents = async () => {
     try {
       const [teamsRes, eventsRes] = await Promise.all([
-        fetch(`/api/teams?startupId=${session?.user.startupId}`),
-        fetch(`/api/events?startupId=${session?.user.startupId}`),
+        fetch(`/api/teams?organizationId=${session?.user.organizationId}`),
+        fetch(`/api/events?organizationId=${session?.user.organizationId}`),
       ])
 
       if (!teamsRes.ok || !eventsRes.ok) throw new Error("Failed to fetch data")
@@ -102,9 +110,10 @@ export default function TeamsPage() {
       const teamsData = await teamsRes.json()
       const eventsResponse = await eventsRes.json()
 
-      setTeams(teamsData || [])
-      setFilteredTeams(teamsData || [])
-      // Events API returns { events, pagination } - extract the events array
+      const teamsArray = teamsData?.teams || (Array.isArray(teamsData) ? teamsData : [])
+      
+      setTeams(teamsArray)
+      setFilteredTeams(teamsArray)
       setEvents(eventsResponse?.events || [])
       setIsLoading(false)
     } catch (error) {
@@ -114,22 +123,18 @@ export default function TeamsPage() {
     }
   }
 
-  const handleDeleteTeam = async (teamId: string, teamName: string) => {
-    if (!confirm(`Are you sure you want to delete "${teamName}"? This action cannot be undone.`)) return
-
-    setIsDeleting(teamId)
+  const handleDeleteTeam = async (teamId: string) => {
     try {
       const res = await fetch(`/api/teams/${teamId}`, {
         method: "DELETE",
       })
 
       if (!res.ok) throw new Error("Failed to delete team")
-
-      // Remove team from list
-      setTeams(teams.filter((t) => t.id !== teamId))
-      alert("Team deleted successfully")
+      
+      toast.success("Squad Devalidated")
+      fetchTeamsAndEvents()
     } catch (error: any) {
-      alert(error.message || "Error deleting team")
+      toast.error("Recall Failed")
     } finally {
       setIsDeleting(null)
     }
@@ -144,15 +149,8 @@ export default function TeamsPage() {
   }
 
   const handleCreateTeam = async () => {
-    if (!newTeam.name.trim()) {
-      alert("Team name is required")
-      return
-    }
-
-    if (newTeam.type === "event-based" && !selectedEvent) {
-      alert("Please select an event for event-based teams")
-      return
-    }
+    if (!newTeam.name.trim()) return
+    if (newTeam.type === "event-based" && !selectedEvent) return
 
     setIsCreating(true)
     try {
@@ -162,7 +160,7 @@ export default function TeamsPage() {
         body: JSON.stringify({
           name: newTeam.name,
           purpose: newTeam.purpose,
-          startupId: session?.user.startupId,
+          organizationId: session?.user.organizationId,
           eventId: newTeam.type === "event-based" ? selectedEvent : null,
         }),
       })
@@ -189,362 +187,486 @@ export default function TeamsPage() {
 
   if (isLoading) {
     return (
-      <DashboardLayout role={(session?.user.role || "HR") as UserRole}>
-        <div className="flex justify-center items-center py-24">
+      <HRLayout orgName={session?.user?.name || "Organization"}>
+        <div className="flex justify-center items-center py-24 relative z-10">
           <div className="space-y-4 text-center">
-            <div className="h-12 w-12 animate-spin rounded-full border-4 border-primary border-t-transparent mx-auto"></div>
-            <p className="text-gray-600">Loading teams...</p>
+             <div className="w-16 h-16 border-4 border-blue-500/20 border-t-blue-500 rounded-full animate-spin mx-auto" />
+             <p className="text-white/40 font-bold tracking-widest uppercase text-xs">Syncing Command Center...</p>
           </div>
         </div>
-      </DashboardLayout>
-    )
-  }
-
-  if (error) {
-    return (
-      <DashboardLayout role={(session?.user.role || "HR") as UserRole}>
-        <Card className="border-red-200 bg-red-50">
-          <CardHeader>
-            <CardTitle className="text-red-700">Error</CardTitle>
-            <CardDescription className="text-red-600">{error}</CardDescription>
-          </CardHeader>
-        </Card>
-      </DashboardLayout>
+      </HRLayout>
     )
   }
 
   return (
-    <DashboardLayout role={(session?.user.role || "HR") as UserRole}>
-      <div className="space-y-6">
+    <HRLayout orgName={session?.user?.name || "Organization"}>
+      <div className="space-y-8 relative z-10">
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-          <div>
-            <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-600 to-blue-800 bg-clip-text text-transparent">
-              Teams & Groups
-            </h1>
-            <p className="text-gray-600 mt-1">Organize teams, manage groups, and assign tasks</p>
-          </div>
-          <Button
-            onClick={() => setShowCreateModal(true)}
-            className="bg-blue-600 hover:bg-blue-700 text-white gap-2 shadow-lg"
+        <div className="flex flex-col gap-6 md:flex-row md:items-end md:justify-between mb-12">
+          <motion.div 
+            initial={{ opacity: 0, x: -20 }}
+            animate={{ opacity: 1, x: 0 }}
           >
-            <Plus className="w-4 h-4" />
-            Create Team
-          </Button>
+            <h1 className="text-5xl font-black text-white tracking-tighter mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
+              TEAM <span className="text-blue-500">INTEL</span>
+            </h1>
+            <p className="text-white/40 font-medium tracking-wide">Configure operational squads and deployment units</p>
+          </motion.div>
+          
+          <motion.div
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            className="flex gap-4"
+          >
+            <Button
+              onClick={() => router.push("/dashboard/hr/teams/orchestrator")}
+              variant="outline"
+              className="h-14 px-8 bg-white/5 hover:bg-white/10 text-white gap-3 rounded-2xl border-white/10 font-black transition-all"
+            >
+              <Zap className="w-5 h-5 text-blue-400" />
+              SQUAD ORCHESTRATOR
+            </Button>
+            <Button
+              onClick={() => setShowCreateModal(true)}
+              className="h-14 px-8 bg-blue-600 hover:bg-blue-700 text-white gap-3 rounded-2xl shadow-xl shadow-blue-600/20 border border-blue-500/50 font-black transition-all hover:scale-105 active:scale-95"
+            >
+              <Plus className="w-5 h-5" />
+              DEPLOY NEW SQUAD
+            </Button>
+          </motion.div>
         </div>
 
         {/* Stats Grid */}
-        <div className="grid gap-4 md:grid-cols-4">
-          <Card className="bg-gradient-to-br from-blue-50 to-blue-100 border-blue-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Total Teams</p>
-                  <p className="text-3xl font-bold text-blue-700 mt-2">{stats.total}</p>
-                </div>
-                <Users className="w-10 h-10 text-blue-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-purple-50 to-purple-100 border-purple-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Event-Based</p>
-                  <p className="text-3xl font-bold text-purple-700 mt-2">{stats.eventBased}</p>
-                </div>
-                <Calendar className="w-10 h-10 text-purple-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-green-50 to-green-100 border-green-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Independent</p>
-                  <p className="text-3xl font-bold text-green-700 mt-2">{stats.independent}</p>
-                </div>
-                <Briefcase className="w-10 h-10 text-green-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card className="bg-gradient-to-br from-emerald-50 to-emerald-100 border-emerald-200">
-            <CardContent className="pt-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm font-medium text-gray-600">Active</p>
-                  <p className="text-3xl font-bold text-emerald-700 mt-2">{stats.active}</p>
-                </div>
-                <CheckCircle className="w-10 h-10 text-emerald-600 opacity-20" />
-              </div>
-            </CardContent>
-          </Card>
+        <div className="grid gap-6 md:grid-cols-4">
+          <StatCard icon={Users} label="TOTAL ASSETS" value={stats.total} color="blue" />
+          <StatCard icon={Calendar} label="EVENT BASED" value={stats.eventBased} color="purple" />
+          <StatCard icon={Briefcase} label="STANDALONE" value={stats.independent} color="emerald" />
+          <StatCard icon={CheckCircle} label="OPERATIONAL" value={stats.active} color="amber" />
         </div>
 
         {/* Search & Filter */}
-        <Card className="border-gray-200 shadow-sm">
-          <CardHeader>
-            <CardTitle className="text-lg">Search & Filter</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="relative">
-              <Search className="absolute left-3 top-3 w-5 h-5 text-gray-400" />
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-end">
+          <div className="lg:col-span-2 space-y-2">
+            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Registry Search</p>
+            <div className="relative group">
+              <Search className="absolute left-5 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20 group-focus-within:text-blue-500 transition-colors" />
               <Input
-                placeholder="Search teams..."
+                placeholder="Locate squads in the database..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10 bg-gray-50 border-gray-200 focus:bg-white"
+                className="h-16 pl-14 bg-white/[0.03] border-white/[0.08] focus:border-blue-500/50 text-white rounded-2xl transition-all backdrop-blur-xl group-hover:bg-white/[0.05]"
               />
             </div>
+          </div>
 
-            <div className="space-y-3">
-              <div className="flex gap-2 flex-wrap">
-                {(["all", "event-based", "independent"] as const).map((filter) => (
-                  <Button
-                    key={filter}
-                    variant={filterType === filter ? "default" : "outline"}
-                    size="sm"
-                    onClick={() => {
-                      setFilterType(filter)
-                      setSelectedEvent(null)
-                    }}
-                    className={
-                      filterType === filter ? "bg-blue-600 hover:bg-blue-700" : "border-gray-300 hover:bg-gray-50"
-                    }
-                  >
-                    {filter === "all"
-                      ? "All Teams"
-                      : filter === "event-based"
-                        ? "Event-Based"
-                        : "Independent"}{" "}
-                    ({filter === "all" ? stats.total : filter === "event-based" ? stats.eventBased : stats.independent})
-                  </Button>
-                ))}
-              </div>
+          <div className="space-y-2">
+            <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Deployment Type</p>
+            <div className="flex p-1.5 bg-white/[0.03] border border-white/[0.08] rounded-2xl backdrop-blur-xl h-16 items-center">
+              {(["all", "event-based", "independent"] as const).map((filter) => (
+                <button
+                  key={filter}
+                  onClick={() => { setFilterType(filter); setSelectedEvent(null); }}
+                  className={`flex-1 h-full rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${
+                    filterType === filter 
+                    ? "bg-blue-600 text-white shadow-lg shadow-blue-600/20" 
+                    : "text-white/30 hover:text-white hover:bg-white/5"
+                  }`}
+                >
+                  {filter === "all" ? "Grid" : filter === "event-based" ? "Events" : "Direct"}
+                </button>
+              ))}
             </div>
-          </CardContent>
-        </Card>
+          </div>
+        </div>
+
+        {/* Event Filter (Visible only when 'event-based' is selected) */}
+        <AnimatePresence>
+          {filterType === "event-based" && events.length > 0 && (
+            <motion.div
+              initial={{ opacity: 0, height: 0, marginTop: 0 }}
+              animate={{ opacity: 1, height: "auto", marginTop: 24 }}
+              exit={{ opacity: 0, height: 0, marginTop: 0 }}
+              className="flex gap-3 overflow-x-auto pb-4 custom-scrollbar"
+            >
+              <button
+                onClick={() => setSelectedEvent(null)}
+                className={`px-6 py-3 rounded-xl border text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all flex-shrink-0 ${
+                  selectedEvent === null 
+                  ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/20" 
+                  : "bg-white/5 text-white/40 border-white/10 hover:border-white/20 hover:text-white"
+                }`}
+              >
+                All Events
+              </button>
+              {events.map((event) => (
+                <button
+                  key={event.id}
+                  onClick={() => setSelectedEvent(event.id)}
+                  className={`px-6 py-3 rounded-xl border text-xs font-black uppercase tracking-widest whitespace-nowrap transition-all flex-shrink-0 ${
+                    selectedEvent === event.id 
+                    ? "bg-blue-500/20 text-blue-400 border-blue-500 shadow-lg shadow-blue-500/10" 
+                    : "bg-white/5 text-white/40 border-white/10 hover:border-white/20 hover:text-white"
+                  }`}
+                >
+                  {event.title}
+                </button>
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Teams Grid */}
-        {filteredTeams.length === 0 ? (
-          <Card className="border-gray-200">
-            <CardContent className="py-12">
-              <div className="text-center space-y-3">
-                <Users className="w-12 h-12 text-gray-300 mx-auto" />
-                <p className="text-gray-600 font-medium">No teams found</p>
-                <p className="text-gray-400 text-sm">
-                  {searchQuery ? "Try adjusting your search" : "Create your first team to get started"}
-                </p>
+        <AnimatePresence mode="wait">
+          {filteredTeams.length === 0 ? (
+            <motion.div 
+              key="empty"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -20 }}
+              className="py-32 text-center bg-white/[0.02] border border-white/[0.08] rounded-[2rem] backdrop-blur-xl"
+            >
+                <Target className="w-20 h-20 text-white/5 mx-auto mb-6" />
+                <p className="text-xl font-black text-white/40 tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>No Active Squads Detected</p>
+                <p className="text-sm text-white/20 mt-2 mb-8 max-w-sm mx-auto">The operational grid is empty. Initialize your first team to begin assignment protocols.</p>
                 <Button
                   onClick={() => setShowCreateModal(true)}
-                  className="mt-4 bg-blue-600 hover:bg-blue-700 text-white"
+                  className="h-12 px-8 bg-white/5 hover:bg-blue-600 border border-white/10 hover:border-blue-500 text-white font-bold rounded-xl transition-all"
                 >
-                  <Plus className="w-4 h-4 mr-2" />
-                  Create Team
+                  INITIALIZE SQUAD
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ) : (
-          <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
-            {filteredTeams.map((team) => (
-              <Card
-                key={team.id}
-                className="group hover:shadow-lg hover:border-blue-200 transition-all duration-300 overflow-hidden"
-              >
-                <CardContent className="pt-6 pb-4">
-                  {/* Header */}
-                  <div className="flex items-start justify-between mb-4">
-                    <div className="flex-1">
-                      <h3 className="font-bold text-lg text-gray-900 group-hover:text-blue-600 transition-colors">
-                        {team.name}
-                      </h3>
-                      {team.purpose && (
-                        <p className="text-sm text-gray-500 truncate">{team.purpose}</p>
-                      )}
-                    </div>
-                    <Badge
-                      className={`ml-2 ${
-                        team.status === "active"
-                          ? "bg-green-100 text-green-800 border-green-200"
-                          : "bg-gray-100 text-gray-800 border-gray-200"
-                      }`}
-                      variant="outline"
-                    >
-                      {team.status}
-                    </Badge>
-                  </div>
-
-                  {/* Type Badge */}
-                  <div className="mb-4 pb-4 border-b border-gray-100">
-                    {team.eventId ? (
-                      <Badge className="bg-purple-100 text-purple-800 border-purple-200 gap-2" variant="outline">
-                        <Calendar className="w-3 h-3" />
-                        Event-Based
-                      </Badge>
-                    ) : (
-                      <Badge className="bg-blue-100 text-blue-800 border-blue-200 gap-2" variant="outline">
-                        <Briefcase className="w-3 h-3" />
-                        Independent
-                      </Badge>
-                    )}
-                  </div>
-
-                  {/* Stats */}
-                  <div className="grid grid-cols-2 gap-2 mb-4 pb-4 border-b border-gray-100">
-                    <div className="text-center">
-                      <p className="text-xs text-gray-600">Members</p>
-                      <p className="text-xl font-bold text-gray-900">{team.members}</p>
-                    </div>
-                    <div className="text-center">
-                      <p className="text-xs text-gray-600">Tasks</p>
-                      <p className="text-xl font-bold text-gray-900">{team.taskCount}</p>
-                    </div>
-                  </div>
-
-                  {/* Actions */}
-                  <div className="flex gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="flex-1 text-blue-600 hover:bg-blue-50 border-blue-200 gap-2"
-                      onClick={() => handleManageTeam(team.id)}
-                    >
-                      <Eye className="w-4 h-4" />
-                      Manage
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-gray-600 hover:bg-gray-50 border-gray-200"
-                      onClick={() => handleEditTeam(team.id)}
-                    >
-                      <Edit className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="text-red-600 hover:bg-red-50 border-red-200"
-                      onClick={() => handleDeleteTeam(team.id, team.name)}
-                      disabled={isDeleting === team.id}
-                    >
-                      {isDeleting === team.id ? "..." : <Trash2 className="w-4 h-4" />}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        )}
+            </motion.div>
+          ) : (
+            <motion.div 
+              key="grid"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="grid gap-6 md:grid-cols-2 lg:grid-cols-3"
+            >
+              {filteredTeams.map((team, index) => (
+                <TeamCard 
+                  key={team.id} 
+                  team={team} 
+                  index={index} 
+                  onManage={() => handleManageTeam(team.id)}
+                  onEdit={() => handleEditTeam(team.id)}
+                  onDelete={() => setIsDeleting(team.id)}
+                  isActionMenuOpen={actionMenuId === team.id}
+                  setActionMenuId={setActionMenuId}
+                />
+              ))}
+            </motion.div>
+          )}
+        </AnimatePresence>
       </div>
 
       {/* Create Team Modal */}
-      {showCreateModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-40 p-4 overflow-y-auto">
-          <Card className="w-full max-w-md my-8">
-            <CardHeader>
-              <CardTitle>Create New Team</CardTitle>
-              <CardDescription>Create a team for your events or as a standalone group</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <label className="text-sm font-medium">Team Name *</label>
-                <Input
-                  placeholder="e.g., Marketing Team"
-                  value={newTeam.name}
-                  onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium">Purpose/Description</label>
-                <Input
-                  placeholder="What is this team for?"
-                  value={newTeam.purpose}
-                  onChange={(e) => setNewTeam({ ...newTeam, purpose: e.target.value })}
-                />
-              </div>
-              <div>
-                <label className="text-sm font-medium mb-2 block">Type</label>
-                <div className="flex gap-2">
-                  <Button
-                    variant={newTeam.type === "event-based" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setNewTeam({ ...newTeam, type: "event-based" })}
-                  >
-                    <Calendar className="w-4 h-4 mr-2" />
-                    Event-Based
-                  </Button>
-                  <Button
-                    variant={newTeam.type === "independent" ? "default" : "outline"}
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => setNewTeam({ ...newTeam, type: "independent" })}
-                  >
-                    <Briefcase className="w-4 h-4 mr-2" />
-                    Independent
-                  </Button>
-                </div>
+      <AnimatePresence>
+        {showCreateModal && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
+             <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+              onClick={() => setShowCreateModal(false)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-lg bg-[#0a0a10] border border-white/10 rounded-[2.5rem] shadow-2xl p-10 overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-blue-600 to-indigo-600" />
+              <div className="flex items-center gap-4 mb-8">
+                 <div className="w-14 h-14 rounded-2xl bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                    <Rocket className="w-7 h-7 text-blue-400" />
+                 </div>
+                 <div>
+                    <h3 className="text-2xl font-black text-white leading-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>SQUAD INITIALIZATION</h3>
+                    <p className="text-white/40 text-[10px] font-black uppercase tracking-widest mt-0.5">Define new operational parameters</p>
+                 </div>
               </div>
 
-              {/* Event Selection for Event-Based Teams */}
-              {newTeam.type === "event-based" && (
-                <div>
-                  <label className="text-sm font-medium mb-2 block">Select Event *</label>
-                  {events.length === 0 ? (
-                    <div className="p-3 bg-amber-50 border border-amber-200 rounded text-sm text-amber-800">
-                      No events available. Create an event first.
-                    </div>
-                  ) : (
-                    <div className="space-y-2 max-h-48 overflow-y-auto">
-                      {events.map((event: any) => (
+              <div className="space-y-6">
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Team Designation</label>
+                  <Input
+                    placeholder="e.g., Strike Team Alpha"
+                    value={newTeam.name}
+                    onChange={(e) => setNewTeam({ ...newTeam, name: e.target.value })}
+                    className="h-14 bg-white/5 border-white/10 text-white rounded-xl focus:border-blue-500/50"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Mission Purpose</label>
+                  <Input
+                    placeholder="Brief description of objectives"
+                    value={newTeam.purpose}
+                    onChange={(e) => setNewTeam({ ...newTeam, purpose: e.target.value })}
+                    className="h-14 bg-white/5 border-white/10 text-white rounded-xl focus:border-blue-500/50"
+                  />
+                </div>
+
+                <div className="space-y-3">
+                  <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Operational Type</label>
+                  <div className="flex gap-4">
+                    <button
+                      onClick={() => setNewTeam({ ...newTeam, type: "event-based" })}
+                      className={`flex-1 h-14 rounded-xl border flex items-center justify-center gap-2 font-bold transition-all ${
+                        newTeam.type === "event-based" 
+                        ? "bg-blue-600 text-white border-blue-500 shadow-lg shadow-blue-600/20" 
+                        : "bg-white/5 text-white/30 border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <Calendar className="w-4 h-4" />
+                      EVENT-LINKED
+                    </button>
+                    <button
+                      onClick={() => setNewTeam({ ...newTeam, type: "independent" })}
+                      className={`flex-1 h-14 rounded-xl border flex items-center justify-center gap-2 font-bold transition-all ${
+                        newTeam.type === "independent" 
+                        ? "bg-emerald-600 text-white border-emerald-500 shadow-lg shadow-emerald-600/20" 
+                        : "bg-white/5 text-white/30 border-white/10 hover:border-white/20"
+                      }`}
+                    >
+                      <Briefcase className="w-4 h-4" />
+                      STANDALONE
+                    </button>
+                  </div>
+                </div>
+
+                {newTeam.type === "event-based" && (
+                  <div className="space-y-2">
+                    <label className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em] ml-1">Select Operations Center</label>
+                    <div className="space-y-2 max-h-40 overflow-y-auto pr-2 custom-scrollbar">
+                      {events.map((event) => (
                         <button
                           key={event.id}
                           onClick={() => setSelectedEvent(event.id)}
-                          className={`w-full p-3 border rounded-lg text-left transition-all ${
+                          className={`w-full p-4 border rounded-xl text-left transition-all group ${
                             selectedEvent === event.id
-                              ? "bg-blue-50 border-blue-500 ring-2 ring-blue-200"
-                              : "bg-white border-gray-200 hover:border-blue-300"
+                              ? "bg-blue-500/10 border-blue-500 ring-1 ring-blue-500/50"
+                              : "bg-white/5 border-white/10 hover:border-white/20"
                           }`}
                         >
-                          <p className="font-medium text-sm">{event.title}</p>
-                          <p className="text-xs text-gray-600">
-                            {new Date(event.startAt).toLocaleDateString()}
-                          </p>
+                          <div className="flex justify-between items-center">
+                             <p className={`font-black tracking-tight ${selectedEvent === event.id ? "text-blue-400" : "text-white"}`}>{event.title}</p>
+                             <div className={`w-2 h-2 rounded-full ${selectedEvent === event.id ? "bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.6)]" : "bg-white/10"}`} />
+                          </div>
                         </button>
                       ))}
                     </div>
-                  )}
-                </div>
-              )}
+                  </div>
+                )}
 
-              <div className="flex gap-2 pt-4">
-                <Button
-                  variant="outline"
-                  className="flex-1"
-                  onClick={() => {
-                    setShowCreateModal(false)
-                    setSelectedEvent(null)
-                  }}
-                  disabled={isCreating}
-                >
-                  Cancel
-                </Button>
-                <Button
-                  className="flex-1 bg-blue-600 hover:bg-blue-700"
-                  onClick={handleCreateTeam}
-                  disabled={isCreating}
-                >
-                  {isCreating ? "Creating..." : "Create"}
-                </Button>
+                <div className="flex gap-4 pt-6">
+                  <Button
+                    variant="ghost"
+                    className="flex-1 h-16 rounded-2xl text-white/40 hover:text-white hover:bg-white/5 font-black uppercase tracking-widest"
+                    onClick={() => setShowCreateModal(false)}
+                    disabled={isCreating}
+                  >
+                    Abort
+                  </Button>
+                  <Button
+                    className="flex-1 h-16 rounded-2xl bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest shadow-xl shadow-blue-600/20"
+                    onClick={handleCreateTeam}
+                    disabled={isCreating}
+                  >
+                    {isCreating ? "Deploying..." : "Confirm Deployment"}
+                  </Button>
+                </div>
               </div>
-            </CardContent>
-          </Card>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Delete Confirmation Modal */}
+      <AnimatePresence>
+        {isDeleting && (
+          <div className="fixed inset-0 z-[60] flex items-center justify-center p-4">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/90 backdrop-blur-xl" 
+              onClick={() => setIsDeleting(null)}
+            />
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              className="relative w-full max-w-sm bg-[#0a0a0f] border border-red-500/20 rounded-[2.5rem] shadow-2xl p-10 text-center overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-full h-1.5 bg-red-600" />
+              <div className="w-20 h-20 rounded-3xl bg-red-500/10 border border-red-500/20 flex items-center justify-center mb-6 mx-auto">
+                 <Trash2 className="w-10 h-10 text-red-500" />
+              </div>
+              <h3 className="text-3xl font-black text-white leading-tight mb-2" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>PURGE SQUAD?</h3>
+              <p className="text-white/40 text-sm font-medium italic mb-10">This will permanently deauthorize all team members and erase operational history from the primary database.</p>
+              
+              <div className="flex flex-col gap-3">
+                 <Button
+                    onClick={() => { handleDeleteTeam(isDeleting); setIsDeleting(null); }}
+                    className="h-16 rounded-2xl bg-red-600 hover:bg-red-700 text-white font-black uppercase tracking-widest shadow-xl shadow-red-600/20"
+                 >
+                   CONFIRM PURGE
+                 </Button>
+                 <Button
+                    variant="ghost"
+                    className="h-14 rounded-2xl text-white/40 hover:text-white"
+                    onClick={() => setIsDeleting(null)}
+                 >
+                   ABORT MISSION
+                 </Button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+    </HRLayout>
+  )
+}
+
+function StatCard({ icon: Icon, label, value, color }: any) {
+  const themes: any = {
+    blue: { border: "border-blue-500/20", text: "text-blue-400", bg: "bg-blue-600/10" },
+    purple: { border: "border-purple-500/20", text: "text-purple-400", bg: "bg-purple-600/10" },
+    emerald: { border: "border-emerald-500/20", text: "text-emerald-400", bg: "bg-emerald-600/10" },
+    amber: { border: "border-amber-500/20", text: "text-amber-400", bg: "bg-amber-600/10" },
+  }
+  const theme = themes[color]
+  return (
+    <div className={`bg-white/[0.02] border ${theme.border} backdrop-blur-xl p-6 rounded-3xl group hover:bg-white/[0.04] transition-all duration-500`}>
+      <div className="flex items-center justify-between mb-2">
+         <p className="text-[10px] font-black text-white/20 uppercase tracking-[0.2em]">{label}</p>
+         <div className={`p-2 rounded-xl ${theme.bg} ${theme.text}`}>
+            <Icon className="w-4 h-4" />
+         </div>
+      </div>
+      <p className="text-4xl font-black text-white tracking-tight" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{value}</p>
+    </div>
+  )
+}
+
+function TeamCard({ team, index, onManage, onEdit, onDelete, isActionMenuOpen, setActionMenuId }: any) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.05 }}
+      className="group relative bg-white/[0.02] border border-white/[0.08] hover:border-blue-500/30 rounded-[2rem] overflow-hidden transition-all duration-500 shadow-2xl hover:shadow-blue-500/10 flex flex-col"
+    >
+      <div className="p-8 flex flex-col h-full">
+        {/* Header */}
+        <div className="flex items-start justify-between mb-6">
+          <div className="flex-1 min-w-0">
+             <div className="flex items-center gap-3 mb-1">
+                <h3 className="text-2xl font-black text-white tracking-tight truncate group-hover:text-blue-400 transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{team.name}</h3>
+                <span className={`w-2 h-2 rounded-full ${team.status === "active" ? "bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.5)]" : "bg-white/20"}`} />
+             </div>
+             <p className="text-white/40 text-sm font-medium line-clamp-1">{team.purpose || "No operational summary defined"}</p>
+          </div>
+          
+          <div className="relative">
+            <button 
+              onClick={() => setActionMenuId(isActionMenuOpen ? null : team.id)}
+              className="p-2 rounded-xl bg-white/5 hover:bg-white/10 text-white/40 hover:text-white transition-colors border border-white/5"
+            >
+              <MoreVertical className="w-5 h-5" />
+            </button>
+            <AnimatePresence>
+              {isActionMenuOpen && (
+                <motion.div 
+                  initial={{ opacity: 0, scale: 0.95, y: 10 }}
+                  animate={{ opacity: 1, scale: 1, y: 0 }}
+                  exit={{ opacity: 0, scale: 0.95, y: 10 }}
+                  className="absolute right-0 top-12 w-48 bg-[#0a0a10] border border-white/10 rounded-2xl shadow-2xl z-20 py-2 backdrop-blur-xl"
+                >
+                  <button onClick={onManage} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-white/60 hover:bg-white/5 hover:text-white transition-colors">
+                    <Eye className="w-4 h-4 text-blue-400" /> Squadron Intel
+                  </button>
+                  <button onClick={onEdit} className="w-full flex items-center gap-3 px-4 py-2.5 text-xs font-bold text-white/60 hover:bg-white/5 hover:text-white transition-colors">
+                    <Edit className="w-4 h-4 text-indigo-400" /> Modify Parameters
+                  </button>
+                  <div className="border-t border-white/5 my-2" />
+                  <button onClick={onDelete} className="w-full flex items-center gap-3 px-4 py-2 text-xs font-bold text-red-400 hover:bg-red-500/10 transition-colors">
+                    <Trash2 className="w-4 h-4" /> Final Recall
+                  </button>
+                </motion.div>
+              )}
+            </AnimatePresence>
+          </div>
         </div>
-      )}
-    </DashboardLayout>
+
+        {/* Members Avatars */}
+        {team.members && team.members.length > 0 && (
+          <div className="flex flex-wrap gap-2 mb-6">
+            {team.members.slice(0, 10).map((member: any) => (
+               <div key={member.id} className="w-8 h-8 rounded-lg bg-white/5 border border-white/10 flex items-center justify-center overflow-hidden transition-all hover:bg-white/10 hover:border-white/20" title={member.user?.name}>
+                 {member.user?.avatarId ? (
+                    // In a generic scenario we'd show the avatar image, but here we can just use initials to be safe
+                    <span className="text-[10px] font-bold text-white/60 uppercase">{member.user?.name?.charAt(0)}</span>
+                 ) : (
+                    <span className="text-[10px] font-bold text-white/60 uppercase">{member.user?.name?.charAt(0)}</span>
+                 )}
+               </div>
+            ))}
+            {team.members.length > 10 && (
+               <div className="w-8 h-8 rounded-lg bg-blue-500/10 border border-blue-500/20 flex items-center justify-center">
+                 <span className="text-[10px] font-black text-blue-400">+{team.members.length - 10}</span>
+               </div>
+            )}
+          </div>
+        )}
+
+        {/* Info */}
+        <div className="space-y-4 mb-8">
+           <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl transition-all group-hover:bg-white/[0.04]">
+              <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-lg bg-blue-500/10 flex items-center justify-center">
+                    <Users className="w-4 h-4 text-blue-400" />
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Members</span>
+              </div>
+              <span className="text-xl font-black text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{team.memberCount}</span>
+           </div>
+
+           <div className="flex items-center justify-between p-4 bg-white/[0.02] border border-white/5 rounded-2xl transition-all group-hover:bg-white/[0.04]">
+              <div className="flex items-center gap-3">
+                 <div className="w-8 h-8 rounded-lg bg-emerald-500/10 flex items-center justify-center">
+                    <Target className="w-4 h-4 text-emerald-400" />
+                 </div>
+                 <span className="text-[10px] font-black uppercase tracking-widest text-white/30">Tasks</span>
+              </div>
+              <span className="text-xl font-black text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{team.taskCount}</span>
+           </div>
+        </div>
+
+        {/* Footer */}
+        <div className="mt-auto pt-6 border-t border-white/[0.05] flex items-center justify-between">
+           {team.eventId ? (
+             <div className="flex items-center gap-2 text-purple-400">
+                <Calendar className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Operation Bound</span>
+             </div>
+           ) : (
+             <div className="flex items-center gap-2 text-blue-400/60">
+                <Briefcase className="w-3.5 h-3.5" />
+                <span className="text-[10px] font-black uppercase tracking-widest">Independent Unit</span>
+             </div>
+           )}
+           <button 
+             onClick={onManage} 
+             className="flex items-center gap-2 text-white/20 hover:text-blue-400 transition-all font-black uppercase text-[8px] tracking-[0.3em] group/btn"
+           >
+              INTEL
+              <Eye className="w-3.5 h-3.5 group-hover/btn:scale-110 transition-transform" />
+           </button>
+        </div>
+      </div>
+    </motion.div>
   )
 }

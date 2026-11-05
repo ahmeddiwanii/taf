@@ -3,31 +3,40 @@
 import { usePathname } from "next/navigation"
 import Link from "next/link"
 import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import {
   LayoutDashboard,
   Users,
   Calendar,
-  BookOpen,
   Settings,
   LogOut,
   ChevronDown,
-  NetworkIcon,
-  Megaphone,
   TrendingUp,
   Menu,
   X,
   MessageSquare,
   Briefcase,
+  UserPlus,
+  ClipboardList,
+  ClipboardCheck,
+  Building2,
+  Handshake,
+  Star,
+  Lightbulb,
+  Plus,
 } from "lucide-react"
-import { signOut } from "next-auth/react"
+import { signOut, useSession } from "next-auth/react"
+import { UserAvatar } from "../user-avatar"
 
 interface HRSidebarProps {
   organizationName: string
+  isOpen: boolean
+  setIsOpen: (open: boolean) => void
 }
 
-export function HRSidebar({ organizationName }: HRSidebarProps) {
+export function HRSidebar({ organizationName, isOpen, setIsOpen }: HRSidebarProps) {
   const pathname = usePathname()
-  const [isMobileOpen, setIsMobileOpen] = useState(false)
+  const { data: session } = useSession()
   const [expandedSections, setExpandedSections] = useState<string[]>(["main"])
 
   const toggleSection = (section: string) => {
@@ -36,141 +45,95 @@ export function HRSidebar({ organizationName }: HRSidebarProps) {
     )
   }
 
-  const isActive = (href: string) => pathname.startsWith(href)
+  // Exact match for dashboard root, prefix match for sub-pages
+  const isActive = (href: string) => {
+    if (href === "/dashboard/hr") return pathname === "/dashboard/hr"
+    return pathname === href || pathname.startsWith(href + "/")
+  }
 
-  const NavLink = ({
-    href,
-    icon: Icon,
-    label,
-    badge,
-  }: {
-    href: string
-    icon: any
-    label: string
-    badge?: string
-  }) => (
+  const NavLink = ({ href, icon: Icon, label, badge }: { href: string; icon: any; label: string; badge?: string }) => (
     <Link
       href={href}
-      onClick={() => setIsMobileOpen(false)}
-      className={`flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium group ${
-        isActive(href)
-          ? "bg-blue-600 text-white shadow-md"
-          : "text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
-      }`}
+      onClick={() => setIsOpen(false)}
+      className={`flex items-center gap-3 px-3 py-2 rounded-xl transition-all duration-300 text-[13px] font-medium group relative overflow-hidden ${isActive(href)
+        ? "text-white"
+        : "text-white/50 hover:text-white/90 hover:bg-white/[0.06]"
+        }`}
     >
-      <Icon className="w-5 h-5" />
-      <span className="flex-1">{label}</span>
+      {isActive(href) && (
+        <motion.div layoutId="sidebar-active" className="absolute inset-0 bg-gradient-to-r from-blue-600/20 to-indigo-600/20 border border-white/10" />
+      )}
+      <Icon className={`w-[18px] h-[18px] flex-shrink-0 z-10 transition-colors ${isActive(href) ? "text-blue-400" : "group-hover:text-white/80"}`} />
+      <span className="flex-1 truncate z-10" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{label}</span>
       {badge && (
-        <span className={`text-xs font-bold px-2 py-1 rounded-full ${isActive(href) ? "bg-blue-400" : "bg-red-100 text-red-700"}`}>
+        <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded-full z-10 ${isActive(href) ? "bg-blue-500 text-white shadow-[0_0_10px_rgba(59,130,246,0.5)]" : "bg-white/10 text-white/60"}`}>
           {badge}
         </span>
       )}
     </Link>
   )
 
-  const NavSection = ({
-    title,
-    icon: Icon,
-    id,
-    children,
-  }: {
-    title: string
-    icon: any
-    id: string
-    children: React.ReactNode
-  }) => (
-    <div>
+  const NavSection = ({ title, id, children }: { title: string; id: string; children: React.ReactNode }) => (
+    <div className="space-y-1">
       <button
         onClick={() => toggleSection(id)}
-        className="flex items-center gap-3 px-4 py-2.5 w-full rounded-lg transition-all duration-200 text-sm font-medium text-gray-700 hover:bg-gray-100 dark:text-gray-300 dark:hover:bg-gray-800"
+        className="flex items-center gap-2 px-3 py-2 w-full rounded-lg text-[10px] font-bold uppercase tracking-widest text-white/30 hover:text-white/60 transition-colors"
       >
-        <Icon className="w-5 h-5" />
         <span className="flex-1 text-left">{title}</span>
-        <ChevronDown
-          className={`w-4 h-4 transition-transform duration-200 ${expandedSections.includes(id) ? "rotate-180" : ""}`}
-        />
+        <ChevronDown className={`w-3 h-3 transition-transform duration-300 ${expandedSections.includes(id) ? "rotate-180" : ""}`} />
       </button>
-      {expandedSections.includes(id) && <div className="mt-2 space-y-1 pl-2 border-l-2 border-gray-200 dark:border-gray-700 ml-2">{children}</div>}
+      {expandedSections.includes(id) && <div className="space-y-0.5 pl-1">{children}</div>}
     </div>
   )
 
   const sidebarContent = (
     <>
-      {/* Logo & Organization Name */}
-      <div className="p-6 border-b border-gray-200 dark:border-gray-800">
-        <Link href="/dashboard/hr" className="flex items-center gap-3 group">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-blue-700 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-shadow">
-            <Briefcase className="w-6 h-6 text-white" />
+      {/* Logo & Org */}
+      <div className="px-4 py-8 border-b border-white/[0.06]">
+        <Link href="/dashboard/hr" className="flex items-center gap-3 group" onClick={() => setIsOpen(false)}>
+          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 via-indigo-500 to-purple-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-500/20 group-hover:scale-105 transition-transform">
+            <span className="font-black text-white text-base" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>T</span>
           </div>
-          <div>
-            <p className="font-bold text-sm text-gray-900 dark:text-white group-hover:text-blue-600 transition-colors">
+          <div className="min-w-0">
+            <p className="font-bold text-sm text-white/90 truncate group-hover:text-blue-400 transition-colors" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
               {organizationName || "Organization"}
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-400">HR Dashboard</p>
+            <div className="flex items-center gap-1.5">
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-[9px] text-white/40 tracking-[0.2em] uppercase font-bold">Live Core</p>
+            </div>
           </div>
         </Link>
       </div>
 
-      {/* Main Navigation */}
-      <nav className="flex-1 overflow-y-auto p-4 space-y-2">
-        {/* Core Section */}
-        <div className="space-y-2 pb-4">
-          <NavLink href="/dashboard/hr" icon={LayoutDashboard} label="Dashboard" />
-          <NavLink href="/dashboard/hr/home" icon={MessageSquare} label="Home Feed" badge="NEW" />
-        </div>
-
-        {/* Team & Events */}
-        <NavSection title="Teams & Events" icon={NetworkIcon} id="teams">
-          <div className="space-y-1 ml-2">
-            <NavLink href="/dashboard/hr/teams" icon={Users} label="Create Teams" />
-            <NavLink href="/dashboard/hr/teams/groups" icon={NetworkIcon} label="Team Groups" badge="PRO" />
-            <NavLink href="/dashboard/hr/events" icon={Calendar} label="Events" />
-            <NavLink href="/dashboard/hr/events/new" icon={Calendar} label="Create Event" />
-          </div>
-        </NavSection>
-
-        {/* Task Management */}
-        <NavSection title="Task Management" icon={Briefcase} id="tasks">
-          <div className="space-y-1 ml-2">
-            <NavLink href="/dashboard/hr/tasks/create" icon={Briefcase} label="Create Tasks" />
-            <NavLink href="/dashboard/hr/tasks/review" icon={MessageSquare} label="Review Tasks" badge="NEW" />
-          </div>
-        </NavSection>
-
-        {/* People Management */}
-        <NavSection title="People" icon={Users} id="people">
-          <div className="space-y-1 ml-2">
-            <NavLink href="/dashboard/hr/employees" icon={Users} label="All Employees" />
-            <NavLink href="/dashboard/hr/employees/invite" icon={Users} label="Invite Team" />
-          </div>
-        </NavSection>
-
-        {/* Development & Analysis */}
-        <NavSection title="Development" icon={TrendingUp} id="development">
-          <div className="space-y-1 ml-2">
-            <NavLink href="/dashboard/hr/training-planner" icon={BookOpen} label="Training Plans" />
-            <NavLink href="/dashboard/hr/compatibility" icon={TrendingUp} label="Team Analysis" />
-            <NavLink href="/dashboard/hr/members/credits" icon={TrendingUp} label="Member Credits" badge="NEW" />
-          </div>
-        </NavSection>
-
-        {/* Organization */}
-        <NavLink href="/dashboard/hr/organization" icon={Briefcase} label="Organization" />
-
-        {/* Divider */}
-        <div className="my-4 border-t border-gray-200 dark:border-gray-800"></div>
-
-        {/* Settings */}
+      {/* Navigation */}
+      <nav className="flex-1 overflow-y-auto px-3 py-4 space-y-1 custom-scrollbar">
+        <NavLink href="/dashboard/hr" icon={LayoutDashboard} label="Dashboard" />
+        <NavLink href="/dashboard/hr/members" icon={Users} label="Members" />
+        <NavLink href="/dashboard/hr/events" icon={Calendar} label="Events" />
+        <NavLink href="/dashboard/hr/teams" icon={Users} label="Teams" />
+        <NavLink href="/dashboard/hr/tasks" icon={ClipboardList} label="Tasks" />
+        <NavLink href="/dashboard/hr/compatibility" icon={TrendingUp} label="Compatibility" />
+        <NavLink href="/dashboard/hr/proposals" icon={Lightbulb} label="Proposals" />
         <NavLink href="/dashboard/hr/settings" icon={Settings} label="Settings" />
       </nav>
 
-      {/* User Section */}
-      <div className="border-t border-gray-200 dark:border-gray-800 p-4 space-y-2">
+      {/* User & Sign Out */}
+      <div className="border-t border-white/[0.06] px-3 py-6 space-y-4 bg-white/[0.01]">
+        <div className="flex items-center gap-3 px-3">
+          <div className="ring-2 ring-blue-500/20 rounded-full p-0.5">
+            <UserAvatar avatarId={(session?.user as any)?.avatarId} name={session?.user?.name} size="sm" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-xs font-bold text-white/90 truncate" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{session?.user?.name || "User"}</p>
+            <p className="text-[10px] text-white/20 truncate uppercase tracking-tighter">{session?.user?.email}</p>
+          </div>
+        </div>
         <button
           onClick={() => signOut({ callbackUrl: "/auth/login" })}
-          className="flex items-center gap-3 px-4 py-2.5 rounded-lg transition-all duration-200 text-sm font-medium w-full text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20"
+          className="flex items-center gap-3 px-3 py-3 rounded-xl transition-all duration-300 text-[10px] font-black w-full text-rose-400/60 hover:bg-rose-500/10 hover:text-rose-400 border border-white/5 hover:border-rose-500/20 uppercase tracking-widest"
         >
-          <LogOut className="w-5 h-5" />
+          <LogOut className="w-3.5 h-3.5" />
           <span>Sign Out</span>
         </button>
       </div>
@@ -179,33 +142,39 @@ export function HRSidebar({ organizationName }: HRSidebarProps) {
 
   return (
     <>
-      {/* Mobile Toggle Button */}
-      <div className="md:hidden fixed top-4 left-4 z-50">
-        <button
-          onClick={() => setIsMobileOpen(!isMobileOpen)}
-          className="p-2 rounded-lg bg-blue-600 text-white shadow-lg hover:bg-blue-700 transition-colors"
-        >
-          {isMobileOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
-        </button>
-      </div>
-
       {/* Desktop Sidebar */}
-      <aside className="hidden md:flex md:fixed md:left-0 md:top-0 md:h-screen md:w-64 md:flex-col md:bg-white md:dark:bg-gray-900 md:border-r md:border-gray-200 md:dark:border-gray-800 md:shadow-sm">
+      <aside className="hidden md:flex md:fixed md:left-0 md:top-0 md:h-screen md:w-64 md:flex-col bg-[#050508] border-r border-white/[0.06] shadow-2xl z-40">
         {sidebarContent}
       </aside>
 
       {/* Mobile Sidebar */}
-      {isMobileOpen && (
-        <div className="fixed inset-0 z-40 md:hidden">
-          {/* Backdrop */}
-          <div className="absolute inset-0 bg-black/50" onClick={() => setIsMobileOpen(false)} />
-
-          {/* Sidebar */}
-          <aside className="absolute left-0 top-0 h-screen w-64 bg-white dark:bg-gray-900 shadow-2xl overflow-y-auto">
-            {sidebarContent}
-          </aside>
-        </div>
-      )}
+      <AnimatePresence>
+        {isOpen && (
+          <div className="fixed inset-0 z-[60] md:hidden">
+            <motion.div 
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="absolute inset-0 bg-black/80 backdrop-blur-md" 
+              onClick={() => setIsOpen(false)} 
+            />
+            <motion.aside 
+              initial={{ x: "-100%" }}
+              animate={{ x: 0 }}
+              exit={{ x: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="absolute left-0 top-0 h-screen w-72 bg-[#0a0a0f] border-r border-white/10 shadow-2xl flex flex-col pt-4"
+            >
+              <div className="absolute top-4 right-4 z-10">
+                <button onClick={() => setIsOpen(false)} className="p-2 rounded-xl bg-white/5 text-white/40 hover:text-white border border-white/5">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+              {sidebarContent}
+            </motion.aside>
+          </div>
+        )}
+      </AnimatePresence>
     </>
   )
 }

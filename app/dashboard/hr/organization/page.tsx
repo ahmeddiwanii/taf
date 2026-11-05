@@ -3,93 +3,87 @@ import Link from "next/link"
 import { UserRole } from "../../../../types/user"
 import { authOptions } from "../../../../lib/auth"
 import { prisma } from "../../../../lib/db"
-import { DashboardLayout } from "../../../../components/layout/dashboard-layout"
+import { HRLayout } from "../../../../components/layout/hr-layout"
+import { getHRSessionUser } from "../../../../lib/hr-session-user"
 import { OrgProfileEdit } from "../../../../components/org-profile-edit"
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "../../../../components/ui/card"
 import { Button } from "../../../../components/ui/button"
 import { ArrowLeft } from "lucide-react"
 
 export default async function OrgProfilePage() {
-  const session = await getServerSession(authOptions)
+  const user = getHRSessionUser(await getServerSession(authOptions))
 
-  if (!session || session.user.role !== UserRole.HR) {
+  if (!user || user.role !== UserRole.HR) {
     return <div className="p-8 text-center text-red-500">Not authorized</div>
   }
 
-  if (!session.user.startupId) {
-    return <div className="p-8 text-center text-red-500">No startup assigned</div>
+  if (!user.organizationId) {
+    return <div className="p-8 text-center text-red-500">No organization assigned</div>
   }
 
-  const profile = await prisma.startupProfile.findUnique({
-    where: { startupId: session.user.startupId },
+  const profile = await prisma.organizationProfile.findUnique({
+    where: { organizationId: user.organizationId },
   })
 
-  const startup = await prisma.startup.findUnique({
-    where: { id: session.user.startupId },
+  const organization = await prisma.organization.findUnique({
+    where: { id: user.organizationId },
   })
+
 
   return (
-    <DashboardLayout role={UserRole.HR}>
-      <div className="space-y-6">
-        <div className="flex items-center gap-4">
-          <Link href="/dashboard/hr">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="w-4 h-4 mr-2" />
-              Back to Dashboard
-            </Button>
-          </Link>
+    <HRLayout orgName={organization?.name || "Your workspace"}>
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6 sm:py-8 space-y-6">
           <div>
-            <h1 className="text-3xl font-bold">Organization Profile</h1>
-            <p className="text-gray-600">Manage your organization's public profile</p>
+            <h1 className="text-3xl font-bold">Club profile</h1>
+            <p className="text-gray-600">Manage your organization&apos;s public profile</p>
           </div>
-        </div>
 
-        <Card className="border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="text-base">Why Update Your Profile?</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <ul className="space-y-2 text-sm text-gray-700">
-              <li>✓ Appear in the public organizations directory</li>
-              <li>✓ Showcase your events and training programs</li>
-              <li>✓ Attract talented professionals to your events</li>
-              <li>✓ Build your organization's professional brand</li>
-            </ul>
-          </CardContent>
-        </Card>
-
-        <OrgProfileEdit
-          startupId={session.user.startupId}
-          initialData={{
-            profileImageUrl: profile?.profileImageUrl || "",
-            coverImageUrl: profile?.coverImageUrl || "",
-            bio: profile?.bio || "",
-            contactEmail: profile?.contactEmail || "",
-            contactPhone: profile?.contactPhone || "",
-            location: profile?.location || "",
-            website: profile?.website || "",
-            isPublic: profile?.isPublic ?? true,
-          }}
-        />
-
-        {profile && (
-          <Card>
+          <Card className="border-blue-200 bg-blue-50">
             <CardHeader>
-              <CardTitle>Preview Your Profile</CardTitle>
-              <CardDescription>
-                Your profile will appear like this to other users
-              </CardDescription>
+              <CardTitle className="text-base">Why Update Your Profile?</CardTitle>
             </CardHeader>
             <CardContent>
-              <Link href={`/organizations/${session.user.startupId}`}>
-                <Button variant="outline" className="w-full">
-                  View Public Profile
-                </Button>
-              </Link>
+              <ul className="space-y-2 text-sm text-gray-700">
+                <li>✓ Appear in the public organizations directory</li>
+                <li>✓ Showcase your events and training programs</li>
+                <li>✓ Attract talented professionals to your events</li>
+                <li>✓ Build your organization&apos;s professional brand</li>
+              </ul>
             </CardContent>
           </Card>
-        )}
-      </div>
-    </DashboardLayout>
+
+          <OrgProfileEdit
+            organizationId={user.organizationId}
+            initialData={{
+              profileImageUrl: profile?.profileImageUrl || "",
+              coverImageUrl: profile?.coverImageUrl || "",
+              bio: profile?.bio || "",
+              contactEmail: profile?.contactEmail || "",
+              contactPhone: profile?.contactPhone || "",
+              location: profile?.location || "",
+              website: profile?.website || "",
+              isPublic: profile?.isPublic ?? true,
+            }}
+          />
+
+          {profile && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Preview Your Profile</CardTitle>
+                <CardDescription>
+                  Your profile will appear like this to other users
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <Link href={`/organizations/${user.organizationId}`}>
+                  <Button variant="outline" className="w-full">
+                    View Public Profile
+                  </Button>
+                </Link>
+              </CardContent>
+            </Card>
+          )}
+        </div>
+    </HRLayout>
   )
 }

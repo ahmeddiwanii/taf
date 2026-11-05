@@ -14,7 +14,7 @@ import { Loader2, Upload, Save, X } from "lucide-react"
 import Image from "next/image"
 
 interface OrgProfileEditProps {
-  startupId: string
+  organizationId: string
   initialData?: {
     profileImageUrl?: string
     coverImageUrl?: string
@@ -27,7 +27,7 @@ interface OrgProfileEditProps {
   }
 }
 
-export function OrgProfileEdit({ startupId, initialData }: OrgProfileEditProps) {
+export function OrgProfileEdit({ organizationId, initialData }: OrgProfileEditProps) {
   const router = useRouter()
   const { toast } = useToast()
   const [loading, setLoading] = useState(false)
@@ -100,7 +100,7 @@ export function OrgProfileEdit({ startupId, initialData }: OrgProfileEditProps) 
   const handleSave = async () => {
     setLoading(true)
     try {
-      const response = await fetch(`/api/startups/${startupId}/profile`, {
+      const response = await fetch(`/api/organizations/${organizationId}/profile`, {
         method: "PATCH",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
