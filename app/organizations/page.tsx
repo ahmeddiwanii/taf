@@ -2,237 +2,147 @@
 
 import { useState, useEffect } from "react"
 import Link from "next/link"
-import { motion } from "framer-motion"
-import { Button } from "../../components/ui/button"
-import { Input } from "../../components/ui/input"
-import { Card } from "../../components/ui/card"
+import { Search } from "lucide-react"
 import { OrganizationCard } from "../../components/organization-card"
-import { UserNav } from "../../components/user-nav"
-import { Search, Building2, ArrowRight, Sparkles } from "lucide-react"
+import { PublicShell } from "@/components/brand/public-shell"
+import { BrandFigure } from "@/components/brand/figures"
+import { LogoMark } from "@/components/brand/logo"
+import { landingCopy } from "@/lib/landing-copy"
+import { useLocale } from "@/lib/i18n/locale-context"
 
-interface StartupData {
+interface OrganizationData {
   id: string
   name: string
-  startupProfile?: {
-    profileImageUrl?: string
-    bio?: string
-    location?: string
-    isPublic: boolean
-  }
-  _count?: {
-    user: number
-    event: number
-    project: number
-  }
+  organizationProfile?: { profileImageUrl?: string; bio?: string; location?: string; isPublic: boolean }
+  _count?: { user: number; event: number; project: number }
 }
 
 export default function OrganizationsPage() {
-  const [startups, setStartups] = useState<StartupData[]>([])
+  const { locale, t } = useLocale()
+  const copy = landingCopy[locale]
+  const display = { fontFamily: "Fraunces, serif" }
+  const [organizations, setOrganizations] = useState<OrganizationData[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
+  const [pages, setPages] = useState(1)
 
   useEffect(() => {
-    fetchStartups()
+    setLoading(true)
+    fetch(`/api/organizations?page=${page}&limit=12`)
+      .then((r) => r.json())
+      .then((d) => {
+        setOrganizations(d.organizations || [])
+        setPages(d.pages || 1)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
   }, [page])
 
-  const fetchStartups = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/organizations?page=${page}&limit=12`)
-      const data = await response.json()
-      setStartups(data.startups)
-      setTotalPages(data.pages)
-    } catch (error) {
-      console.error("Failed to fetch startups:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const filteredStartups = startups.filter((startup) =>
-    startup.name.toLowerCase().includes(searchTerm.toLowerCase())
-  )
+  const filtered = organizations.filter((s) => s.name.toLowerCase().includes(search.toLowerCase()))
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-slate-50 to-slate-100">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center space-x-3">
-            <motion.div
-              initial={{ rotate: -10, scale: 0.8 }}
-              animate={{ rotate: 0, scale: 1 }}
-              className="w-10 h-10 bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 rounded-lg flex items-center justify-center shadow-md"
-            >
-              <span className="font-bold text-white text-lg">T</span>
-            </motion.div>
-            <div>
-              <span className="font-bold text-xl text-gray-900">TAFSULA</span>
-              <p className="text-xs text-gray-500">Organizations</p>
-            </div>
-          </Link>
-          <UserNav />
-        </div>
-      </header>
-
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative py-16 md:py-24 overflow-hidden">
-          <div className="absolute inset-0 z-0">
-            <motion.div
-              className="absolute rounded-full blur-3xl opacity-10"
-              style={{
-                width: "500px",
-                height: "500px",
-                backgroundColor: "#3182ce",
-                top: "-100px",
-                right: "-100px",
-              }}
-              animate={{
-                x: [0, 50, 0],
-                y: [0, -50, 0],
-              }}
-              transition={{
-                duration: 20,
-                repeat: Number.POSITIVE_INFINITY,
-              }}
+    <PublicShell>
+      <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-8 pt-10 sm:px-6 md:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <p className="mb-5 inline-flex rounded-full border-[2.5px] border-soot bg-[#F3DFA0] px-3.5 py-1 text-[12px] font-bold text-soot shadow-[2px_3px_0_0_#161210]">
+            {copy.clubsKicker}
+          </p>
+          <h1 className="font-display text-4xl leading-tight text-soot sm:text-5xl" style={display}>
+            {copy.clubsTitle}
+            <em className="italic" style={{ color: "#C45C4A" }}>
+              {copy.clubsAccent}
+            </em>
+          </h1>
+          <p className="mt-4 max-w-lg text-soot/65">{copy.clubsSub}</p>
+          <div className="relative mt-8 max-w-xl">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-soot/35" />
+            <input
+              placeholder={copy.clubsSearch}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-14 w-full rounded-full border-[2.5px] border-soot bg-jasmine pl-11 pr-4 text-soot placeholder:text-soot/35 focus:outline-none"
             />
           </div>
+        </div>
+        <BrandFigure id="seek" className="mx-auto max-w-sm" />
+      </section>
 
-          <div className="relative z-10 max-w-7xl mx-auto px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              className="text-center space-y-6 mb-12"
-            >
-              <div className="inline-flex items-center space-x-2 bg-blue-50 px-4 py-2 rounded-full border border-blue-200">
-                <Building2 className="w-4 h-4 text-blue-600" />
-                <span className="text-sm font-medium text-blue-600">Discover Amazing Organizations</span>
-              </div>
-
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900">
-                Explore Top
-                <span className="bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {" "}Organizations
-                </span>
-              </h1>
-
-              <p className="text-lg md:text-xl text-gray-600 max-w-2xl mx-auto">
-                Connect with innovative startups, join their events, and build valuable professional relationships
-              </p>
-
-              {/* Search Bar */}
-              <div className="max-w-2xl mx-auto mt-8">
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                  <Input
-                    placeholder="Search organizations..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 h-12 border-gray-300 bg-white shadow-sm hover:shadow-md transition-shadow"
-                  />
-                </div>
-              </div>
-            </motion.div>
-
-            {/* Stats */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.2 }}
-              className="grid grid-cols-3 md:grid-cols-3 gap-4 mb-16"
-            >
-              {[
-                { label: "Organizations", value: "50+" },
-                { label: "Events", value: "200+" },
-                { label: "Members", value: "5000+" },
-              ].map((stat, index) => (
-                <Card key={index} className="p-4 text-center">
-                  <p className="text-2xl md:text-3xl font-bold text-gray-900">{stat.value}</p>
-                  <p className="text-sm text-gray-600">{stat.label}</p>
-                </Card>
-              ))}
-            </motion.div>
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        {loading ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-64 animate-pulse rounded-[1.6rem] border-[2.5px] border-soot/20 bg-plaster" />
+            ))}
           </div>
-        </section>
-
-        {/* Organizations Grid */}
-        <section className="py-16 max-w-7xl mx-auto px-6">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                  className="h-80 bg-gray-200 rounded-lg"
+        ) : filtered.length > 0 ? (
+          <>
+            <p className="mb-6 text-sm text-soot/50">
+              {filtered.length} {locale === "fr" ? "portes ouvertes" : locale === "ar" ? "أبواب مفتوحة" : "open doors"}
+            </p>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((organization, i) => (
+                <OrganizationCard
+                  key={organization.id}
+                  id={organization.id}
+                  name={organization.name}
+                  profile={organization.organizationProfile}
+                  _count={organization._count}
+                  index={i}
                 />
               ))}
             </div>
-          ) : filteredStartups.length > 0 ? (
-            <div className="space-y-12">
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredStartups.map((startup, index) => (
-                  <OrganizationCard key={startup.id} {...startup} index={index} />
+            {pages > 1 && (
+              <div className="mt-10 flex justify-center gap-2">
+                {Array.from({ length: Math.min(5, pages) }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPage(i + 1)}
+                    className={`h-10 w-10 rounded-full border-[2px] border-soot text-sm font-semibold ${
+                      page === i + 1 ? "bg-soot text-jasmine" : "bg-jasmine text-soot"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
                 ))}
               </div>
-
-              {/* Pagination */}
-              {totalPages > 1 && (
-                <div className="flex justify-center items-center gap-4 mt-12">
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage(Math.max(1, page - 1))}
-                    disabled={page === 1}
-                  >
-                    Previous
-                  </Button>
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => (
-                      <Button
-                        key={i}
-                        variant={page === i + 1 ? "default" : "outline"}
-                        onClick={() => setPage(i + 1)}
-                      >
-                        {i + 1}
-                      </Button>
-                    ))}
-                  </div>
-                  <Button
-                    variant="outline"
-                    onClick={() => setPage(Math.min(totalPages, page + 1))}
-                    disabled={page === totalPages}
-                  >
-                    Next
-                  </Button>
-                </div>
-              )}
-            </div>
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-gray-600">No organizations found</p>
-            </div>
-          )}
-        </section>
-
-        {/* CTA Section */}
-        <section className="py-16 bg-gradient-to-r from-blue-600 to-purple-600">
-          <div className="max-w-4xl mx-auto px-6 text-center text-white space-y-6">
-            <h2 className="text-3xl md:text-4xl font-bold">Ready to Join an Organization?</h2>
-            <p className="text-lg opacity-90">
-              Explore events, connect with professionals, and grow your career
+            )}
+          </>
+        ) : (
+          <div className="py-16 text-center">
+            <BrandFigure id="peek" className="mx-auto mb-4 max-w-[180px]" />
+            <p className="font-display text-xl text-soot" style={display}>
+              {locale === "fr" ? "Pas encore cette porte." : locale === "ar" ? "لا باب بعد." : "That door isn’t here yet."}
             </p>
-            <Link href="/">
-              <Button size="lg" className="bg-white text-blue-600 hover:bg-gray-100">
-                <span>Explore More</span>
-                <ArrowRight className="w-4 h-4 ml-2" />
-              </Button>
-            </Link>
           </div>
-        </section>
-      </main>
-    </div>
+        )}
+      </section>
+
+      <section className="px-4 pb-10 sm:px-6">
+        <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 rounded-[2rem] border-[3px] border-soot bg-[#C9E4D8] px-6 py-12 text-center shadow-[5px_7px_0_0_#161210] sm:flex-row sm:text-left">
+          <BrandFigure id="work" className="max-w-[160px] shrink-0" />
+          <div className="flex-1">
+            <h2 className="font-display text-2xl text-soot" style={display}>
+              {locale === "fr" ? "Tu tiens un club ? Tiens la porte ouverte." : locale === "ar" ? "تدير ناديًا؟ أبقِ الباب مفتوحًا." : "You run a club? Keep the door open."}
+            </h2>
+            <p className="mt-2 text-sm text-soot/65">
+              {locale === "fr"
+                ? "Pour que la jeunesse ait où atterrir — pas pour remplir un tableau de bord."
+                : "So youth have somewhere to land — not so a dashboard looks full."}
+            </p>
+          </div>
+          <Link href="/organizations/join" className="rounded-full bg-soot px-5 py-2.5 text-sm font-semibold text-jasmine no-underline">
+            {t("cta.joinClub")}
+          </Link>
+        </div>
+      </section>
+
+      <footer className="border-t-[3px] border-soot/10 py-8">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 sm:px-6">
+          <LogoMark className="h-8 w-8" />
+          <p className="text-sm text-soot/45">{copy.footer}</p>
+        </div>
+      </footer>
+    </PublicShell>
   )
 }

@@ -1,14 +1,13 @@
 "use client"
 
 import { useState, useEffect } from "react"
-import Link from "next/link"
-import { motion } from "framer-motion"
-import { Button } from "../../components/ui/button"
-import { Input } from "../../components/ui/input"
-import { Card } from "../../components/ui/card"
+import { Search } from "lucide-react"
 import { EventCard } from "../../components/event-card"
-import { UserNav } from "../../components/user-nav"
-import { Search, Calendar, ArrowRight, Sparkles, TrendingUp } from "lucide-react"
+import { PublicShell } from "@/components/brand/public-shell"
+import { BrandFigure } from "@/components/brand/figures"
+import { LogoMark } from "@/components/brand/logo"
+import { landingCopy } from "@/lib/landing-copy"
+import { useLocale } from "@/lib/i18n/locale-context"
 
 interface Event {
   id: string
@@ -19,364 +18,152 @@ interface Event {
   type?: string
   format?: string
   posterUrl?: string
-  startup: {
-    id: string
-    name: string
-    startupProfile?: {
-      profileImageUrl?: string
-    }
-  }
-  _count?: {
-    registrations: number
-  }
+  organization: { id: string; name: string; organizationProfile?: { profileImageUrl?: string } }
+  _count?: { registrations: number }
 }
 
+const types = ["GENERAL", "TRAINING", "WORKSHOP", "CONFERENCE"]
+
 export default function EventsPage() {
+  const { locale } = useLocale()
+  const copy = landingCopy[locale]
+  const display = { fontFamily: "Fraunces, serif" }
   const [events, setEvents] = useState<Event[]>([])
   const [loading, setLoading] = useState(true)
-  const [searchTerm, setSearchTerm] = useState("")
+  const [search, setSearch] = useState("")
   const [page, setPage] = useState(1)
-  const [totalPages, setTotalPages] = useState(1)
-  const [filterType, setFilterType] = useState<string>("all")
+  const [pages, setPages] = useState(1)
+  const [filter, setFilter] = useState("all")
 
   useEffect(() => {
-    fetchEvents()
-  }, [page, filterType])
+    fetch(`/api/events/upcoming?page=${page}&limit=12`)
+      .then((r) => r.json())
+      .then((d) => {
+        setEvents(d.events || [])
+        setPages(d.pages || 1)
+      })
+      .catch(() => {})
+      .finally(() => setLoading(false))
+  }, [page, filter])
 
-  const fetchEvents = async () => {
-    setLoading(true)
-    try {
-      const response = await fetch(`/api/events/upcoming?page=${page}&limit=12`)
-      const data = await response.json()
-      setEvents(data.events)
-      setTotalPages(data.pages)
-    } catch (error) {
-      console.error("Failed to fetch events:", error)
-    } finally {
-      setLoading(false)
-    }
-  }
-
-  const filteredEvents = events.filter((event) => {
-    const matchesSearch =
-      event.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      event.startup.name.toLowerCase().includes(searchTerm.toLowerCase())
-
-    const matchesFilter = filterType === "all" || event.type === filterType
-
-    return matchesSearch && matchesFilter
+  const filtered = events.filter((e) => {
+    const s =
+      e.title.toLowerCase().includes(search.toLowerCase()) ||
+      e.organization.name.toLowerCase().includes(search.toLowerCase())
+    return s && (filter === "all" || e.type === filter)
   })
 
-  const eventTypes = ["GENERAL", "TRAINING", "WORKSHOP", "CONFERENCE"]
-
   return (
-    <div className="min-h-screen bg-gradient-to-b from-white via-slate-50 to-slate-100">
-      {/* Header */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <Link href="/" className="flex items-center space-x-3">
-            <motion.div
-              initial={{ rotate: -10, scale: 0.8 }}
-              animate={{ rotate: 0, scale: 1 }}
-              className="w-10 h-10 bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 rounded-lg flex items-center justify-center shadow-md"
-            >
-              <span className="font-bold text-white text-lg">T</span>
-            </motion.div>
-            <div>
-              <span className="font-bold text-xl text-gray-900">TAFSULA</span>
-              <p className="text-xs text-gray-500">Events & Training</p>
-            </div>
-          </Link>
-          <UserNav />
+    <PublicShell>
+      <section className="mx-auto grid max-w-6xl items-center gap-8 px-4 pb-8 pt-10 sm:px-6 md:grid-cols-[1.1fr_0.9fr]">
+        <div>
+          <p className="mb-5 inline-flex rounded-full border-[2.5px] border-soot bg-[#F3DFA0] px-3.5 py-1 text-[12px] font-bold text-soot shadow-[2px_3px_0_0_#161210]">
+            {copy.eventsKicker}
+          </p>
+          <h1 className="font-display text-4xl leading-tight text-soot sm:text-5xl" style={display}>
+            {copy.eventsTitle}
+            <em className="italic" style={{ color: "#C45C4A" }}>
+              {copy.eventsAccent}
+            </em>
+          </h1>
+          <p className="mt-4 max-w-lg text-soot/65">{copy.eventsSub}</p>
+          <div className="relative mt-8 max-w-xl">
+            <Search className="absolute left-4 top-1/2 h-4 w-4 -translate-y-1/2 text-soot/35" />
+            <input
+              placeholder={copy.eventsSearch}
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              className="h-14 w-full rounded-full border-[2.5px] border-soot bg-jasmine pl-11 pr-4 text-soot placeholder:text-soot/35 focus:outline-none"
+            />
+          </div>
         </div>
-      </header>
+        <BrandFigure id="join" className="mx-auto max-w-sm" />
+      </section>
 
-      <main className="flex-1">
-        {/* Hero Section - Enhanced */}
-        <section className="relative py-16 md:py-32 overflow-hidden">
-          <div className="absolute inset-0 z-0">
-            {/* Animated background blobs */}
-            <motion.div
-              className="absolute rounded-full blur-3xl opacity-15"
-              style={{
-                width: "500px",
-                height: "500px",
-                backgroundColor: "#ec4899",
-                top: "-100px",
-                left: "-100px",
-              }}
-              animate={{
-                x: [0, -50, 0],
-                y: [0, 50, 0],
-              }}
-              transition={{
-                duration: 20,
-                repeat: Number.POSITIVE_INFINITY,
-              }}
-            />
-            <motion.div
-              className="absolute rounded-full blur-3xl opacity-10"
-              style={{
-                width: "400px",
-                height: "400px",
-                backgroundColor: "#3b82f6",
-                bottom: "-50px",
-                right: "-50px",
-              }}
-              animate={{
-                x: [0, 50, 0],
-                y: [0, -50, 0],
-              }}
-              transition={{
-                duration: 25,
-                repeat: Number.POSITIVE_INFINITY,
-              }}
-            />
-          </div>
-
-          <div className="relative z-10 max-w-7xl mx-auto px-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.6 }}
-              className="text-center space-y-6 mb-12"
+      <div className="border-y-[2.5px] border-soot/10 bg-[#F4EDE0]">
+        <div className="mx-auto flex max-w-6xl gap-2 overflow-x-auto px-4 py-3 sm:px-6">
+          <button
+            onClick={() => setFilter("all")}
+            className={`rounded-full border-[2px] border-soot px-4 py-1.5 text-sm font-semibold ${
+              filter === "all" ? "bg-soot text-jasmine" : "bg-jasmine text-soot"
+            }`}
+          >
+            All
+          </button>
+          {types.map((tp) => (
+            <button
+              key={tp}
+              onClick={() => setFilter(tp)}
+              className={`rounded-full border-[2px] border-soot px-4 py-1.5 text-sm font-semibold ${
+                filter === tp ? "bg-soot text-jasmine" : "bg-jasmine text-soot"
+              }`}
             >
-              <motion.div
-                className="inline-flex items-center space-x-2 bg-gradient-to-r from-purple-50 to-pink-50 px-4 py-2 rounded-full border border-purple-200 shadow-sm"
-                whileHover={{ scale: 1.05 }}
-                transition={{ type: "spring", stiffness: 300 }}
-              >
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 3, repeat: Number.POSITIVE_INFINITY }}
-                >
-                  <Sparkles className="w-4 h-4 text-purple-600" />
-                </motion.div>
-                <span className="text-sm font-medium bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent">
-                  Discover Amazing Events
-                </span>
-              </motion.div>
+              {tp.charAt(0) + tp.slice(1).toLowerCase()}
+            </button>
+          ))}
+        </div>
+      </div>
 
-              <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold text-gray-900 leading-tight">
-                Explore Events &
-                <span className="block bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 bg-clip-text text-transparent">
-                  Training Sessions
-                </span>
-              </h1>
-
-              <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                Connect with industry leaders, develop new skills, and expand your network through curated events and training sessions
-              </p>
-
-              {/* Enhanced Search Bar */}
-              <div className="max-w-2xl mx-auto mt-10">
-                <motion.div
-                  className="relative group"
-                  whileHover={{ scale: 1.02 }}
-                  transition={{ type: "spring", stiffness: 400 }}
-                >
-                  <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400 group-hover:text-purple-600 transition-colors" />
-                  <Input
-                    placeholder="Search events, organizations, topics..."
-                    value={searchTerm}
-                    onChange={(e) => setSearchTerm(e.target.value)}
-                    className="pl-12 h-14 border-2 border-gray-200 bg-white shadow-lg hover:shadow-xl hover:border-purple-300 transition-all rounded-xl text-base"
-                  />
-                </motion.div>
-              </div>
-            </motion.div>
+      <section className="mx-auto max-w-6xl px-4 py-10 sm:px-6">
+        {loading ? (
+          <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 6 }).map((_, i) => (
+              <div key={i} className="h-72 animate-pulse rounded-[1.6rem] border-[2.5px] border-soot/20 bg-plaster" />
+            ))}
           </div>
-        </section>
-
-        {/* Filter Section */}
-        <section className="py-8 bg-white border-b border-gray-200">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="flex flex-wrap items-center gap-3">
-              <span className="font-semibold text-gray-700">Filter by type:</span>
-              <motion.button
-                onClick={() => setFilterType("all")}
-                className={`px-4 py-2 rounded-full font-medium transition-all ${
-                  filterType === "all"
-                    ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                }`}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                All Events
-              </motion.button>
-              {eventTypes.map((type) => (
-                <motion.button
-                  key={type}
-                  onClick={() => setFilterType(type)}
-                  className={`px-4 py-2 rounded-full font-medium transition-all ${
-                    filterType === type
-                      ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg"
-                      : "bg-gray-100 text-gray-700 hover:bg-gray-200"
-                  }`}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                >
-                  {type}
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Events Grid */}
-        <section className="py-16 max-w-7xl mx-auto px-6">
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              {[...Array(6)].map((_, i) => (
-                <motion.div
-                  key={i}
-                  animate={{ opacity: [0.5, 1, 0.5] }}
-                  transition={{ duration: 2, repeat: Number.POSITIVE_INFINITY }}
-                  className="h-96 bg-gradient-to-br from-gray-200 to-gray-100 rounded-xl"
+        ) : filtered.length > 0 ? (
+          <>
+            <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {filtered.map((ev, i) => (
+                <EventCard
+                  key={ev.id}
+                  id={ev.id}
+                  title={ev.title}
+                  description={ev.description}
+                  startAt={ev.startAt}
+                  location={ev.location}
+                  organizationName={ev.organization.name}
+                  organizationProfileImage={ev.organization.organizationProfile?.profileImageUrl}
+                  posterUrl={ev.posterUrl}
+                  registrationCount={ev._count?.registrations || 0}
+                  index={i}
+                  type={ev.type}
+                  format={ev.format}
                 />
               ))}
             </div>
-          ) : filteredEvents.length > 0 ? (
-            <div className="space-y-12">
-              <motion.div
-                className="flex items-center gap-2 text-gray-700"
-                initial={{ opacity: 0, x: -10 }}
-                animate={{ opacity: 1, x: 0 }}
-              >
-                <TrendingUp className="w-5 h-5 text-purple-600" />
-                <span className="font-semibold">
-                  Showing {filteredEvents.length} event{filteredEvents.length !== 1 ? "s" : ""}
-                </span>
-              </motion.div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {filteredEvents.map((event, index) => (
-                  <EventCard
-                    key={event.id}
-                    id={event.id}
-                    title={event.title}
-                    description={event.description}
-                    startAt={event.startAt}
-                    location={event.location}
-                    startupName={event.startup.name}
-                    startupProfileImage={event.startup.startupProfile?.profileImageUrl}
-                    posterUrl={event.posterUrl}
-                    registrationCount={event._count?.registrations || 0}
-                    index={index}
-                    type={event.type}
-                    format={event.format}
-                  />
+            {pages > 1 && (
+              <div className="mt-10 flex justify-center gap-2">
+                {Array.from({ length: Math.min(5, pages) }).map((_, i) => (
+                  <button
+                    key={i}
+                    onClick={() => setPage(i + 1)}
+                    className={`h-10 w-10 rounded-full border-[2px] border-soot text-sm font-semibold ${
+                      page === i + 1 ? "bg-soot text-jasmine" : "bg-jasmine text-soot"
+                    }`}
+                  >
+                    {i + 1}
+                  </button>
                 ))}
               </div>
-
-              {/* Enhanced Pagination */}
-              {totalPages > 1 && (
-                <motion.div
-                  className="flex justify-center items-center gap-4 mt-16 pb-8"
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                >
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      variant="outline"
-                      onClick={() => setPage(Math.max(1, page - 1))}
-                      disabled={page === 1}
-                      className="rounded-lg border-2"
-                    >
-                      Previous
-                    </Button>
-                  </motion.div>
-
-                  <div className="flex items-center gap-2">
-                    {Array.from({ length: Math.min(5, totalPages) }).map((_, i) => (
-                      <motion.div
-                        key={i}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.95 }}
-                      >
-                        <Button
-                          variant={page === i + 1 ? "default" : "outline"}
-                          onClick={() => setPage(i + 1)}
-                          className={`rounded-lg ${
-                            page === i + 1
-                              ? "bg-gradient-to-r from-purple-600 to-pink-600 text-white"
-                              : "border-2"
-                          }`}
-                        >
-                          {i + 1}
-                        </Button>
-                      </motion.div>
-                    ))}
-                  </div>
-
-                  <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                    <Button
-                      variant="outline"
-                      onClick={() => setPage(Math.min(totalPages, page + 1))}
-                      disabled={page === totalPages}
-                      className="rounded-lg border-2"
-                    >
-                      Next
-                    </Button>
-                  </motion.div>
-                </motion.div>
-              )}
-            </div>
-          ) : (
-            <motion.div
-              className="text-center py-16"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-            >
-              <div className="w-16 h-16 bg-gray-100 rounded-full mx-auto mb-4 flex items-center justify-center">
-                <Search className="w-8 h-8 text-gray-400" />
-              </div>
-              <p className="text-lg text-gray-600 font-medium">No events found</p>
-              <p className="text-gray-500">Try adjusting your search or filter criteria</p>
-            </motion.div>
-          )}
-        </section>
-
-        {/* CTA Section - Enhanced */}
-        <section className="py-20 bg-gradient-to-r from-purple-600 via-pink-600 to-blue-600 relative overflow-hidden">
-          <div className="absolute inset-0 overflow-hidden">
-            <motion.div
-              className="absolute w-96 h-96 bg-white/10 rounded-full blur-3xl"
-              animate={{ x: [0, 100, 0], y: [0, 50, 0] }}
-              transition={{ duration: 15, repeat: Number.POSITIVE_INFINITY }}
-              style={{ top: "-50px", left: "-50px" }}
-            />
+            )}
+          </>
+        ) : (
+          <div className="py-16 text-center">
+            <BrandFigure id="leap" className="mx-auto mb-4 max-w-[180px]" />
+            <p className="font-display text-xl text-soot" style={display}>
+              {locale === "fr" ? "Pas de nuit ici — encore." : "No night on this street — yet."}
+            </p>
           </div>
+        )}
+      </section>
 
-          <div className="relative z-10 max-w-4xl mx-auto px-6 text-center text-white space-y-8">
-            <div className="space-y-4">
-              <h2 className="text-3xl md:text-5xl font-bold">Ready to Grow?</h2>
-              <p className="text-lg opacity-90 max-w-2xl mx-auto">
-                Browse all organizations and discover their comprehensive training sessions and networking events
-              </p>
-            </div>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link href="/organizations">
-                  <Button size="lg" className="bg-white text-purple-600 hover:bg-gray-100 font-semibold rounded-xl shadow-lg">
-                    <span>View Organizations</span>
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </motion.div>
-              <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-                <Link href="/dashboard">
-                  <Button size="lg" variant="outline" className="border-white text-white hover:bg-white/20 font-semibold rounded-xl">
-                    Go to Dashboard
-                  </Button>
-                </Link>
-              </motion.div>
-            </div>
-          </div>
-        </section>
-      </main>
-    </div>
+      <footer className="border-t-[3px] border-soot/10 py-8">
+        <div className="mx-auto flex max-w-6xl items-center gap-3 px-4 sm:px-6">
+          <LogoMark className="h-8 w-8" />
+          <p className="text-sm text-soot/45">{copy.footer}</p>
+        </div>
+      </footer>
+    </PublicShell>
   )
 }

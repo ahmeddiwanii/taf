@@ -24,7 +24,7 @@ interface Profile {
 interface Organization {
   id: string
   name: string
-  startupProfile?: Profile
+  organizationProfile?: Profile
   _count?: {
     user: number
     event: number
@@ -53,7 +53,7 @@ interface Event {
 
 export default function OrganizationProfilePage() {
   const params = useParams()
-  const startupId = params.id as string
+  const organizationId = params.id as string
 
   const [org, setOrg] = useState<Organization | null>(null)
   const [posts, setPosts] = useState<Post[]>([])
@@ -63,15 +63,15 @@ export default function OrganizationProfilePage() {
 
   useEffect(() => {
     fetchOrgData()
-  }, [startupId])
+  }, [organizationId])
 
   const fetchOrgData = async () => {
     setLoading(true)
     try {
       const [orgRes, postsRes, eventsRes] = await Promise.all([
-        fetch(`/api/startups/${startupId}`),
-        fetch(`/api/startups/${startupId}/posts`),
-        fetch(`/api/events?startupId=${startupId}`),
+        fetch(`/api/organizations/${organizationId}`),
+        fetch(`/api/organizations/${organizationId}/posts`),
+        fetch(`/api/events?organizationId=${organizationId}`),
       ])
 
       if (orgRes.ok) {
@@ -113,7 +113,7 @@ export default function OrganizationProfilePage() {
     )
   }
 
-  const profile = org.startupProfile
+  const profile = org.organizationProfile
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-white via-slate-50 to-slate-100">

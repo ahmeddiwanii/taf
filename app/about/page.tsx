@@ -1,31 +1,41 @@
 "use client"
 
-import React from "react"
-import { motion } from "framer-motion"
+import Link from "next/link"
+import { PublicShell } from "@/components/brand/public-shell"
+import { LogoMark } from "@/components/brand/logo"
+import { BRAND } from "@/lib/brand"
+import { landingCopy } from "@/lib/landing-copy"
+import { useLocale } from "@/lib/i18n/locale-context"
 
 export default function About() {
+  const { locale, t } = useLocale()
+  const copy = landingCopy[locale]
+  const display = { fontFamily: "Fraunces, serif" }
+
   return (
-    <div className="min-h-screen bg-[hsl(var(--background))] text-foreground">
-      <header className="sticky top-0 z-10 border-b bg-[hsl(var(--background))]/95 backdrop-blur supports-[backdrop-filter]:bg-[hsl(var(--background))]/60">
-        <div className="container flex h-14 items-center">
-          <h1 className="text-2xl font-bold">About Tafsula</h1>
+    <PublicShell>
+      <article className="mx-auto max-w-3xl px-4 py-16 sm:px-6">
+        <div className="mb-6 flex items-center gap-3">
+          <LogoMark className="h-10 w-10" />
+          <p className="text-[11px] font-semibold uppercase tracking-[0.24em] text-pomegranate">About</p>
         </div>
-      </header>
-      <main className="container mx-auto px-4 py-12 md:py-24">
-        <motion.div
-          className="max-w-3xl mx-auto text-center"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-        >
-          <h2 className="text-3xl font-bold mb-4">About Tafsula</h2>
-          <p className="text-lg text-muted-foreground">
-            Tafsula is a cutting-edge platform designed to help startups build stronger teams through personality
-            assessment. We use the DISC personality model to analyze team compatibility and provide insights that lead
-            to better collaboration, communication, and overall team performance.
-          </p>
-        </motion.div>
-      </main>
-    </div>
+        <h1 className="font-display text-4xl text-soot sm:text-5xl" style={display}>
+          {BRAND.name}
+        </h1>
+        <p className="mt-4 font-display text-xl text-soot/80" style={display}>
+          {BRAND.tagline[locale]}
+        </p>
+        <p className="mt-6 text-base leading-relaxed text-soot/65">{BRAND.mission[locale]}</p>
+        <p className="mt-4 text-base leading-relaxed text-soot/65">{copy.manifesto}</p>
+        <div className="mt-10 flex flex-wrap gap-3">
+          <Link href="/organizations/join" className="rounded-full bg-soot px-5 py-3 text-sm font-semibold text-jasmine no-underline">
+            {t("cta.joinClub")}
+          </Link>
+          <Link href="/organizations" className="rounded-full border-[2.5px] border-soot px-5 py-3 text-sm font-semibold text-soot no-underline">
+            {t("cta.exploreClubs")}
+          </Link>
+        </div>
+      </article>
+    </PublicShell>
   )
 }

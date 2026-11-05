@@ -2,623 +2,383 @@
 
 import Link from "next/link"
 import { motion } from "framer-motion"
-import { Button } from "../components/ui/button"
-import { Card } from "../components/ui/card"
-import { ArrowRight, Sparkles, Brain, Zap, Heart, CheckCircle, Users, TrendingUp, Building2 } from "lucide-react"
-import { UserNav } from "components/user-nav"
-
-// Predefined blob positions and sizes
-const blobConfigs = [
-  { width: "32.387%", height: "20.167%", top: "59.855%", left: "55.574%" },
-  { width: "26.827%", height: "15.918%", top: "75.037%", left: "14.112%" },
-  { width: "37.978%", height: "24.928%", top: "79.683%", left: "48.003%" },
-  { width: "36.897%", height: "23.540%", top: "36.119%", left: "50.640%" }
-]
-
-const colorCards = [
-  {
-    color: "#e53e3e",
-    title: "Red Energy",
-    icon: Zap,
-    description: "Bold, direct, and results-driven. Reds are natural leaders who focus on the big picture, take risks, and embrace challenges. They value results, action, and efficiency.",
-    strengths: [
-      "Taking initiative and driving projects forward",
-      "Making tough decisions under pressure",
-      "Leading teams through challenges",
-    ],
-  },
-  {
-    color: "#ecc94b",
-    title: "Yellow Joy",
-    icon: Sparkles,
-    description: "Enthusiastic, creative, and social. Yellows are optimistic communicators who value social recognition, group activities, and relationships. They bring energy and optimism to teams.",
-    strengths: [
-      "Building relationships and networks",
-      "Generating innovative ideas",
-      "Motivating and inspiring others",
-    ],
-  },
-  {
-    color: "#48bb78",
-    title: "Green Growth",
-    icon: Heart,
-    description: "Patient, loyal, and relationship-focused. Greens are team players who create harmony and stability. They listen deeply and offer consistent support.",
-    strengths: [
-      "Creating harmony and reducing conflict",
-      "Building stable, trusting relationships",
-      "Supporting team members",
-    ],
-  },
-  {
-    color: "#3182ce",
-    title: "Blue Depth",
-    icon: Brain,
-    description: "Precise, logical, and detail-oriented. Blues are methodical thinkers who value accuracy and quality. They excel at solving complex problems.",
-    strengths: [
-      "Analyzing complex problems",
-      "Ensuring quality and accuracy",
-      "Creating systematic processes"
-    ],
-  }
-]
+import { useState } from "react"
+import { ArrowRight, DoorOpen, Heart, Play, Sparkles, Users } from "lucide-react"
+import { PublicShell } from "@/components/brand/public-shell"
+import { LogoMark } from "@/components/brand/logo"
+import { BureauMock, MemberMock } from "@/components/brand/device-mocks"
+import { BrandFigure } from "@/components/brand/figures"
+import { InviteMascot } from "@/components/brand/invite-mascot"
+import { landingCopy } from "@/lib/landing-copy"
+import { useLocale } from "@/lib/i18n/locale-context"
 
 export default function Home() {
+  const { locale, t } = useLocale()
+  const copy = landingCopy[locale]
+  const [openFaq, setOpenFaq] = useState<number | null>(0)
+  const display = { fontFamily: "Fraunces, serif" }
+
   return (
-    
-    <div className="flex min-h-screen flex-col bg-gradient-to-b from-white via-slate-50 to-slate-100">
-      {/* Header with UserNav */}
-      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-md border-b border-gray-200 shadow-sm">
-        <div className="max-w-7xl mx-auto px-6 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
+    <PublicShell cinematic>
+      <section className="relative isolate h-[calc(100svh-5rem)] min-h-[calc(100svh-5rem)] overflow-hidden text-white">
+        <img
+          src="/brand/hero-portal.png"
+          alt=""
+          width={3344}
+          height={1882}
+          className="pointer-events-none absolute inset-0 h-full w-full max-w-none select-none object-cover object-center"
+          decoding="sync"
+          fetchPriority="high"
+          draggable={false}
+        />
+
+        <div className="relative z-10 mx-auto flex h-full min-h-[calc(100svh-5rem)] w-full max-w-[1280px] flex-col px-5 sm:px-8 lg:px-10">
+          <div className="flex min-h-0 flex-1 flex-col justify-start pt-8 sm:pt-10 lg:pt-12">
             <motion.div
-              initial={{ rotate: -10, scale: 0.8 }}
-              animate={{ rotate: 0, scale: 1 }}
-              transition={{ duration: 0.6, type: "spring" }}
-              className="w-10 h-10 bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 rounded-lg flex items-center justify-center shadow-md"
+              className="w-full max-w-[32rem] lg:max-w-[34rem]"
+              initial={{ opacity: 0, y: 14 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
             >
-              <span className="font-bold text-white text-lg">T</span>
-            </motion.div>
-            <motion.div
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6, delay: 0.2 }}
-            >
-              <span className="font-bold text-2xl text-gray-900">TAFSULA</span>
-              <p className="text-xs text-gray-500 -mt-1">Team Compatibility Analysis</p>
+              <p className="mb-5 inline-flex items-center gap-2 rounded-full border border-white/20 bg-black/45 px-3 py-1.5 text-[12px] font-semibold text-white backdrop-blur-sm">
+                <span aria-hidden>🚀</span>
+                {copy.kicker}
+                <span className="inline-flex h-4 w-4 items-center justify-center rounded-full bg-[#E31C23] text-[9px] leading-none" aria-hidden>
+                  🇹🇳
+                </span>
+              </p>
+
+              <h1 className="text-white" style={{ textShadow: "0 2px 22px rgba(0,0,0,0.45)" }}>
+                <span
+                  className="block text-[2.65rem] font-extrabold leading-[0.95] tracking-[-0.035em] sm:text-[3.35rem] lg:text-[3.85rem]"
+                  style={{ fontFamily: "Figtree, sans-serif" }}
+                >
+                  {copy.heroLine1}
+                </span>
+                <span className="relative inline-block">
+                  <span
+                    className="block text-[2.65rem] font-extrabold leading-[0.95] tracking-[-0.035em] sm:text-[3.35rem] lg:text-[3.85rem]"
+                    style={{ fontFamily: "Figtree, sans-serif" }}
+                  >
+                    {copy.heroLine2}
+                  </span>
+                  <svg
+                    className="absolute -right-7 top-1 hidden h-6 w-6 sm:block lg:-right-8 lg:top-2"
+                    viewBox="0 0 24 24"
+                    fill="#E8B84A"
+                    aria-hidden
+                  >
+                    <path d="M12 0 13.8 8.6 22 12 13.8 15.4 12 24 10.2 15.4 2 12l8.2-3.4Z" />
+                  </svg>
+                </span>
+                <span
+                  className="mt-1 block text-[2.15rem] italic leading-[1.02] sm:text-[2.7rem] lg:text-[3.15rem]"
+                  style={{ fontFamily: "Fraunces, serif", color: "#E07A6A" }}
+                >
+                  {copy.heroAccent}
+                </span>
+                <span
+                  className="block text-[2.15rem] italic leading-[1.02] text-white sm:text-[2.7rem] lg:text-[3.15rem]"
+                  style={{ fontFamily: "Fraunces, serif" }}
+                >
+                  {copy.heroAfter}
+                </span>
+              </h1>
+
+              <p
+                className="mt-5 max-w-[26.5rem] text-[13.5px] leading-[1.55] text-white/85 sm:text-[14.5px]"
+                style={{ textShadow: "0 1px 14px rgba(0,0,0,0.5)" }}
+              >
+                {copy.heroSub}
+              </p>
+
+              <div className="mt-7 flex flex-wrap items-center gap-3">
+                <Link
+                  href="/organizations"
+                  className="inline-flex items-center gap-2.5 rounded-full bg-pomegranate py-2.5 pl-2.5 pr-5 text-sm font-semibold text-white no-underline shadow-[0_0_28px_rgba(196,60,50,0.5)]"
+                >
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-xl bg-black/25">
+                    <ArrowRight className="h-4 w-4" />
+                  </span>
+                  {copy.ctaPrimary}
+                </Link>
+                <a
+                  href="#how"
+                  className="inline-flex items-center gap-2.5 rounded-full bg-black/75 py-2.5 pl-2.5 pr-5 text-sm font-semibold text-white no-underline ring-1 ring-white/10"
+                >
+                  <span className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/10">
+                    <Play className="h-3 w-3 fill-white" />
+                  </span>
+                  {copy.ctaWatch}
+                </a>
+              </div>
             </motion.div>
           </div>
-         
-          <nav className="hidden md:flex items-center space-x-1">
-            <Link href="/about">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                About
-              </Button>
-            </Link>
-            <Link href="/organizations">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                Organizations
-              </Button>
-            </Link>
-            <Link href="/events">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                Events
-              </Button>
-            </Link>
-            <Link href="/colors">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                Learn More
-              </Button>
-            </Link>
-            <Link href="/test">
-              <Button variant="ghost" className="text-gray-600 hover:text-gray-900 hover:bg-gray-100">
-                Take Assessment
-              </Button>
-            </Link>
-          </nav>
 
-          <UserNav />
+          <div className="mt-auto pb-5 pt-8 sm:pb-6">
+            <div className="grid grid-cols-2 overflow-hidden rounded-[1.7rem] border border-white/12 bg-black/40 sm:grid-cols-4 sm:rounded-full">
+              {copy.stats.map((s, i) => {
+                const Icon = [Users, DoorOpen, Sparkles, Heart][i] ?? Users
+                return (
+                  <motion.div
+                    key={s.n}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: 0.35 + i * 0.08, duration: 0.45 }}
+                    className={`group flex items-center gap-3 px-5 py-4 sm:px-6 sm:py-[1.15rem] ${
+                      i > 0 ? "sm:border-l sm:border-white/10" : ""
+                    }`}
+                  >
+                    <span className="relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white/5 ring-1 ring-white/10 transition group-hover:bg-amber-200/10 group-hover:ring-amber-200/30">
+                      <Icon className="h-4 w-4 text-white/75 transition group-hover:text-amber-200" strokeWidth={1.7} />
+                    </span>
+                    <div className="min-w-0">
+                      <p className="font-display text-[1.15rem] leading-none text-white" style={display}>
+                        {s.n}
+                      </p>
+                      <p className="mt-1.5 truncate text-[9px] font-semibold uppercase tracking-[0.16em] text-white/45">
+                        {s.l}
+                      </p>
+                    </div>
+                  </motion.div>
+                )
+              })}
+            </div>
+          </div>
         </div>
-      </header>
+      </section>
 
-      <main className="flex-1">
-        {/* Hero Section */}
-        <section className="relative overflow-hidden py-20 md:py-32">
-          {/* Animated background elements */}
-          <div className="absolute inset-0 z-0">
-            {colorCards.map((card, index) => (
-              <motion.div
-                key={`hero-blob-${index}`}
-                className="absolute rounded-full blur-3xl opacity-5"
-                style={{
-                  backgroundColor: card.color,
-                  width: blobConfigs[index].width,
-                  height: blobConfigs[index].height,
-                  top: blobConfigs[index].top,
-                  left: blobConfigs[index].left
-                }}
-                animate={{
-                  x: [0, 20, 0, -20, 0],
-                  y: [0, -20, 0, 20, 0],
-                }}
-                transition={{
-                  duration: 25 + index * 3,
-                  repeat: Number.POSITIVE_INFINITY,
-                  ease: "easeInOut",
-                }}
-              />
+      <div className="relative overflow-hidden bg-jasmine text-soot">
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          <motion.div
+            className="absolute h-[500px] w-[500px] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(230,57,70,0.15) 0%, transparent 70%)", top: "-2%", left: "-8%" }}
+            animate={{ x: [0, 40, 0], y: [0, 30, 0] }}
+            transition={{ duration: 20, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute h-[400px] w-[400px] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(241,178,74,0.16) 0%, transparent 70%)", top: "22%", right: "-6%" }}
+            animate={{ x: [0, -30, 0], y: [0, 40, 0] }}
+            transition={{ duration: 18, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute h-[450px] w-[450px] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(6,167,125,0.12) 0%, transparent 70%)", top: "52%", left: "18%" }}
+            animate={{ x: [0, 50, 0], y: [0, -40, 0] }}
+            transition={{ duration: 22, repeat: Infinity, ease: "easeInOut" }}
+          />
+          <motion.div
+            className="absolute h-[350px] w-[350px] rounded-full"
+            style={{ background: "radial-gradient(circle, rgba(31,119,180,0.14) 0%, transparent 70%)", bottom: "6%", right: "8%" }}
+            animate={{ x: [0, -40, 0], y: [0, 30, 0] }}
+            transition={{ duration: 16, repeat: Infinity, ease: "easeInOut" }}
+          />
+        </div>
+
+        <section className="relative mx-auto max-w-6xl px-4 py-24 sm:px-6">
+          <p className="mb-5 inline-flex rounded-full border-[2px] border-soot px-3.5 py-1.5 text-[12px] font-semibold text-soot">
+            {copy.roomsKicker}
+          </p>
+          <h2 className="max-w-2xl font-display text-3xl leading-tight text-soot sm:text-5xl" style={display}>
+            {copy.roomsTitle}
+            <em className="italic" style={{ color: "#C45C4A" }}>
+              {copy.roomsAccent}
+            </em>
+          </h2>
+          <div className="mt-14 grid gap-8 lg:grid-cols-2">
+            {copy.rooms.map((room, i) => (
+              <article
+                key={room.title}
+                className="overflow-hidden rounded-[1.8rem] border-[3px] border-soot bg-jasmine shadow-[5px_7px_0_0_#161210]"
+              >
+                <div className={i === 0 ? "bg-[#F3C4B0]" : "bg-[#C9E4D8]"}>
+                  <BrandFigure id={i === 0 ? "seek" : "work"} className="mx-auto max-w-[240px] px-6 py-4" delay={i * 0.3} />
+                </div>
+                <div className="border-t-[3px] border-soot p-7">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-soot/45">{room.kicker}</p>
+                  <h3 className="mt-2 font-display text-2xl text-soot" style={display}>
+                    {room.title}
+                  </h3>
+                  <p className="mt-3 text-sm leading-relaxed text-soot/60">{room.body}</p>
+                  <ul className="mt-5 space-y-2 text-sm text-soot/80">
+                    {room.bullets.map((b) => (
+                      <li key={b} className="flex gap-2.5">
+                        <span className="mt-0.5 inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-soot text-[9px] text-jasmine">
+                          ✓
+                        </span>
+                        {b}
+                      </li>
+                    ))}
+                  </ul>
+                  <Link
+                    href={room.href}
+                    className="mt-7 inline-flex rounded-full bg-soot px-5 py-2.5 text-sm font-semibold text-jasmine no-underline"
+                  >
+                    {room.cta}
+                  </Link>
+                </div>
+              </article>
             ))}
           </div>
-
-          <div className="relative z-10 max-w-7xl mx-auto px-6">
-            <div className="grid gap-12 lg:grid-cols-2 lg:gap-16 items-center">
-              <motion.div
-                className="flex flex-col justify-center space-y-8"
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.8 }}
-              >
-                <div className="space-y-6">
-                  <motion.h1
-                    className="text-4xl md:text-6xl font-bold tracking-tight text-gray-900 leading-tight"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.2 }}
-                  >
-                    Discover Your True{" "}
-                    <span className="bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 bg-clip-text text-transparent">
-                      Personality Colors
-                    </span>
-                  </motion.h1>
-                  <motion.p
-                    className="text-lg md:text-xl text-gray-600 leading-relaxed max-w-2xl"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ duration: 0.8, delay: 0.4 }}
-                  >
-                    Unlock the vibrant spectrum of your personality and understand how you naturally connect with the
-                    world around you. Build stronger teams through scientific personality assessment.
-                  </motion.p>
-                </div>
-
-                <motion.div
-                  className="bg-white/80 backdrop-blur-sm rounded-xl p-6 border border-gray-200 shadow-sm"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.6 }}
-                >
-                  <p className="italic text-lg font-medium text-gray-700 mb-2">
-                    "Understanding personality differences is the key to building exceptional teams that achieve
-                    extraordinary results."
-                  </p>
-                  <p className="text-sm text-gray-500">— Team Development Research</p>
-                </motion.div>
-
-                <motion.div
-                  className="flex flex-col sm:flex-row gap-4"
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: 0.8 }}
-                >
-                  <Link href="/test" className="flex-1">
-                    <Button
-                      size="lg"
-                      className="w-full bg-gray-900 hover:bg-gray-800 text-white group transition-all duration-300"
-                    >
-                      <span>Start Your Assessment</span>
-                      <ArrowRight className="ml-2 h-4 w-4 transition-transform group-hover:translate-x-1" />
-                    </Button>
-                  </Link>
-                  <Link href="/colors" className="flex-1">
-                    <Button size="lg" variant="outline" className="w-full border-gray-300 hover:bg-gray-50">
-                      Learn More
-                    </Button>
-                  </Link>
-                </motion.div>
-              </motion.div>
-
-              <motion.div
-                className="flex items-center justify-center"
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ duration: 0.8, delay: 0.5 }}
-              >
-                <div className="grid grid-cols-2 gap-6">
-                  {colorCards.map((card, index) => (
-                    <motion.div
-                      key={card.title}
-                      className="relative group"
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.6, delay: 0.7 + index * 0.1 }}
-                      whileHover={{ scale: 1.05, rotate: index % 2 === 0 ? 2 : -2 }}
-                    >
-                      <div
-                        className="w-32 h-32 md:w-40 md:h-40 rounded-xl flex items-center justify-center text-white shadow-lg transition-all duration-300 group-hover:shadow-xl"
-                        style={{ backgroundColor: card.color }}
-                      >
-                        <div className="text-center">
-                          <card.icon className="h-8 w-8 md:h-10 md:w-10 mx-auto mb-2" />
-                          <span className="text-lg md:text-xl font-bold">{card.title.split(" ")[0]}</span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))}
-                </div>
-              </motion.div>
-            </div>
-          </div>
         </section>
 
-        {/* Personality Colors Section */}
-        <section className="py-20 bg-white">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-                <h2 className="text-3xl md:text-5xl font-bold text-gray-900 mb-6">The Four Personality Colors</h2>
-                <p className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed">
-                  Each color represents a distinct personality type with unique traits, strengths, and communication
-                  styles that shape how we work and interact.
-                </p>
-              </motion.div>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-              {colorCards.map((card, index) => (
-                <motion.div
-                  key={card.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  whileHover={{ y: -5 }}
-                  className="group"
+        <section id="how" className="relative mx-auto max-w-6xl scroll-mt-24 px-4 py-12 sm:px-6">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-pomegranate">{copy.howKicker}</p>
+          <h2 className="mt-3 font-display text-3xl text-soot sm:text-4xl" style={display}>
+            {copy.howTitle}
+          </h2>
+          <div className="mt-16 space-y-20">
+            {copy.howSteps.map((s, i) => {
+              const fig = (["seek", "join", "work", "leap"] as const)[i]
+              const reverse = i % 2 === 1
+              return (
+                <div
+                  key={s.t}
+                  className={`grid items-center gap-10 lg:grid-cols-2 ${reverse ? "lg:[&>*:first-child]:order-2" : ""}`}
                 >
-                  <Card
-                    className="h-full p-6 border-t-4 hover:shadow-lg transition-all duration-300"
-                    style={{ borderTopColor: card.color }}
-                  >
-                    <div className="flex items-start space-x-4 mb-4">
-                      <div
-                        className="w-12 h-12 rounded-full flex items-center justify-center text-white transition-transform group-hover:scale-110"
-                        style={{ backgroundColor: card.color }}
-                      >
-                        <card.icon className="h-6 w-6" />
-                      </div>
-                      <div>
-                        <h3 className="text-xl font-bold text-gray-900 mb-2">{card.title}</h3>
-                        <p className="text-gray-600 leading-relaxed">{card.description}</p>
-                      </div>
-                    </div>
-                    <div className="mt-4">
-                      <h4 className="text-sm font-semibold uppercase tracking-wider text-gray-500 mb-2">
-                        Key Strengths
-                      </h4>
-                      <ul className="space-y-1">
-                        {card.strengths.slice(0, 3).map((strength, i) => (
-                          <li key={i} className="flex items-center text-sm text-gray-700">
-                            <CheckCircle className="h-4 w-4 mr-2 text-green-500" />
-                            {strength}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Why Choose Tafsula Section */}
-        <section className="py-20 bg-gray-50">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">Why Choose Tafsula?</h2>
-              <p className="text-lg text-gray-600 max-w-2xl mx-auto">
-                Our platform offers comprehensive tools to help startups and teams build stronger, more compatible
-                working relationships
-              </p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.6, delay: index * 0.1 }}
-                  whileHover={{ y: -5 }}
-                >
-                  <Card className="h-full p-6 text-center hover:shadow-lg transition-all duration-300">
-                    <div className="w-16 h-16 bg-gray-100 rounded-full flex items-center justify-center mx-auto mb-4">
-                      <feature.icon className="h-8 w-8 text-gray-700" />
-                    </div>
-                    <h3 className="text-xl font-semibold text-gray-900 mb-3">{feature.title}</h3>
-                    <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Call to Action Section */}
-        <section className="py-20 bg-gray-900">
-          <div className="max-w-4xl mx-auto px-6 text-center">
-            <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.6 }}>
-              <h2 className="text-3xl md:text-4xl font-bold text-white mb-6">Ready to Build a Stronger Team?</h2>
-              <p className="text-xl text-gray-300 mb-8 max-w-2xl mx-auto">
-                Take the comprehensive personality assessment today and gain valuable insights into your team's
-                compatibility and dynamics
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/test">
-                  <Button size="lg" className="bg-white text-gray-900 hover:bg-gray-100 font-medium px-8">
-                    Start Assessment
-                  </Button>
-                </Link>
-                <Link href="/colors">
-                  <Button size="lg" variant="outline" className="border-gray-600 text-gray-300 hover:bg-gray-800">
-                    Learn More
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
-          </div>
-        </section>
-
-        {/* Features Section */}
-        <section className="py-20 md:py-28 bg-gradient-to-b from-slate-50 to-white">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="text-center mb-16">
-              <motion.h2
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                className="text-3xl md:text-5xl font-bold text-gray-900 mb-6"
-              >
-                Powerful Features for Modern Teams
-              </motion.h2>
-              <motion.p
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.1 }}
-                className="text-lg md:text-xl text-gray-600 max-w-3xl mx-auto"
-              >
-                From DISC assessments to organization profiles and event management
-              </motion.p>
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-              {features.map((feature, index) => (
-                <motion.div
-                  key={feature.title}
-                  initial={{ opacity: 0, y: 20 }}
-                  whileInView={{ opacity: 1, y: 0 }}
-                  viewport={{ once: true }}
-                  transition={{ delay: index * 0.1 }}
-                  whileHover={{ y: -5 }}
-                  className="group"
-                >
-                  <Card className="h-full p-8 border-0 shadow-lg hover:shadow-xl transition-all duration-300">
-                    <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-gradient-to-br from-blue-500 to-purple-500 text-white mb-6 group-hover:scale-110 transition-transform">
-                      <feature.icon className="h-6 w-6" />
-                    </div>
-                    <h3 className="text-xl font-bold text-gray-900 mb-3">{feature.title}</h3>
-                    <p className="text-gray-600 leading-relaxed">{feature.description}</p>
-                  </Card>
-                </motion.div>
-              ))}
-            </div>
-          </div>
-        </section>
-
-        {/* Organizations & Events Section */}
-        <section className="py-20 md:py-28 bg-white">
-          <div className="max-w-7xl mx-auto px-6">
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 items-center">
-              <motion.div
-                initial={{ opacity: 0, x: -20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="space-y-6"
-              >
-                <div className="inline-flex items-center space-x-2 bg-green-50 px-4 py-2 rounded-full border border-green-200">
-                  <Users className="w-4 h-4 text-green-600" />
-                  <span className="text-sm font-medium text-green-600">Organizations & Events</span>
-                </div>
-                <h2 className="text-3xl md:text-4xl font-bold text-gray-900">
-                  Build Your Organization Profile
-                </h2>
-                <p className="text-lg text-gray-600">
-                  Create a professional presence with your organization profile. Showcase events, training programs, and connect with talented professionals.
-                </p>
-                <ul className="space-y-3">
-                  {[
-                    "Professional organization profiles",
-                    "Event and training management",
-                    "Organization directory and discovery",
-                    "Event registration system",
-                  ].map((item, i) => (
-                    <li key={i} className="flex items-center space-x-3">
-                      <CheckCircle className="w-5 h-5 text-green-500" />
-                      <span className="text-gray-700">{item}</span>
-                    </li>
-                  ))}
-                </ul>
-                <div className="flex gap-4 pt-4">
-                  <Link href="/organizations">
-                    <Button className="bg-green-600 hover:bg-green-700 text-white">
-                      Explore Organizations
-                    </Button>
-                  </Link>
-                  <Link href="/events">
-                    <Button variant="outline" className="border-green-600 text-green-600 hover:bg-green-50">
-                      View Events
-                    </Button>
-                  </Link>
-                </div>
-              </motion.div>
-
-              <motion.div
-                initial={{ opacity: 0, x: 20 }}
-                whileInView={{ opacity: 1, x: 0 }}
-                viewport={{ once: true }}
-                className="relative"
-              >
-                <div className="absolute inset-0 bg-gradient-to-br from-green-100 to-blue-100 rounded-2xl opacity-50" />
-                <Card className="relative z-10 p-8 border-0 shadow-xl">
-                  <div className="space-y-4">
-                    <div className="h-40 bg-gradient-to-r from-green-500 to-blue-500 rounded-lg opacity-80" />
-                    <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gray-300 rounded-lg" />
-                      <div className="flex-1">
-                        <div className="h-2 bg-gray-300 rounded w-32 mb-2" />
-                        <div className="h-2 bg-gray-200 rounded w-24" />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <div className="h-2 bg-gray-200 rounded w-full" />
-                      <div className="h-2 bg-gray-200 rounded w-5/6" />
-                    </div>
+                  <div>
+                    <p className="font-display text-6xl leading-none text-soot/15" style={display}>
+                      0{i + 1}
+                    </p>
+                    <h3 className="mt-2 font-display text-2xl text-soot sm:text-3xl" style={display}>
+                      {s.t}
+                    </h3>
+                    <p className="mt-3 max-w-md text-[15px] leading-relaxed text-soot/60">{s.d}</p>
+                    <p className="mt-4 italic" style={{ color: "#C45C4A", fontFamily: "Fraunces, serif" }}>
+                      {copy.howAside[i] ?? copy.howAside[0]}
+                    </p>
                   </div>
-                </Card>
-              </motion.div>
+                  <div>
+                    {i === 1 ? (
+                      <InviteMascot className="mx-auto w-full max-w-[460px]" />
+                    ) : (
+                      <BrandFigure id={fig} className="mx-auto max-w-[280px]" delay={i * 0.2} />
+                    )}
+                  </div>
+                </div>
+              )
+            })}
+          </div>
+        </section>
+
+        <section className="relative mx-auto max-w-6xl px-4 py-24 sm:px-6">
+          <h2 className="font-display text-3xl text-soot sm:text-4xl" style={display}>
+            {copy.mockCaption}
+          </h2>
+          <div className="mt-12 grid items-start gap-10 lg:grid-cols-2">
+            <div>
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-soot/45">{copy.mockBureau}</p>
+              <div className="overflow-hidden rounded-[1.6rem] border-[3px] border-soot shadow-[5px_7px_0_0_#161210]">
+                <BureauMock />
+              </div>
+            </div>
+            <div className="lg:mt-10">
+              <p className="mb-3 text-xs font-semibold uppercase tracking-widest text-soot/45">{copy.mockMember}</p>
+              <div className="overflow-hidden rounded-[1.6rem] border-[3px] border-soot shadow-[5px_7px_0_0_#161210]">
+                <MemberMock />
+              </div>
             </div>
           </div>
         </section>
 
-        {/* CTA Section */}
-        <section className="py-20 md:py-28 bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 relative overflow-hidden">
-          <div className="absolute inset-0 opacity-10">
-            <div className="absolute top-0 left-0 w-96 h-96 bg-white rounded-full blur-3xl" />
-            <div className="absolute bottom-0 right-0 w-96 h-96 bg-white rounded-full blur-3xl" />
-          </div>
-
-          <div className="relative z-10 max-w-4xl mx-auto px-6 text-center text-white space-y-8">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-            >
-              <h2 className="text-3xl md:text-5xl font-bold mb-6">Ready to Transform Your Team?</h2>
-              <p className="text-lg md:text-xl opacity-90 mb-8">
-                Join thousands of organizations using Tafsula to build stronger, more compatible teams
-              </p>
-              <div className="flex flex-col sm:flex-row gap-4 justify-center">
-                <Link href="/test">
-                  <Button size="lg" className="w-full sm:w-auto bg-white text-blue-600 hover:bg-gray-100">
-                    <span>Take the Assessment</span>
-                    <ArrowRight className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-                <Link href="/organizations">
-                  <Button size="lg" variant="outline" className="w-full sm:w-auto border-white text-white hover:bg-white/20">
-                    <span>Explore Organizations</span>
-                    <Users className="w-4 h-4 ml-2" />
-                  </Button>
-                </Link>
-              </div>
-            </motion.div>
+        <section className="relative py-24">
+          <div className="mx-auto max-w-6xl px-4 sm:px-6">
+            <h2 className="font-display text-3xl text-soot" style={display}>
+              {copy.featuresTitle}
+            </h2>
+            <div className="mt-10 grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
+              {copy.features.map((f, i) => (
+                <div
+                  key={f.t}
+                  className={`rounded-[1.4rem] border-[3px] border-soot bg-jasmine p-5 shadow-[4px_5px_0_0_#161210] ${
+                    i === 0 ? "sm:col-span-2 lg:col-span-2" : ""
+                  }`}
+                >
+                  <h3 className="font-display text-lg text-soot" style={display}>
+                    {f.t}
+                  </h3>
+                  <p className="mt-2 max-w-sm text-sm leading-relaxed text-soot/60">{f.d}</p>
+                </div>
+              ))}
+            </div>
           </div>
         </section>
-      </main>
 
-      {/* Footer */}
-      <footer className="bg-gray-900 text-gray-400 py-16 border-t border-gray-800">
-        <div className="max-w-7xl mx-auto px-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center space-x-2 mb-4">
-                <div className="w-8 h-8 bg-gradient-to-r from-red-500 via-yellow-400 to-blue-500 rounded-lg"></div>
-                <span className="text-white text-lg font-semibold">Tafsula</span>
-              </div>
-              <p className="text-gray-400 leading-relaxed">
-                Building stronger startup teams through scientific personality assessment and compatibility analysis.
-              </p>
+        <section className="relative mx-auto max-w-3xl px-4 py-20 sm:px-6">
+          <h2 className="font-display text-3xl text-soot" style={display}>
+            {copy.faqTitle}
+          </h2>
+          <div className="mt-8 divide-y divide-soot/10 rounded-[1.8rem] border-[3px] border-soot bg-jasmine px-5 shadow-[5px_7px_0_0_#161210]">
+            {copy.faq.map((item, i) => (
+              <button key={item.q} type="button" onClick={() => setOpenFaq(openFaq === i ? null : i)} className="block w-full py-5 text-left">
+                <p className="font-display text-lg text-soot" style={display}>
+                  {item.q}
+                </p>
+                {openFaq === i && <p className="mt-2 text-sm leading-relaxed text-soot/60">{item.a}</p>}
+              </button>
+            ))}
+          </div>
+        </section>
+
+        <section className="relative px-4 pb-16 sm:px-6">
+          <div className="relative mx-auto max-w-4xl overflow-hidden rounded-[1.8rem] border-[3px] border-soot bg-jasmine px-6 py-16 text-center shadow-[5px_7px_0_0_#161210] sm:px-12">
+            <div className="relative mx-auto mb-2 max-w-[200px]">
+              <BrandFigure id="leap" delay={0.2} />
             </div>
-            <div>
-              <h4 className="text-white text-md font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    About DISC
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Research
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Blog
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white text-md font-semibold mb-4">Company</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    About Us
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Careers
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Contact
-                  </a>
-                </li>
-              </ul>
-            </div>
-            <div>
-              <h4 className="text-white text-md font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2">
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Privacy Policy
-                  </a>
-                </li>
-                <li>
-                  <a href="#" className="hover:text-white transition-colors">
-                    Terms of Service
-                  </a>
-                </li>
-              </ul>
+            <h2 className="relative font-display text-3xl text-soot sm:text-4xl" style={display}>
+              {copy.closeTitle}
+              <em className="italic" style={{ color: "#C45C4A" }}>
+                {copy.closeAccent}
+              </em>
+            </h2>
+            <p className="relative mt-4 text-soot/60">{copy.closeSub}</p>
+            <div className="relative mt-8 flex flex-wrap justify-center gap-3">
+              <Link
+                href="/organizations"
+                className="rounded-full bg-soot px-6 py-3 text-sm font-semibold text-jasmine no-underline"
+              >
+                {copy.ctaPrimary}
+              </Link>
+              <Link
+                href="/organizations/join"
+                className="rounded-full border-[2px] border-soot bg-jasmine px-6 py-3 text-sm font-semibold text-soot no-underline"
+              >
+                {copy.ctaSecondary}
+              </Link>
             </div>
           </div>
-          <div className="border-t border-gray-800 mt-12 pt-8 text-center">
-            <p className="text-gray-500">&copy; {new Date().getFullYear()} Tafsula. All rights reserved.</p>
+        </section>
+
+        <footer className="relative border-t-[3px] border-soot/10 py-10">
+          <div className="mx-auto flex max-w-6xl flex-col gap-6 px-4 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+            <div>
+              <span className="inline-flex items-center gap-2">
+                <LogoMark className="h-8 w-8" />
+                <span className="font-display text-lg text-soot" style={display}>
+                  Tafsula
+                </span>
+              </span>
+              <p className="mt-2 max-w-sm text-sm text-soot/50">{copy.footer}</p>
+            </div>
+            <div className="flex flex-wrap gap-4 text-sm">
+              <Link href="/privacy" className="text-soot/50 no-underline hover:text-soot">
+                {t("legal.privacy")}
+              </Link>
+              <Link href="/terms" className="text-soot/50 no-underline hover:text-soot">
+                {t("legal.terms")}
+              </Link>
+              <Link href="/contact" className="text-soot/50 no-underline hover:text-soot">
+                {t("legal.contact")}
+              </Link>
+              <Link href="/about" className="text-soot/50 no-underline hover:text-soot">
+                {t("nav.about")}
+              </Link>
+            </div>
           </div>
-        </div>
-      </footer>
-    </div>
+        </footer>
+      </div>
+    </PublicShell>
   )
 }
 
-const features = [
-  {
-    title: "Accurate Assessment",
-    description:
-      "Our scientifically validated DISC assessment provides accurate insights into personality traits and work styles, helping you understand team dynamics.",
-    icon: CheckCircle,
-  },
-  {
-    title: "Team Compatibility",
-    description:
-      "Analyze how team members work together and identify potential areas of conflict or synergy to build more effective teams.",
-    icon: Users,
-  },
-  {
-    title: "Actionable Insights",
-    description:
-      "Get personalized recommendations and insights to improve team dynamics, communication, and overall performance.",
-    icon: TrendingUp,
-  },
-]
