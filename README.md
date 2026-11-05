@@ -1,100 +1,67 @@
-# Tafsula - Team Compatibility Analysis Platform
+# Tafsula
 
-Tafsula is a SaaS platform that analyzes startup team compatibility using the DISC personality model. It helps startups understand their team dynamics and improve collaboration.
+A club operating system for Tunisian youth.
 
-## Features
+Tafsula helps young people find clubs and events, join a bureau or a team, complete real work, and carry that trail on a profile. Clubs get a house for members, nights, tasks, and ideas — without WhatsApp folklore as the only source of truth.
 
-- **DISC Personality Test**: Employees take a short test to determine their DISC personality type
-- **AI-Powered Insights**: Receive personalized feedback about work style and strengths
-- **Team Compatibility Analysis**: HR managers can view team balance and get recommendations
-- **Role-Based Access**: Different dashboards for Superadmins, HR Managers, and Employees
+## Product surfaces
 
-## Tech Stack
+| Surface | Who it is for |
+| --- | --- |
+| Public site | Discover clubs and events (FR · EN · AR) |
+| Member dashboard | Tasks, teams, events, profile |
+| Bureau (HR) dashboard | Members, invites, events, teams, proposals |
+| Superadmin | Organizations, join requests, platform oversight |
 
-- **Frontend**: Next.js 14 with App Router, React, TypeScript, Tailwind CSS
-- **Backend**: Next.js API Routes, Server Actions
-- **Database**: MySQL with Prisma ORM
-- **Authentication**: NextAuth.js
-- **AI Integration**: Hugging Face API
+## Stack
 
-## Getting Started
+- Next.js 15 (App Router) + TypeScript + Tailwind CSS
+- PostgreSQL + Prisma
+- NextAuth (credentials)
+- Optional SMTP for invites / password reset
+- Deployable on Vercel + Neon/Supabase
 
-### Prerequisites
+## Local setup
 
-- Node.js 18+ and npm
-- MySQL database
+```bash
+cp .env.example .env
+npm install
+npx prisma migrate deploy
+npm run seed:test
+npm run dev
+```
 
-### Installation
+Fill Postgres and `NEXTAUTH_SECRET` in `.env` first. Never commit real secrets.
 
-1. Clone the repository:
-   \`\`\`bash
-   git clone https://github.com/yourusername/tafsula.git
-   cd tafsula
-   \`\`\`
+## Demo login accounts
 
-2. Install dependencies:
-   \`\`\`bash
-   npm install
-   \`\`\`
+Created by `npm run seed:test` (safe fictional passwords for local / portfolio demos):
 
-3. Set up environment variables:
-   Create a `.env` file in the root directory with the following variables:
-   \`\`\`
-   # Database
-   DATABASE_URL="mysql://username:password@localhost:3306/tafsula"
+| Role | Email | Password | Opens |
+| --- | --- | --- | --- |
+| Superadmin | `admin@tafsula.test` | `[set-in-local-env]` | `/dashboard/admin` |
+| Bureau (HR) | `hr@tafsula.test` | `[set-in-local-env]` | `/dashboard/hr` |
+| Member | `member@tafsula.test` | `[set-in-local-env]` | `/dashboard/member` |
 
-   # NextAuth
-   NEXTAUTH_SECRET=your_secret_key
-   NEXTAUTH_URL=http://localhost:3000
+The seed also creates a sample club (`Maison El Medina`), a public open night, a welcome-desk team, and one assigned task.
 
-   # Hugging Face
-   HUGGING_FACE_API_KEY=your_huggingface_api_key
+## Scripts
 
-   # App
-   NEXT_PUBLIC_APP_URL=http://localhost:3000
-   \`\`\`
+| Command | Purpose |
+| --- | --- |
+| `npm run dev` | Local server |
+| `npm run build` | Prisma generate + Next build |
+| `npm start` | Production server |
+| `npm run seed:test` | Upsert demo org + role accounts |
+| `npm run seed` | Alternate seed script |
 
-4. Set up the database:
-   \`\`\`bash
-   npx prisma migrate dev --name init
-   \`\`\`
+## Deploy outline
 
-5. Seed the database with initial data:
-   \`\`\`bash
-   npm run seed
-   \`\`\`
-
-6. Run the development server:
-   \`\`\`bash
-   npm run dev
-   \`\`\`
-
-7. Open [http://localhost:3000](http://localhost:3000) in your browser.
-
-### Default Users
-
-After running the seed script, you can log in with the following credentials:
-
-- **Super Admin**:
-  - Email: admin@tafsula.com
-  - Password: admin123
-
-- **HR Manager**:
-  - Email: hr@samplestartup.com
-  - Password: hr123
-
-- **Employee**:
-  - Email: john@samplestartup.com
-  - Password: employee123
-
-## Project Structure
-
-- `/app`: Next.js App Router pages and API routes
-- `/components`: Reusable React components
-- `/lib`: Utility functions, types, and database connection
-- `/prisma`: Database schema and migrations
-- `/scripts`: Seed script and other utilities
+1. Provision Postgres (Neon or Supabase free tier).
+2. Set env vars on the host (see `.env.example`).
+3. Run `npx prisma migrate deploy` against production.
+4. Deploy the Next.js app (Vercel works with the included config).
 
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+MIT

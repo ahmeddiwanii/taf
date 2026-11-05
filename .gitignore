@@ -18,6 +18,7 @@ yarn-error.log*
 
 # env files
 .env*
+!.env.example
 
 # vercel
 .vercel
@@ -25,3 +26,30 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Local generated demo-account credentials
+credentials.md
+
+# Local tooling / noise (keep the public repo CV-clean)
+.vscode/
+*.code-workspace
+.kilo/
+server_log*.txt
+*.har
+recon.py
+har_analyze.py
+rename_all.js
+finisheddoc.md
+COMPONENT_INVENTORY.md
+COMPONENT_LIBRARY.md
+COMPREHENSIVE_ARCHITECTURAL_PLAN.md
+DESIGN_SYSTEM*.md
+DESIGN_SYSTEM_README.txt
+IMPLEMENTATION_DIRECTORS_AND_COLLABORATIONS*.md
+TECHNICAL_INVENTORY.md
+PRODUCT.md
+
+# OS / editor
+.DS_Store
+Thumbs.db
+*.swp
