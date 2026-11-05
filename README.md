@@ -35,17 +35,7 @@ npm run dev
 
 Never commit real `.env` values. Passwords for seed accounts live only in your local env (and optionally a local `credentials.md`, which is gitignored).
 
-## Demo accounts (local only)
 
-`npm run seed:test` creates three roles when seed passwords are set in `.env`:
-
-| Role | Email | Opens |
-| --- | --- | --- |
-| Superadmin | `admin@tafsula.test` | `/dashboard/admin` |
-| Bureau (HR) | `hr@tafsula.test` | `/dashboard/hr` |
-| Member | `member@tafsula.test` | `/dashboard/member` |
-
-Passwords are **not** stored in this repo. The seed script prints them once in your terminal.
 
 It also creates a sample club (`Maison El Medina`), a public open night, a welcome-desk team, and one assigned task.
 
