@@ -35,31 +35,28 @@ export default function MemberLayout({ children, orgName = "Organization" }: Mem
   }, [status])
 
   return (
-    <div className="min-h-screen bg-jasmine text-soot selection:bg-pomegranate/30">
+    <div className="min-h-screen bg-[#07080c] text-[#F7F3EA] selection:bg-pomegranate/30">
       <OnboardingTour role="member" />
-      {/* Ambient backgrounds */}
-      <div className="fixed inset-0 overflow-hidden pointer-events-none">
-        <div className="absolute -top-[10%] -left-[10%] w-[40%] h-[40%] bg-[#e85d4c]/10 blur-[120px] rounded-full" />
-        <div className="absolute top-[20%] -right-[10%] w-[35%] h-[35%] bg-[#2a9d8f]/8 blur-[100px] rounded-full" />
-        <div className="absolute -bottom-[10%] left-[20%] w-[30%] h-[30%] bg-[#6b8f71]/8 blur-[100px] rounded-full" />
+      <div className="pointer-events-none fixed inset-0 overflow-hidden">
+        <div className="absolute -left-[10%] -top-[10%] h-[40%] w-[40%] rounded-full bg-[#e85d4c]/10 blur-[120px]" />
+        <div className="absolute -right-[10%] top-[20%] h-[35%] w-[35%] rounded-full bg-[#2a9d8f]/8 blur-[100px]" />
       </div>
 
-      <MemberSidebar 
-        organizationName={displayOrg} 
-        isOpen={isSidebarOpen} 
-        setIsOpenAction={setIsSidebarOpen} 
+      <MemberSidebar
+        organizationName={displayOrg}
+        isOpen={isSidebarOpen}
+        setIsOpenAction={setIsSidebarOpen}
       />
-      
-      <main className="md:ml-64 min-h-screen relative z-10 flex flex-col">
-        <MemberTopNav 
-          organizationName={displayOrg} 
-          onMenuAction={() => setIsSidebarOpen(true)} 
+
+      <main className="relative z-10 flex min-h-screen flex-col md:ml-64">
+        <MemberTopNav
+          organizationName={displayOrg}
+          onMenuAction={() => setIsSidebarOpen(true)}
         />
-        <div className="flex-1 max-w-7xl mx-auto w-full px-4 sm:px-6 lg:px-8 py-6 sm:py-8">
+        <div className="mx-auto w-full max-w-7xl flex-1 px-4 py-5 sm:px-6 sm:py-8 lg:px-8">
           {children}
         </div>
       </main>
     </div>
   )
 }
-

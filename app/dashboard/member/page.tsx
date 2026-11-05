@@ -27,6 +27,7 @@ import { Badge } from "@/components/ui/badge"
 import { Card } from "@/components/ui/card"
 import { toast } from "sonner"
 import { format } from "date-fns"
+import { GuideBanner } from "@/components/dashboard/guide-banner"
 
 interface TeamInvitation {
   id: string
@@ -216,7 +217,18 @@ export default function MemberDashboard() {
 
   return (
     <MemberLayout>
-      <div className="relative z-10 max-w-7xl mx-auto pb-20 space-y-12">
+      <div className="relative z-10 mx-auto max-w-7xl space-y-8 pb-20 sm:space-y-12">
+        <GuideBanner
+          storageKey="tafsula_member_checklist_v2"
+          title="Your first steps"
+          body="Join an event, check team invites, open your tasks, then finish your profile."
+          steps={[
+            { id: "events", label: "See events", href: "/dashboard/member/events", done: events.some((e) => e.isRegistered) },
+            { id: "teams", label: "Check team invites", href: "/dashboard/member/teams", done: invitations.length === 0 && tasks.length > 0 },
+            { id: "tasks", label: "Open your tasks", href: "/dashboard/member/tasks", done: tasks.length > 0 },
+            { id: "profile", label: "Finish your profile", href: "/dashboard/member/profile" },
+          ]}
+        />
 
         {/* Directorship Details Modal */}
         <AnimatePresence>
@@ -315,16 +327,16 @@ export default function MemberDashboard() {
               {organization && <p className="text-blue-400/60 font-medium mt-2 uppercase tracking-widest text-[10px]">{organization.name}</p>}
            </div>
            
-           <div className="flex flex-wrap gap-4 p-2 bg-white/[0.02] border border-white/5 rounded-2xl backdrop-blur-xl">
-              <div className="px-6 py-3 text-center border-r border-white/5">
+           <div className="grid grid-cols-3 sm:flex sm:flex-wrap gap-0 sm:gap-4 p-2 bg-white/[0.02] border border-white/5 rounded-2xl backdrop-blur-xl w-full md:w-auto">
+              <div className="px-3 sm:px-6 py-3 text-center sm:border-r border-white/5">
                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Open tasks</p>
                  <p className="text-xl font-black text-white">{tasks.length}</p>
               </div>
-              <div className="px-6 py-3 text-center border-r border-white/5">
+              <div className="px-3 sm:px-6 py-3 text-center sm:border-r border-white/5">
                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Team invites</p>
                  <p className="text-xl font-black text-white">{invitations.length}</p>
               </div>
-              <div className="px-6 py-3 text-center">
+              <div className="px-3 sm:px-6 py-3 text-center">
                  <p className="text-[9px] font-black text-white/20 uppercase tracking-widest mb-1">Upcoming events</p>
                  <p className="text-xl font-black text-blue-400">{events.length}</p>
               </div>
@@ -351,17 +363,17 @@ export default function MemberDashboard() {
                         <h4 className="text-3xl font-black text-white mb-4 uppercase tracking-tighter leading-tight">{inv.team.name}</h4>
                         <p className="text-sm text-white/40 mb-10 italic leading-relaxed">You’ve been invited to join this team.</p>
                         
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                            <Button 
                              onClick={() => handleInvitationResponse(inv.id, "ACCEPTED")}
-                             className="flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-600/20"
+                             className="w-full sm:flex-1 h-12 bg-blue-600 hover:bg-blue-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-blue-600/20"
                            >
                               Accept
                            </Button>
                            <Button 
                              variant="ghost"
                              onClick={() => handleInvitationResponse(inv.id, "REJECTED")}
-                             className="h-12 px-6 bg-white/5 text-white/40 hover:text-red-500 hover:bg-red-500/10 rounded-xl font-black uppercase tracking-widest text-[10px]"
+                             className="w-full sm:w-auto h-12 px-6 bg-white/5 text-white/40 hover:text-red-500 hover:bg-red-500/10 rounded-xl font-black uppercase tracking-widest text-[10px]"
                            >
                               Decline
                            </Button>
@@ -387,24 +399,24 @@ export default function MemberDashboard() {
                            Due: {t.task.dueDate ? format(new Date(t.task.dueDate), "dd MMM yyyy") : "ASAP"}
                         </p>
                         
-                        <div className="flex gap-3">
+                        <div className="flex flex-col sm:flex-row gap-3">
                            <Button
                              variant="ghost"
                              onClick={() => router.push(`/dashboard/member/tasks/${t.task.id}`)}
-                             className="h-12 px-6 bg-white/5 text-white/40 hover:text-white hover:bg-white/10 rounded-xl font-black uppercase tracking-widest text-[10px]"
+                             className="w-full sm:w-auto h-12 px-6 bg-white/5 text-white/40 hover:text-white hover:bg-white/10 rounded-xl font-black uppercase tracking-widest text-[10px]"
                            >
-                             Open Terminal
+                             Open
                            </Button>
                            <Button 
                              onClick={() => handleTaskResponse(t.id, "ACCEPTED")}
-                             className="flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-600/20"
+                             className="w-full sm:flex-1 h-12 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl font-black uppercase tracking-widest text-[10px] shadow-xl shadow-emerald-600/20"
                            >
                               Accept
                            </Button>
                            <Button 
                              variant="ghost"
                              onClick={() => handleTaskResponse(t.id, "REJECTED")}
-                             className="h-12 px-6 bg-white/5 text-white/40 hover:text-red-500 hover:bg-red-500/10 rounded-xl font-black uppercase tracking-widest text-[10px]"
+                             className="w-full sm:w-auto h-12 px-6 bg-white/5 text-white/40 hover:text-red-500 hover:bg-red-500/10 rounded-xl font-black uppercase tracking-widest text-[10px]"
                            >
                               Decline
                            </Button>

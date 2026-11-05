@@ -4,6 +4,7 @@ import { ArrowUpRight, CalendarDays, CheckCheck, ClipboardList, Plus, Sparkles, 
 
 import { HRAnalytics, type DISCPoint, type HRTrendPoint } from "@/components/hr/hr-analytics"
 import { KPICard } from "@/components/hr/dashboard-client"
+import { GuideBanner } from "@/components/dashboard/guide-banner"
 import { HRLayout } from "@/components/layout/hr-layout"
 import { authOptions } from "@/lib/auth"
 import { prisma } from "@/lib/db"
@@ -197,6 +198,17 @@ export default async function HRDashboardPage() {
   return (
     <HRLayout orgName={organization?.name}>
       <div className="space-y-6">
+        <GuideBanner
+          storageKey="tafsula_hr_checklist_v2"
+          title="Start here"
+          body="Invite people, create an event, give a task, then post club news. You can edit events and posts later."
+          steps={[
+            { id: "invite", label: "Invite a member", href: "/dashboard/hr/members/invite", done: memberCount > 0 },
+            { id: "event", label: "Create an event", href: "/dashboard/hr/events", done: totalEvents > 0 },
+            { id: "task", label: "Create a task", href: "/dashboard/hr/tasks/create" },
+            { id: "news", label: "Post club news", href: "/dashboard/hr/posts/new" },
+          ]}
+        />
         <section className="hr-hero relative isolate overflow-hidden rounded-[26px] bg-[#19332f] p-6 text-white shadow-xl sm:p-8">
           <div className="pointer-events-none absolute -right-10 -top-32 -z-10 h-80 w-80 rounded-full border-[44px] border-[#c4e46a]/10" />
           <div className="pointer-events-none absolute -bottom-40 right-1/4 -z-10 h-72 w-72 rounded-full bg-[#c4e46a]/[0.07] blur-3xl" />

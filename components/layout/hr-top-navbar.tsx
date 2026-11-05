@@ -1,9 +1,9 @@
 "use client"
 
 import React from "react"
-import { motion } from "framer-motion"
 import { useSession } from "next-auth/react"
 import { UserAvatar } from "../user-avatar"
+import { LogoWordmark } from "@/components/brand/logo"
 import { 
   Menu as MenuIcon, 
   Bell as BellIcon, 
@@ -32,13 +32,10 @@ export function HRTopNav({ organizationName, onMenuAction }: HRTopNavProps) {
             <MenuIcon className="w-5 h-5" />
           </button>
 
-          {/* Mobile Branding */}
-          <div className="md:hidden flex items-center gap-2">
-            <div className="w-8 h-8 bg-gradient-to-br from-blue-600 to-indigo-600 rounded-lg flex items-center justify-center">
-              <span className="font-black text-white text-xs">T</span>
-            </div>
-            <span className="font-black text-sm text-white tracking-tighter uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-              {organizationName.split(' ')[0]}
+          <div className="flex items-center gap-2 md:hidden">
+            <LogoWordmark href={null} compact className="h-8" />
+            <span className="truncate text-xs font-semibold text-soot/60">
+              {organizationName.split(" ")[0]}
             </span>
           </div>
 
@@ -47,7 +44,7 @@ export function HRTopNav({ organizationName, onMenuAction }: HRTopNavProps) {
             <SearchIcon className="w-3.5 h-3.5 text-white/20 group-focus-within:text-blue-400 transition-colors" />
             <input 
               type="text" 
-              placeholder="Search across matrix..." 
+              placeholder="Search…"
               className="bg-transparent border-none outline-none text-[11px] font-medium text-white/60 placeholder:text-white/10 w-48"
             />
             <div className="flex items-center gap-1 px-1.5 py-0.5 rounded-md bg-white/[0.05] border border-white/5">
@@ -61,9 +58,9 @@ export function HRTopNav({ organizationName, onMenuAction }: HRTopNavProps) {
              <div className="flex flex-col items-end">
                 <div className="flex items-center gap-1.5">
                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 shadow-[0_0_8px_rgba(59,130,246,0.5)]" />
-                   <span className="text-[10px] font-black text-white/80 uppercase tracking-widest">Operational</span>
+                   <span className="text-[10px] font-semibold text-soot/80">Online</span>
                 </div>
-                <span className="text-[8px] font-bold text-white/20 uppercase tracking-tighter">Secure Uplink Active</span>
+                <span className="text-[8px] font-medium text-soot/40">Bureau workspace</span>
              </div>
           </div>
 
