@@ -34,7 +34,7 @@ export default function TeamWarRoomPage() {
       setTeam(data)
     } catch (error) {
       console.error("Error fetching team:", error)
-      toast.error("Could not load Team War Room. Access Denied or Missing.")
+      toast.error("Could not load this team.")
       router.push("/dashboard/member/teams")
     } finally {
       setLoading(false)
@@ -42,7 +42,7 @@ export default function TeamWarRoomPage() {
   }
 
   const handleLeaveTeam = async () => {
-    if (!confirm("Are you sure you want to abandon your post in this team?")) return
+    if (!confirm("Leave this team?")) return
     try {
       const toastId = toast.loading("Leaving team...")
       const res = await fetch(`/api/teams/${teamId}/members/${session?.user?.id}`, { method: "DELETE" })
@@ -77,7 +77,7 @@ export default function TeamWarRoomPage() {
   const combinedLeaders = [
     ...teamDirectors.map((d: any) => ({ ...d.user, auth: 'Team Director' })),
     ...eventDirectors.map((d: any) => ({ ...d.user, auth: 'Event Director' })),
-    ...acceptedMembers.filter((m: any) => m.roleInTeam === "LEADER").map((m: any) => ({ ...m.user, auth: 'Unit Leader' }))
+    ...acceptedMembers.filter((m: any) => m.roleInTeam === "LEADER").map((m: any) => ({ ...m.user, auth: 'Team leader' }))
   ].filter((v, i, a) => a.findIndex(t => (t.id === v.id)) === i) // Remove duplicates
 
   return (
@@ -125,19 +125,19 @@ export default function TeamWarRoomPage() {
               )}
 
               <p className="text-white/50 text-sm md:text-base leading-relaxed max-w-xl">
-                {team.description || team.purpose || "No specific mission parameters set for this squadron yet."}
+                {team.description || team.purpose || "No description for this team yet."}
               </p>
             </div>
 
             {isMember && (
-              <div className="flex items-start">
+              <div className="flex items-start w-full md:w-auto">
                   <Button 
                     onClick={handleLeaveTeam}
                     variant="destructive"
-                    className="bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 rounded-2xl h-12 px-6 shadow-xl shadow-rose-500/0 hover:shadow-rose-500/20 text-[10px] uppercase font-black tracking-widest transition-all"
+                    className="w-full md:w-auto bg-rose-500/10 hover:bg-rose-500 text-rose-500 hover:text-white border border-rose-500/20 rounded-2xl h-12 px-6 shadow-xl shadow-rose-500/0 hover:shadow-rose-500/20 text-[10px] uppercase font-black tracking-widest transition-all"
                   >
                      <UserMinus className="w-4 h-4 mr-2" />
-                     Abandon Post
+                     Leave team
                   </Button>
               </div>
             )}
@@ -147,7 +147,7 @@ export default function TeamWarRoomPage() {
         {/* Command & Crew Grid */}
         <div className="grid grid-cols-1 xl:grid-cols-3 gap-8">
             
-            {/* Chain of Command */}
+            {/* Team leads */}
             <motion.div 
                initial={{ opacity: 0, x: -20 }}
                animate={{ opacity: 1, x: 0 }}
@@ -159,7 +159,7 @@ export default function TeamWarRoomPage() {
                   <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500 border border-amber-500/20">
                       <Key className="w-4 h-4" />
                   </div>
-                  Chain of Command
+                  Team leads
                </h2>
                
                <div className="space-y-4">
@@ -198,7 +198,7 @@ export default function TeamWarRoomPage() {
 
                {acceptedMembers.length === 0 ? (
                   <div className="p-12 text-center border border-dashed border-white/10 rounded-[2rem]">
-                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40">Squadron Empty</p>
+                     <p className="text-[10px] font-black uppercase tracking-widest text-white/40">No members yet</p>
                   </div>
                ) : (
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -237,13 +237,13 @@ export default function TeamWarRoomPage() {
                   <div className="p-2 rounded-lg bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
                       <ClipboardList className="w-5 h-5" />
                   </div>
-                  Operational Tasks
+                  Tasks
                </h2>
                
                {isMember && (
                   <Link href={`/dashboard/member/tasks`}>
                      <Button variant="outline" className="h-10 bg-emerald-500/10 hover:bg-emerald-500/20 text-emerald-400 border-emerald-500/20 text-[10px] uppercase font-black tracking-widest rounded-xl px-4">
-                        View All Operations <ArrowRight className="w-3.5 h-3.5 ml-2" />
+                        View all tasks <ArrowRight className="w-3.5 h-3.5 ml-2" />
                      </Button>
                   </Link>
                )}
@@ -252,7 +252,7 @@ export default function TeamWarRoomPage() {
             {(!team.tasks || team.tasks.length === 0) ? (
                <div className="p-16 text-center border border-dashed border-white/10 rounded-[2rem]">
                    <ClipboardList className="w-10 h-10 mx-auto text-white/10 mb-4" />
-                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">No active tasks designated to this squadron.</p>
+                   <p className="text-[10px] font-black uppercase tracking-[0.2em] text-white/40">No active tasks for this team.</p>
                </div>
             ) : (
                <div className="space-y-4">

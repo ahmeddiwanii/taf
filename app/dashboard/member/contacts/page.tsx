@@ -109,17 +109,17 @@ export default function MemberContactsPage() {
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} className="flex flex-col sm:flex-row sm:items-end justify-between gap-4">
                     <div>
                         <h1 className="text-4xl font-black text-white tracking-tighter mb-2 uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                            COMM-LINK <span className="text-blue-500">NETWORK</span>
+                            My <span className="text-blue-500">contacts</span>
                         </h1>
                         <p className="text-white/40 font-medium tracking-widest uppercase text-xs flex items-center gap-2">
-                            <Network className="w-4 h-4" /> Secure Professional Connections
+                            <Network className="w-4 h-4" /> People you&apos;ve met
                         </p>
                     </div>
                     <Button 
                         onClick={() => { resetForm(); setShowForm(true) }} 
-                        className="bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-xl border border-blue-500/30 transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] hover:shadow-[0_0_30px_rgba(37,99,235,0.4)]"
+                        className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-xl border border-blue-500/30 transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] hover:shadow-[0_0_30px_rgba(37,99,235,0.4)]"
                     >
-                        <Plus className="w-4 h-4 mr-2" /> Add Network Node
+                        <Plus className="w-4 h-4 mr-2" /> Add contact
                     </Button>
                 </motion.div>
 
@@ -128,7 +128,7 @@ export default function MemberContactsPage() {
                     <div className="relative mb-6">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-white/20" />
                         <Input 
-                            placeholder="Scan network registry..." 
+                            placeholder="Search contacts..." 
                             value={search} 
                             onChange={e => setSearch(e.target.value)} 
                             className="pl-12 h-12 bg-white/5 border-white/10 text-white placeholder:text-white/30 focus-visible:ring-1 focus-visible:ring-blue-500 rounded-xl" 
@@ -145,8 +145,8 @@ export default function MemberContactsPage() {
                     ) : contacts.length === 0 ? (
                         <div className="py-24 text-center border-2 border-dashed border-white/10 rounded-3xl bg-white/[0.01]">
                             <Globe className="w-12 h-12 text-white/10 mx-auto mb-4" />
-                            <p className="text-sm font-black text-white/40 uppercase tracking-widest">No Connections Located</p>
-                            <p className="text-[10px] text-white/20 mt-2 uppercase tracking-widest">Add a node to begin mapping your network</p>
+                            <p className="text-sm font-black text-white/40 uppercase tracking-widest">No contacts yet</p>
+                            <p className="text-[10px] text-white/20 mt-2 uppercase tracking-widest">Add a contact to get started</p>
                         </div>
                     ) : (
                         <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
@@ -174,7 +174,7 @@ export default function MemberContactsPage() {
                                                         </h4>
                                                         {contact.isGeneral && (
                                                             <Badge className="bg-emerald-500/20 text-emerald-400 border border-emerald-500/30 text-[9px] uppercase font-black tracking-widest w-max mt-1">
-                                                                Global Scope
+                                                                Shared list
                                                             </Badge>
                                                         )}
                                                     </div>
@@ -214,12 +214,12 @@ export default function MemberContactsPage() {
                                             )}
                                         </div>
 
-                                        <div className="flex gap-2 mt-4 pt-4 border-t border-white/5 opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Button variant="ghost" size="sm" className="flex-1 h-8 bg-blue-500/10 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 text-[10px] font-black uppercase tracking-widest" onClick={() => startEdit(contact)}>
-                                                <Edit className="w-3 h-3 mr-1.5" /> Modify
+                                        <div className="flex flex-col sm:flex-row gap-2 mt-4 pt-4 border-t border-white/5 opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity">
+                                            <Button variant="ghost" size="sm" className="flex-1 h-10 sm:h-8 bg-blue-500/10 text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 text-[10px] font-black uppercase tracking-widest" onClick={() => startEdit(contact)}>
+                                                <Edit className="w-3 h-3 mr-1.5" /> Edit
                                             </Button>
-                                            <Button variant="ghost" size="sm" className="flex-1 h-8 bg-red-500/10 text-red-400 hover:text-red-300 hover:bg-red-500/20 text-[10px] font-black uppercase tracking-widest" onClick={() => setDeleteConfirm(contact.id)}>
-                                                <Trash2 className="w-3 h-3 mr-1.5" /> Erase
+                                            <Button variant="ghost" size="sm" className="flex-1 h-10 sm:h-8 bg-red-500/10 text-red-400 hover:text-red-300 hover:bg-red-500/20 text-[10px] font-black uppercase tracking-widest" onClick={() => setDeleteConfirm(contact.id)}>
+                                                <Trash2 className="w-3 h-3 mr-1.5" /> Delete
                                             </Button>
                                         </div>
                                     </motion.div>
@@ -242,7 +242,7 @@ export default function MemberContactsPage() {
                             >
                                 <div className="px-8 py-6 border-b border-white/10 flex items-center justify-between sticky top-0 bg-[#0a0a0f]/90 backdrop-blur-md z-10">
                                     <h3 className="text-xl font-black text-white uppercase tracking-widest" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                                        {editingId ? "Reconfigure Node" : "Initialize New Node"}
+                                        {editingId ? "Edit contact" : "Add contact"}
                                     </h3>
                                     <button onClick={resetForm} className="p-2 hover:bg-white/5 rounded-xl transition-colors">
                                         <X className="w-5 h-5 text-white/40" />
@@ -252,7 +252,7 @@ export default function MemberContactsPage() {
                                 <div className="p-8 space-y-6">
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                                         <div className="sm:col-span-2 space-y-2">
-                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Identity Designation *</Label>
+                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Name *</Label>
                                             <Input 
                                                 value={formData.name} onChange={e => setFormData({ ...formData, name: e.target.value })} 
                                                 placeholder="Contact Name" 
@@ -260,7 +260,7 @@ export default function MemberContactsPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Comm Channel (Email)</Label>
+                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Email</Label>
                                             <Input 
                                                 value={formData.email} onChange={e => setFormData({ ...formData, email: e.target.value })} 
                                                 placeholder="target@domain.net" 
@@ -268,7 +268,7 @@ export default function MemberContactsPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Secure Line (Phone)</Label>
+                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Phone</Label>
                                             <Input 
                                                 value={formData.phone} onChange={e => setFormData({ ...formData, phone: e.target.value })} 
                                                 placeholder="+00 (00) 000-0000" 
@@ -276,7 +276,7 @@ export default function MemberContactsPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Affiliation (Company)</Label>
+                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Company</Label>
                                             <Input 
                                                 value={formData.organization} onChange={e => setFormData({ ...formData, organization: e.target.value })} 
                                                 placeholder="Megacorp Inc." 
@@ -284,7 +284,7 @@ export default function MemberContactsPage() {
                                             />
                                         </div>
                                         <div className="space-y-2">
-                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Rank / Position</Label>
+                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Role</Label>
                                             <Input 
                                                 value={formData.role} onChange={e => setFormData({ ...formData, role: e.target.value })} 
                                                 placeholder="Director" 
@@ -292,10 +292,10 @@ export default function MemberContactsPage() {
                                             />
                                         </div>
                                         <div className="sm:col-span-2 space-y-2">
-                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Origin Point (How Met)</Label>
+                                            <Label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">How you met</Label>
                                             <Input 
                                                 value={formData.howMet} onChange={e => setFormData({ ...formData, howMet: e.target.value })} 
-                                                placeholder="Sector 7 Summit" 
+                                                placeholder="e.g. club event, conference" 
                                                 className="bg-white/5 border-white/10 text-white focus-visible:ring-blue-500 h-12 rounded-xl" 
                                             />
                                         </div>
@@ -317,12 +317,12 @@ export default function MemberContactsPage() {
                                     </div>
                                 </div>
                                 
-                                <div className="px-8 py-6 border-t border-white/10 flex gap-4 justify-end bg-black/20">
-                                    <Button variant="ghost" onClick={resetForm} className="text-white/40 hover:text-white uppercase font-black tracking-widest text-[10px]">
+                                <div className="px-8 py-6 border-t border-white/10 flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 justify-end bg-black/20">
+                                    <Button variant="ghost" onClick={resetForm} className="w-full sm:w-auto text-white/40 hover:text-white uppercase font-black tracking-widest text-[10px]">
                                         Cancel
                                     </Button>
-                                    <Button onClick={handleSubmit} className="bg-blue-600 hover:bg-blue-700 text-white uppercase font-black tracking-widest text-[10px] h-10 px-8" disabled={!formData.name.trim()}>
-                                        {editingId ? "Update Node" : "Confirm Entry"}
+                                    <Button onClick={handleSubmit} className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white uppercase font-black tracking-widest text-[10px] h-10 px-8" disabled={!formData.name.trim()}>
+                                        {editingId ? "Save changes" : "Add contact"}
                                     </Button>
                                 </div>
                             </motion.div>
@@ -344,14 +344,14 @@ export default function MemberContactsPage() {
                                 <div className="w-16 h-16 rounded-full bg-red-500/10 border border-red-500/20 flex items-center justify-center mx-auto mb-6">
                                     <Trash2 className="w-8 h-8 text-red-500" />
                                 </div>
-                                <h3 className="text-xl font-black text-white uppercase tracking-widest mb-2">Erase Node?</h3>
-                                <p className="text-sm text-white/40 mb-8">This action is irreversible and will purge from all local registries.</p>
-                                <div className="flex gap-4 justify-center">
-                                    <Button variant="ghost" onClick={() => setDeleteConfirm(null)} className="text-white/40 hover:text-white uppercase font-black tracking-widest text-[10px]">
+                                <h3 className="text-xl font-black text-white uppercase tracking-widest mb-2">Delete contact?</h3>
+                                <p className="text-sm text-white/40 mb-8">This cannot be undone.</p>
+                                <div className="flex flex-col-reverse sm:flex-row gap-3 sm:gap-4 justify-center">
+                                    <Button variant="ghost" onClick={() => setDeleteConfirm(null)} className="w-full sm:w-auto text-white/40 hover:text-white uppercase font-black tracking-widest text-[10px]">
                                         Cancel
                                     </Button>
-                                    <Button variant="destructive" onClick={() => handleDelete(deleteConfirm)} className="bg-red-600 hover:bg-red-700 uppercase font-black tracking-widest text-[10px]">
-                                        Confirm Purge
+                                    <Button variant="destructive" onClick={() => handleDelete(deleteConfirm)} className="w-full sm:w-auto bg-red-600 hover:bg-red-700 uppercase font-black tracking-widest text-[10px]">
+                                        Delete
                                     </Button>
                                 </div>
                             </motion.div>

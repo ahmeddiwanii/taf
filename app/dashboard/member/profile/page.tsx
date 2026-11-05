@@ -77,9 +77,9 @@ export default function MemberProfilePage() {
             <Button 
                 onClick={saveProfile} 
                 disabled={saving}
-                className="bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-xl border border-blue-500/30 transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] hover:shadow-[0_0_30px_rgba(37,99,235,0.4)] disabled:opacity-50"
+                className="w-full sm:w-auto bg-blue-600 hover:bg-blue-700 text-white font-black uppercase tracking-widest text-[10px] h-10 px-6 rounded-xl border border-blue-500/30 transition-all shadow-[0_0_20px_rgba(37,99,235,0.2)] hover:shadow-[0_0_30px_rgba(37,99,235,0.4)] disabled:opacity-50"
             >
-                {saving ? "Transmitting..." : <><Save className="w-4 h-4 mr-2" /> Sync Profile</>}
+                {saving ? "Saving..." : <><Save className="w-4 h-4 mr-2" /> Save profile</>}
             </Button>
         </motion.div>
 
@@ -93,13 +93,13 @@ export default function MemberProfilePage() {
                     <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 blur-[80px] rounded-full pointer-events-none" />
                     
                     <h2 className="text-sm font-black text-white mb-6 uppercase tracking-widest border-b border-white/5 pb-4 flex items-center gap-2">
-                        <Shield className="w-4 h-4 text-blue-500" /> Core Identity
+                        <Shield className="w-4 h-4 text-blue-500" /> Basic info
                     </h2>
 
                     <div className="space-y-5 relative z-10">
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Callsign / Headline</label>
+                                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Headline</label>
                                 <Input 
                                     value={headline} 
                                     onChange={(e) => setHeadline(e.target.value)} 
@@ -108,7 +108,7 @@ export default function MemberProfilePage() {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Rank / Role Title</label>
+                                <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Role title</label>
                                 <Input 
                                     value={roleTitle} 
                                     onChange={(e) => setRoleTitle(e.target.value)} 
@@ -119,12 +119,12 @@ export default function MemberProfilePage() {
                         </div>
 
                         <div className="space-y-2">
-                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">Sector / Location</label>
+                            <label className="text-[10px] font-black text-white/40 uppercase tracking-widest ml-1">City / location</label>
                             <Input 
                                 value={location} 
                                 onChange={(e) => setLocation(e.target.value)} 
                                 className="bg-white/5 border-white/10 text-white focus-visible:ring-blue-500 rounded-xl h-11"
-                                placeholder="Sector 7"
+                                placeholder="City or country"
                             />
                         </div>
 

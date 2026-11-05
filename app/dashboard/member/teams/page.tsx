@@ -44,7 +44,7 @@ export default function MemberTeamsPage() {
       setMyTeams(data.myTeams || [])
     } catch (error) {
       console.error("Error fetching teams:", error)
-      toast.error("Failed to load squadrons.")
+      toast.error("Failed to load teams.")
     } finally {
       setLoading(false)
     }
@@ -137,7 +137,7 @@ export default function MemberTeamsPage() {
                   </div>
                 </div>
                 <Badge className="bg-white/5 text-white/50 border-white/10 font-black text-[9px] tracking-widest px-2 py-1">
-                {team.members.filter(m => m.status === "ACCEPTED").length} Slot{team.members.length !== 1 ? 's' : ''} Filled
+                {team.members.filter(m => m.status === "ACCEPTED").length} member{team.members.filter(m => m.status === "ACCEPTED").length !== 1 ? 's' : ''}
                 </Badge>
             </div>
             
@@ -216,7 +216,7 @@ export default function MemberTeamsPage() {
             {/* Event Header */}
             <div 
                onClick={toggle}
-               className={`p-6 md:p-8 flex items-center justify-between transition-all ${isAvailable ? "cursor-pointer hover:bg-white/[0.02]" : ""}`}
+               className={`p-6 md:p-8 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${isAvailable ? "cursor-pointer hover:bg-white/[0.02]" : ""}`}
             >
                 <div className="flex items-center gap-4">
                     <div className="w-12 h-12 rounded-2xl bg-violet-500/10 border border-violet-500/20 flex items-center justify-center text-violet-400">
@@ -308,8 +308,8 @@ export default function MemberTeamsPage() {
                   {myTeams.length === 0 ? (
                     <div className="py-20 text-center border border-dashed border-white/10 rounded-[3rem] bg-white/[0.01]">
                       <Shield className="w-12 h-12 text-white/10 mx-auto mb-4" />
-                      <p className="text-white/40 uppercase tracking-widest font-black text-sm">Offline</p>
-                      <p className="text-white/20 text-xs mt-2 uppercase tracking-widest">You are not established in any team yet.</p>
+                      <p className="text-white/40 uppercase tracking-widest font-black text-sm">No teams yet</p>
+                      <p className="text-white/20 text-xs mt-2 uppercase tracking-widest">Join a team below when one is available.</p>
                     </div>
                   ) : (
                     <div>

@@ -3,13 +3,13 @@
 import { useState, useEffect } from "react"
 import { useSession } from "next-auth/react"
 import MemberLayout from "../../../../components/layout/member-layout"
-import { Card, CardContent, CardHeader, CardTitle } from "../../../../components/ui/card"
+import { PageTour } from "@/components/dashboard/page-tour"
 import { Badge } from "../../../../components/ui/badge"
 import { Button } from "../../../../components/ui/button"
 import { Input } from "../../../../components/ui/input"
 import { motion, AnimatePresence } from "framer-motion"
 import {
-    Search, ClipboardList, CheckCircle2, Clock, AlertCircle, Calendar, Users, Target, Activity, Zap, Check, X
+    Search, ClipboardList, CheckCircle2, Clock, Calendar, Users, Target, Activity, Zap
 } from "lucide-react"
 import { format } from "date-fns"
 
@@ -79,117 +79,180 @@ export default function MemberTasksPage() {
         } catch { }
     }
 
+    const filterLabels: Record<string, string> = {
+        OPEN: "Open",
+        IN_PROGRESS: "In progress",
+        COMPLETED: "Done",
+        BLOCKED: "Blocked",
+    }
+
     return (
         <MemberLayout>
-            <div className="space-y-6 relative z-10 pb-12">
+            <PageTour
+                storageKey="tafsula_tour_member_tasks_v1"
+                steps={[
+                    {
+                        target: "member-tasks-stats",
+                        title: "Your numbers",
+                        body: "See how many tasks you have, and how many are done.",
+                    },
+                    {
+                        target: "member-tasks-search",
+                        title: "Find a task",
+                        body: "Type a word to search, or tap a filter to narrow the list.",
+                    },
+                    {
+                        target: "member-tasks-list",
+                        title: "Your task list",
+                        body: "Tap Open to see details and mark your work as done.",
+                    },
+                ]}
+            />
+            <div className="relative z-10 space-y-6 pb-12">
                 <motion.div initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }}>
-                    <h1 className="text-4xl font-black text-white tracking-tighter mb-2 uppercase" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>
-                        MY <span className="text-blue-500">TASKS</span>
+                    <h1 className="mb-2 text-3xl font-semibold tracking-tight text-[#F7F3EA] sm:text-4xl">
+                        My tasks
                     </h1>
-                    <p className="text-white/40 font-medium tracking-widest uppercase text-xs flex items-center gap-2">
-                       <Target className="w-4 h-4" /> View and update your tasks
+                    <p className="flex items-center gap-2 text-sm text-[#F7F3EA]/55">
+                       <Target className="h-4 w-4" /> See your work and mark it when you finish
                     </p>
                 </motion.div>
 
-                {/* Stats */}
-                <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <motion.div
+                    data-tour="member-tasks-stats"
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="grid grid-cols-2 gap-3 md:grid-cols-4 md:gap-4"
+                >
                     {[
-                        { label: "Total tasks", value: stats.total, icon: ClipboardList, color: "text-blue-400", bg: "bg-blue-600/10", border: "border-blue-500/20" },
-                        { label: "Pending", value: stats.open, icon: Clock, color: "text-white/60", bg: "bg-white/5", border: "border-white/10" },
-                        { label: "In progress", value: stats.inProgress, icon: Zap, color: "text-amber-400", bg: "bg-amber-600/10", border: "border-amber-500/20" },
-                        { label: "Completed", value: stats.completed, icon: CheckCircle2, color: "text-emerald-400", bg: "bg-emerald-600/10", border: "border-emerald-500/20" },
-                    ].map(s => (
-                        <div key={s.label} className={`border ${s.border} bg-white/[0.02] backdrop-blur-xl p-4 rounded-2xl group hover:bg-white/[0.04] transition-all`}>
-                            <div className="flex items-center justify-between mb-3">
-                                <span className="text-[10px] font-black text-white/40 tracking-[0.2em] uppercase">{s.label}</span>
-                                <div className={`p-1.5 rounded-lg ${s.bg} ${s.color}`}>
-                                    <s.icon className="w-3.5 h-3.5" />
+                        { label: "All", value: stats.total, icon: ClipboardList, color: "text-blue-300", bg: "bg-blue-500/15", border: "border-blue-400/25" },
+                        { label: "Open", value: stats.open, icon: Clock, color: "text-[#F7F3EA]/70", bg: "bg-white/5", border: "border-white/10" },
+                        { label: "In progress", value: stats.inProgress, icon: Zap, color: "text-amber-300", bg: "bg-amber-500/15", border: "border-amber-400/25" },
+                        { label: "Done", value: stats.completed, icon: CheckCircle2, color: "text-emerald-300", bg: "bg-emerald-500/15", border: "border-emerald-400/25" },
+                    ].map((s) => (
+                        <div key={s.label} className={`rounded-2xl border ${s.border} bg-white/[0.04] p-4 backdrop-blur-xl`}>
+                            <div className="mb-3 flex items-center justify-between">
+                                <span className="text-xs font-medium text-[#F7F3EA]/55">{s.label}</span>
+                                <div className={`rounded-lg p-1.5 ${s.bg} ${s.color}`}>
+                                    <s.icon className="h-3.5 w-3.5" />
                                 </div>
                             </div>
-                            <div className="text-3xl font-black text-white" style={{ fontFamily: "'Space Grotesk', sans-serif" }}>{s.value}</div>
+                            <div className="text-3xl font-semibold text-[#F7F3EA]">{s.value}</div>
                         </div>
                     ))}
                 </motion.div>
 
-                <div className="bg-white/[0.02] border border-white/[0.08] backdrop-blur-xl rounded-2xl p-6 shadow-2xl">
-                    {/* Filters */}
-                    <div className="flex flex-col sm:flex-row gap-4 mb-6">
-                        <div className="relative flex-1 group">
-                            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20 group-focus-within:text-blue-400 transition-colors" />
-                            <Input placeholder="Search tasks..." value={search} onChange={e => setSearch(e.target.value)} 
-                                className="pl-9 h-11 bg-white/[0.03] border-white/10 text-white placeholder:text-white/20 focus-visible:ring-1 focus-visible:ring-blue-500" 
+                <div className="rounded-2xl border border-white/10 bg-white/[0.04] p-4 shadow-xl backdrop-blur-xl sm:p-6">
+                    <div data-tour="member-tasks-search" className="mb-6 flex flex-col gap-3 sm:flex-row">
+                        <div className="group relative flex-1">
+                            <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#F7F3EA]/35 group-focus-within:text-[#F7F3EA]/70" />
+                            <Input
+                                placeholder="Search by name…"
+                                value={search}
+                                onChange={(e) => setSearch(e.target.value)}
+                                className="h-11 border-white/10 bg-white/[0.06] pl-9 text-[#F7F3EA] placeholder:text-[#F7F3EA]/35 focus-visible:ring-1 focus-visible:ring-[#F7F3EA]/30"
                             />
                         </div>
-                        <div className="flex gap-2 flex-wrap sm:flex-nowrap">
-                            {["OPEN", "IN_PROGRESS", "COMPLETED", "BLOCKED"].map(s => (
-                                <button key={s} onClick={() => setStatusFilter(statusFilter === s ? null : s)}
-                                    className={`px-4 py-2 rounded-xl text-[10px] font-black uppercase tracking-widest transition-all ${statusFilter === s 
-                                        ? "bg-blue-500/20 text-blue-400 border border-blue-500/30" 
-                                        : "bg-white/[0.02] text-white/40 border border-white/5 hover:text-white hover:bg-white/[0.06]"}`}>
-                                    {s.replace("_", " ")}
+                        <div className="flex flex-wrap gap-2">
+                            {["OPEN", "IN_PROGRESS", "COMPLETED", "BLOCKED"].map((s) => (
+                                <button
+                                    key={s}
+                                    type="button"
+                                    onClick={() => setStatusFilter(statusFilter === s ? null : s)}
+                                    className={`rounded-xl border px-3 py-2 text-xs font-semibold transition-all ${
+                                        statusFilter === s
+                                            ? "border-blue-400/40 bg-blue-500/20 text-blue-200"
+                                            : "border-white/10 bg-white/[0.04] text-[#F7F3EA]/55 hover:bg-white/[0.08] hover:text-[#F7F3EA]"
+                                    }`}
+                                >
+                                    {filterLabels[s]}
                                 </button>
                             ))}
                         </div>
                     </div>
 
-                    {/* Tasks List */}
+                    <div data-tour="member-tasks-list">
                     {loading ? (
                         <div className="space-y-3">
-                            {[...Array(4)].map((_, i) => <div key={i} className="h-24 rounded-2xl bg-white/[0.02] border border-white/5 animate-pulse" />)}
+                            {[...Array(4)].map((_, i) => (
+                                <div key={i} className="h-24 animate-pulse rounded-2xl border border-white/5 bg-white/[0.04]" />
+                            ))}
                         </div>
                     ) : filtered.length === 0 ? (
-                        <div className="py-20 text-center">
-                            <Activity className="w-12 h-12 text-white/10 mx-auto mb-4" />
-                            <p className="text-sm font-black text-white/40 uppercase tracking-widest">No tasks found</p>
-                            <p className="text-[10px] text-white/20 mt-2 uppercase tracking-widest">{search ? "Try a different search" : "You have no tasks yet"}</p>
+                        <div className="py-16 text-center">
+                            <Activity className="mx-auto mb-4 h-12 w-12 text-white/15" />
+                            <p className="text-base font-semibold text-[#F7F3EA]/70">No tasks here</p>
+                            <p className="mt-2 text-sm text-[#F7F3EA]/40">
+                                {search ? "Try another search." : "When the bureau gives you work, it will show up here."}
+                            </p>
                         </div>
                     ) : (
                         <div className="space-y-3">
                             <AnimatePresence>
-                                {filtered.map(task => (
-                                    <motion.div 
+                                {filtered.map((task) => (
+                                    <motion.div
                                         key={task.id}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         exit={{ opacity: 0, scale: 0.95 }}
-                                        className="group p-5 rounded-2xl border border-white/[0.06] bg-white/[0.01] hover:bg-white/[0.03] transition-all relative overflow-hidden"
+                                        className="group relative overflow-hidden rounded-2xl border border-white/10 bg-white/[0.03] p-5 transition-all hover:bg-white/[0.06]"
                                     >
-                                        {/* Status Accent Line */}
-                                        <div className={`absolute left-0 top-0 bottom-0 w-1 ${
-                                            task.status === "COMPLETED" ? "bg-emerald-500" :
-                                            task.status === "IN_PROGRESS" ? "bg-blue-500/50" :
-                                            task.priority === "URGENT" ? "bg-red-500" : "bg-white/10"
-                                        }`} />
+                                        <div
+                                            className={`absolute bottom-0 left-0 top-0 w-1 ${
+                                                task.status === "COMPLETED"
+                                                    ? "bg-emerald-500"
+                                                    : task.status === "IN_PROGRESS"
+                                                      ? "bg-blue-400"
+                                                      : task.priority === "URGENT"
+                                                        ? "bg-red-500"
+                                                        : "bg-white/20"
+                                            }`}
+                                        />
 
-                                        <div className="flex flex-col sm:flex-row gap-4 justify-between items-start pl-2">
-                                            <div className="flex-1 min-w-0">
-                                                <div className="flex items-center gap-3 mb-2 flex-wrap">
-                                                    <h3 className="text-base font-bold text-white tracking-tight">{task.title}</h3>
-                                                    <Badge className={`text-[9px] font-black tracking-widest uppercase border-none px-2 py-0.5 ${priorityStyle(task.priority)}`}>
-                                                        {task.priority === "URGENT" ? "CRITICAL" : task.priority}
+                                        <div className="flex flex-col items-start justify-between gap-4 pl-2 sm:flex-row">
+                                            <div className="min-w-0 flex-1">
+                                                <div className="mb-2 flex flex-wrap items-center gap-2">
+                                                    <h3 className="text-base font-semibold tracking-tight text-[#F7F3EA]">
+                                                        {task.title}
+                                                    </h3>
+                                                    <Badge
+                                                        className={`border-none px-2 py-0.5 text-[10px] font-semibold uppercase ${priorityStyle(task.priority)}`}
+                                                    >
+                                                        {task.priority === "URGENT" ? "Urgent" : task.priority.toLowerCase()}
                                                     </Badge>
-                                                    <Badge className={`text-[9px] font-black tracking-widest uppercase border border-white/10 bg-white/5 px-2 py-0.5 ${statusColor(task.status)}`}>
-                                                        {task.status.replace("_", " ")}
+                                                    <Badge
+                                                        className={`border border-white/15 bg-white/5 px-2 py-0.5 text-[10px] font-semibold uppercase ${statusColor(task.status)}`}
+                                                    >
+                                                        {filterLabels[task.status] || task.status.replace("_", " ")}
                                                     </Badge>
                                                 </div>
-                                                {task.description && <p className="text-xs text-white/40 mb-3 line-clamp-2">{task.description}</p>}
-                                                <div className="flex items-center gap-4 text-[10px] text-white/30 font-bold uppercase tracking-widest flex-wrap">
+                                                {task.description && (
+                                                    <p className="mb-3 line-clamp-2 text-sm text-[#F7F3EA]/45">
+                                                        {task.description}
+                                                    </p>
+                                                )}
+                                                <div className="flex flex-wrap items-center gap-4 text-xs font-medium text-[#F7F3EA]/40">
                                                     {task.dueDate && (
-                                                        <span className="flex items-center gap-1.5"><Calendar className="w-3 h-3 text-purple-400" /> TIMEFRAME: {format(new Date(task.dueDate), "MMM d")}</span>
+                                                        <span className="flex items-center gap-1.5">
+                                                            <Calendar className="h-3.5 w-3.5 text-purple-300" />
+                                                            Due {format(new Date(task.dueDate), "MMM d")}
+                                                        </span>
                                                     )}
-                                                    <span className="flex items-center gap-1.5"><Users className="w-3 h-3 text-blue-400" /> ISSUED BY {task.createdBy.name}</span>
+                                                    <span className="flex items-center gap-1.5">
+                                                        <Users className="h-3.5 w-3.5 text-blue-300" />
+                                                        From {task.createdBy.name}
+                                                    </span>
                                                 </div>
                                             </div>
 
-                                            {/* Action Buttons */}
-                                            <div className="flex gap-2 w-full sm:w-auto mt-4 sm:mt-0 pt-4 sm:pt-0 border-t sm:border-0 border-white/5">
-                                                <Button 
+                                            <div className="mt-2 flex w-full gap-2 border-t border-white/10 pt-4 sm:mt-0 sm:w-auto sm:border-0 sm:pt-0">
+                                                <Button
                                                     asChild
-                                                    size="sm" 
-                                                    className="w-full sm:w-auto text-[10px] font-black uppercase tracking-widest h-9 bg-blue-500/20 text-blue-400 border border-blue-500/20 hover:bg-blue-500/30 hover:text-blue-300 shadow-[0_0_15px_rgba(59,130,246,0.1)]" 
+                                                    size="sm"
+                                                    className="h-9 w-full border border-blue-400/25 bg-blue-500/20 text-xs font-semibold text-blue-100 hover:bg-blue-500/30 hover:text-white sm:w-auto"
                                                 >
                                                     <a href={`/dashboard/member/tasks/${task.id}`}>
-                                                        <Activity className="w-3 h-3 mr-2" /> Open Terminal
+                                                        <Activity className="mr-2 h-3.5 w-3.5" /> Open
                                                     </a>
                                                 </Button>
                                             </div>
@@ -199,6 +262,7 @@ export default function MemberTasksPage() {
                             </AnimatePresence>
                         </div>
                     )}
+                    </div>
                 </div>
             </div>
         </MemberLayout>
