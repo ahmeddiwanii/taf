@@ -29,6 +29,12 @@ export function PublicShell({
     window.addEventListener("scroll", onScroll, { passive: true })
     return () => window.removeEventListener("scroll", onScroll)
   }, [])
+  useEffect(() => {
+    document.body.style.overflow = open ? "hidden" : ""
+    return () => {
+      document.body.style.overflow = ""
+    }
+  }, [open])
   const showAccount = mounted && status !== "loading"
   const lightNav = dark
 
@@ -45,8 +51,8 @@ export function PublicShell({
           lightNav ? "border-white/10 bg-soot text-jasmine" : "border-soot bg-jasmine text-soot"
         } ${scrolled ? "shadow-[0_10px_30px_rgba(22,18,16,0.16)]" : ""}`}
       >
-        <div className="mx-auto flex h-20 max-w-6xl items-center justify-between gap-4 px-4 sm:px-6">
-          <LogoWordmark />
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between gap-3 px-4 sm:h-20 sm:gap-4 sm:px-6">
+          <LogoWordmark compact />
           <nav className="hidden items-center gap-7 md:flex">
             {links.map((l) => (
               <Link
@@ -60,7 +66,7 @@ export function PublicShell({
               </Link>
             ))}
           </nav>
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-2 sm:gap-3">
             <LocaleSwitcher inverted={lightNav} className="hidden sm:inline-flex" />
             {showAccount && session ? (
               <UserNav variant={lightNav ? "dark" : "light"} />
@@ -76,31 +82,74 @@ export function PublicShell({
                   href="/organizations"
                   className={
                     lightNav
-                      ? "rounded-full bg-jasmine px-5 py-2.5 text-[13px] font-semibold text-soot no-underline"
-                      : "rounded-full bg-soot px-5 py-2.5 text-[13px] font-semibold text-jasmine no-underline shadow-[3px_4px_0_0_#9C1C28]"
+                      ? "hidden rounded-full bg-jasmine px-5 py-2.5 text-[13px] font-semibold text-soot no-underline sm:inline-flex"
+                      : "hidden rounded-full bg-soot px-5 py-2.5 text-[13px] font-semibold text-jasmine no-underline shadow-[3px_4px_0_0_#9C1C28] sm:inline-flex"
                   }
                 >
                   {t("cta.exploreClubs")}
                 </Link>
               </>
             )}
-            <button type="button" className="md:hidden" onClick={() => setOpen((v) => !v)} aria-label="Menu">
+            <button
+              type="button"
+              className={`inline-flex h-10 w-10 items-center justify-center rounded-full border-[2px] md:hidden ${
+                lightNav ? "border-white/20" : "border-soot"
+              }`}
+              onClick={() => setOpen((v) => !v)}
+              aria-label="Menu"
+              aria-expanded={open}
+            >
               {open ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
             </button>
           </div>
         </div>
         {open && (
-          <div className={`space-y-1 border-t-[2px] px-4 py-3 md:hidden ${lightNav ? "border-white/10 bg-soot" : "border-soot/10 bg-jasmine"}`}>
-            {links.map((l) => (
-              <Link key={l.href} href={l.href} className="block rounded-lg px-2 py-2 text-sm no-underline" onClick={() => setOpen(false)}>
-                {l.label}
-              </Link>
-            ))}
-            <LocaleSwitcher inverted={lightNav} />
+          <div
+            className={`border-t-[2px] px-4 py-4 md:hidden ${
+              lightNav ? "border-white/10 bg-soot" : "border-soot/10 bg-jasmine"
+            }`}
+          >
+            <div className="space-y-1">
+              {links.map((l) => (
+                <Link
+                  key={l.href}
+                  href={l.href}
+                  className="block rounded-xl px-3 py-3 text-[15px] font-medium no-underline"
+                  onClick={() => setOpen(false)}
+                >
+                  {l.label}
+                </Link>
+              ))}
+            </div>
+            <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-soot/10 pt-4">
+              <LocaleSwitcher inverted={lightNav} />
+              {!session && (
+                <>
+                  <Link
+                    href="/auth/login"
+                    className={`text-sm font-medium no-underline ${lightNav ? "text-jasmine/80" : "text-soot/70"}`}
+                    onClick={() => setOpen(false)}
+                  >
+                    {t("nav.login")}
+                  </Link>
+                  <Link
+                    href="/organizations"
+                    className={
+                      lightNav
+                        ? "rounded-full bg-jasmine px-4 py-2 text-[13px] font-semibold text-soot no-underline"
+                        : "rounded-full bg-soot px-4 py-2 text-[13px] font-semibold text-jasmine no-underline"
+                    }
+                    onClick={() => setOpen(false)}
+                  >
+                    {t("cta.exploreClubs")}
+                  </Link>
+                </>
+              )}
+            </div>
           </div>
         )}
       </header>
-      <div className="pt-20">{children}</div>
+      <div className="pt-16 sm:pt-20">{children}</div>
     </div>
   )
 }
