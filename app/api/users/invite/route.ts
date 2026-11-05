@@ -6,6 +6,7 @@ import { hash } from "bcryptjs"
 import { authOptions, UserRole } from "../../../../lib/auth"
 import { prisma } from "../../../../lib/db"
 import { sendInviteEmail } from "../../../../lib/email"
+import { setMemberStatus } from "../../../../lib/member-status-db"
 
 export async function POST(req: Request) {
   try {
@@ -13,21 +14,21 @@ export async function POST(req: Request) {
     if (!session || (session.user.role !== UserRole.SUPERADMIN && session.user.role !== UserRole.HR)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
-    const { name, email, role, startupId } = await req.json()
+    const { name, email, role, organizationId } = await req.json()
     let finalRole = role
-    let finalStartupId = startupId
-    // HR can only invite EMPLOYEE to their own startup
+    let finalOrganizationId = organizationId
+    // HR can only invite MEMBER to their own organization
     if (session.user.role === UserRole.HR) {
-      finalRole = UserRole.EMPLOYEE
-      finalStartupId = session.user.startupId
+      finalRole = UserRole.MEMBER
+      finalOrganizationId = session.user.organizationId
     }
     // Validate role
     if (!finalRole || !Object.values(UserRole).includes(finalRole)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 })
     }
-    // Validate startupId for EMPLOYEE/HR
-    if ((finalRole === UserRole.EMPLOYEE || finalRole === UserRole.HR) && !finalStartupId) {
-      return NextResponse.json({ error: "Startup is required for this role" }, { status: 400 })
+    // Validate organizationId for MEMBER/HR
+    if ((finalRole === UserRole.MEMBER || finalRole === UserRole.HR) && !finalOrganizationId) {
+      return NextResponse.json({ error: "Organization is required for this role" }, { status: 400 })
     }
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({ where: { email } })
@@ -45,19 +46,31 @@ export async function POST(req: Request) {
         email,
         password: hashedPassword,
         role: finalRole,
-        startupId: finalStartupId,
+        organizationId: finalOrganizationId,
         invitedById: session.user.id,
         updatedAt: new Date(),
       },
     })
-    // Send email to user with credentials
+
+    // Invited members are active immediately (no personality test gate)
+    if (finalRole === UserRole.MEMBER) {
+      try {
+        await setMemberStatus(user.id, "ACCEPTED")
+      } catch (e) {
+        console.warn("[invite] Could not set memberStatus:", e)
+      }
+    }
     try {
       await sendInviteEmail({ to: email, password: generatedPassword })
     } catch (emailErr: any) {
       console.error("Failed to send invite email:", emailErr)
       return NextResponse.json({ error: "User created, but failed to send email: " + (emailErr?.message || emailErr) }, { status: 500 })
     }
-    return NextResponse.json({ success: true, user, tempPassword: generatedPassword })
+    // Never return the temporary password in the API response
+    return NextResponse.json({
+      success: true,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role },
+    })
   } catch (error) {
     console.error("Invitation error:", error)
     return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })

@@ -4,19 +4,19 @@ import { getServerSession } from "next-auth/next"
 import { authOptions } from "../../../../lib/auth"
 import { prisma } from "../../../../lib/db"
 
-function canView(session: any, userId: string, targetStartupId: string | null) {
+function canView(session: any, userId: string, targetOrganizationId: string | null) {
   if (!session) return false
   if (session.user.role === "SUPERADMIN") return true
   if (session.user.id === userId) return true
-  if (session.user.role === "HR" && session.user.startupId && session.user.startupId === targetStartupId) return true
+  if (session.user.role === "HR" && session.user.organizationId && session.user.organizationId === targetOrganizationId) return true
   return false
 }
 
-function canEdit(session: any, userId: string, targetStartupId: string | null) {
+function canEdit(session: any, userId: string, targetOrganizationId: string | null) {
   if (!session) return false
   if (session.user.id === userId) return true
   if (session.user.role === "SUPERADMIN") return true
-  if (session.user.role === "HR" && session.user.startupId && session.user.startupId === targetStartupId) return true
+  if (session.user.role === "HR" && session.user.organizationId && session.user.organizationId === targetOrganizationId) return true
   return false
 }
 
@@ -28,7 +28,7 @@ export async function GET(_: Request, context: { params: Promise<{ userId: strin
   const user = await prisma.user.findUnique({
     where: { id: userId },
     include: {
-      startup: true,
+      organization: true,
       result: {
         orderBy: { createdAt: "desc" },
         take: 1,
@@ -43,7 +43,7 @@ export async function GET(_: Request, context: { params: Promise<{ userId: strin
     return NextResponse.json({ error: "User not found" }, { status: 404 })
   }
 
-  if (!canView(session, userId, user.startupId || null)) {
+  if (!canView(session, userId, user.organizationId || null)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -64,7 +64,7 @@ export async function GET(_: Request, context: { params: Promise<{ userId: strin
       name: user.name,
       email: user.email,
       role: user.role,
-      startupId: user.startupId,
+      organizationId: user.organizationId,
     },
     profile: user.profile,
     certificates: user.certificate,
@@ -88,14 +88,14 @@ export async function PUT(req: Request, context: { params: Promise<{ userId: str
 
   const user = await prisma.user.findUnique({
     where: { id: userId },
-    select: { startupId: true },
+    select: { organizationId: true },
   })
 
   if (!user) {
     return NextResponse.json({ error: "User not found" }, { status: 404 })
   }
 
-  if (!canEdit(session, userId, user.startupId || null)) {
+  if (!canEdit(session, userId, user.organizationId || null)) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -122,4 +122,5 @@ export async function PUT(req: Request, context: { params: Promise<{ userId: str
 
   return NextResponse.json({ profile })
 }
+
 

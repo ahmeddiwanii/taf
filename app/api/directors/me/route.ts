@@ -27,7 +27,7 @@ export async function GET(req: NextRequest) {
             title: true,
             description: true,
             status: true,
-            startupId: true,
+            organizationId: true,
           },
         },
       },
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
             description: true,
             status: true,
             startAt: true,
-            startupId: true,
+            organizationId: true,
           },
         },
       },
@@ -62,7 +62,7 @@ export async function GET(req: NextRequest) {
             name: true,
             purpose: true,
             status: true,
-            startupId: true,
+            organizationId: true,
             members: {
               select: {
                 userId: true,

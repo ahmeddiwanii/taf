@@ -13,7 +13,7 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
   if (!resource) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   if (session.user.role !== "SUPERADMIN") {
-    if (!session.user.startupId || session.user.startupId !== resource.startupId) {
+    if (!session.user.organizationId || session.user.organizationId !== resource.organizationId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
     if ((resource as any).visibility === "HR_ONLY" && session.user.role !== "HR") {
@@ -31,9 +31,9 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
-  const existing = await prisma.resource.findUnique({ where: { id }, select: { startupId: true } })
+  const existing = await prisma.resource.findUnique({ where: { id }, select: { organizationId: true } })
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (session.user.role !== "SUPERADMIN" && session.user.startupId !== existing.startupId) {
+  if (session.user.role !== "SUPERADMIN" && session.user.organizationId !== existing.organizationId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -47,4 +47,5 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
   return NextResponse.json(resource)
 }
+
 

@@ -20,12 +20,12 @@ export async function GET(req: Request, context: { params: Promise<{ userId: str
     if (
       session.user.id !== userId &&
       session.user.role !== "SUPERADMIN" &&
-      (session.user.role !== "HR" || !session.user.startupId)
+      (session.user.role !== "HR" || !session.user.organizationId)
     ) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
-    // If HR, check if the requested user belongs to their startup
+    // If HR, check if the requested user belongs to their organization
     if (session.user.role === "HR") {
       const user = await prisma.user.findUnique({
         where: {
@@ -33,7 +33,7 @@ export async function GET(req: Request, context: { params: Promise<{ userId: str
         },
       })
 
-      if (!user || user.startupId !== session.user.startupId) {
+      if (!user || user.organizationId !== session.user.organizationId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
       }
     }

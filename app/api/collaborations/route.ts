@@ -13,16 +13,16 @@ export async function GET(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { startup: true },
+      include: { organization: true },
     })
 
-    if (!user?.startupId) {
+    if (!user?.organizationId) {
       return NextResponse.json({ error: "No organization found" }, { status: 404 })
     }
 
     // Get or create collaboration code
     let collaborationCode = await prisma.organizationCollaborationCode.findUnique({
-      where: { startupId: user.startupId },
+      where: { organizationId: user.organizationId },
     })
 
     if (!collaborationCode) {
@@ -39,7 +39,7 @@ export async function GET(request: NextRequest) {
 
       collaborationCode = await prisma.organizationCollaborationCode.create({
         data: {
-          startupId: user.startupId,
+          organizationId: user.organizationId,
           code,
         },
       })
@@ -47,17 +47,17 @@ export async function GET(request: NextRequest) {
 
     // Get all collaboration requests (sent and received)
     const sentRequests = await prisma.collaborationRequest.findMany({
-      where: { requesterStartupId: user.startupId },
+      where: { requesterOrganizationId: user.organizationId },
       include: {
-        targetStartup: { select: { id: true, name: true } },
+        targetOrganization: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
     })
 
     const receivedRequests = await prisma.collaborationRequest.findMany({
-      where: { targetStartupId: user.startupId },
+      where: { targetOrganizationId: user.organizationId },
       include: {
-        requesterStartup: { select: { id: true, name: true } },
+        requesterOrganization: { select: { id: true, name: true } },
       },
       orderBy: { createdAt: "desc" },
     })
@@ -89,10 +89,10 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { startup: true },
+      include: { organization: true },
     })
 
-    if (!user?.startupId) {
+    if (!user?.organizationId) {
       return NextResponse.json({ error: "No organization found" }, { status: 404 })
     }
 
@@ -105,16 +105,16 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: "Invalid collaboration code" }, { status: 404 })
     }
 
-    if (targetCollabCode.startupId === user.startupId) {
+    if (targetCollabCode.organizationId === user.organizationId) {
       return NextResponse.json({ error: "Cannot send request to your own organization" }, { status: 400 })
     }
 
     // Check if request already exists
     const existingRequest = await prisma.collaborationRequest.findUnique({
       where: {
-        requesterStartupId_targetStartupId: {
-          requesterStartupId: user.startupId,
-          targetStartupId: targetCollabCode.startupId,
+        requesterOrganizationId_targetOrganizationId: {
+          requesterOrganizationId: user.organizationId,
+          targetOrganizationId: targetCollabCode.organizationId,
         },
       },
     })
@@ -126,12 +126,12 @@ export async function POST(request: NextRequest) {
     // Create collaboration request
     const newRequest = await prisma.collaborationRequest.create({
       data: {
-        requesterStartupId: user.startupId,
-        targetStartupId: targetCollabCode.startupId,
+        requesterOrganizationId: user.organizationId,
+        targetOrganizationId: targetCollabCode.organizationId,
         message,
       },
       include: {
-        targetStartup: { select: { id: true, name: true } },
+        targetOrganization: { select: { id: true, name: true } },
       },
     })
 
@@ -158,7 +158,7 @@ export async function PATCH(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { startup: true },
+      include: { organization: true },
     })
 
     // Verify this user can respond to the request
@@ -166,7 +166,7 @@ export async function PATCH(request: NextRequest) {
       where: { id: requestId },
     })
 
-    if (!collabRequest || collabRequest.targetStartupId !== user?.startupId) {
+    if (!collabRequest || collabRequest.targetOrganizationId !== user?.organizationId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
@@ -179,7 +179,7 @@ export async function PATCH(request: NextRequest) {
         responseMessage,
       },
       include: {
-        requesterStartup: { select: { id: true, name: true } },
+        requesterOrganization: { select: { id: true, name: true } },
       },
     })
 

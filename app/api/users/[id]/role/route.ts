@@ -10,25 +10,25 @@ export async function PUT(req: Request, { params }: { params: { id: string } }) 
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
     const userId = params.id
-    const { role, startupId } = await req.json()
+    const { role, organizationId } = await req.json()
     if (!role) {
       return NextResponse.json({ error: "Role is required" }, { status: 400 })
     }
     // Only allow valid roles
-    const validRoles = ["SUPERADMIN", "HR", "EMPLOYEE"]
+    const validRoles = ["SUPERADMIN", "HR", "MEMBER"]
     if (!validRoles.includes(role)) {
       return NextResponse.json({ error: "Invalid role" }, { status: 400 })
     }
-    // If HR or EMPLOYEE, startupId is required
-    if ((role === "HR" || role === "EMPLOYEE") && !startupId) {
-      return NextResponse.json({ error: "Startup is required for this role" }, { status: 400 })
+    // If HR or MEMBER, organizationId is required
+    if ((role === "HR" || role === "MEMBER") && !organizationId) {
+      return NextResponse.json({ error: "Organization is required for this role" }, { status: 400 })
     }
     // Update user
     const updatedUser = await prisma.user.update({
       where: { id: userId },
       data: {
         role,
-        startupId: (role === "HR" || role === "EMPLOYEE") ? startupId : null,
+        organizationId: (role === "HR" || role === "MEMBER") ? organizationId : null,
       },
     })
     return NextResponse.json({ success: true, user: updatedUser })

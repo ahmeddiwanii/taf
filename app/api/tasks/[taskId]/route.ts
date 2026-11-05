@@ -11,10 +11,10 @@ export async function PATCH(req: Request, context: { params: Promise<{ taskId: s
 
   const existing = await prisma.task.findUnique({
     where: { id: taskId },
-    select: { project: { select: { startupId: true, visibility: true } } },
+    select: { project: { select: { organizationId: true, visibility: true } } },
   })
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (session.user.role !== "SUPERADMIN" && session.user.startupId !== existing.project.startupId) {
+  if (session.user.role !== "SUPERADMIN" && session.user.organizationId !== existing.project.organizationId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -34,4 +34,5 @@ export async function PATCH(req: Request, context: { params: Promise<{ taskId: s
 
   return NextResponse.json(task)
 }
+
 

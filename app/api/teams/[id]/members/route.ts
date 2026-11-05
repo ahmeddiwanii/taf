@@ -11,27 +11,55 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   }
 
   const { id } = await context.params
-  const { userId, roleInTeam } = await req.json()
+  const { userId, email, roleInTeam } = await req.json()
 
-  const team = await prisma.team.findUnique({ where: { id }, select: { startupId: true } })
-  const user = await prisma.user.findUnique({ where: { id: userId }, select: { startupId: true } })
+  let userToAssignId = userId
+
+  if (email && !userToAssignId) {
+    const foundUser = await prisma.user.findUnique({ where: { email }, select: { id: true, organizationId: true } })
+    if (foundUser) {
+      userToAssignId = foundUser.id
+    } else {
+      return NextResponse.json({ error: "User not found with this email" }, { status: 404 })
+    }
+  }
+
+  const team = await prisma.team.findUnique({ where: { id }, select: { organizationId: true } })
+  const user = await prisma.user.findUnique({ where: { id: userToAssignId }, select: { organizationId: true } })
   if (!team || !user) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   if (session.user.role !== "SUPERADMIN") {
-    if (!session.user.startupId || session.user.startupId !== team.startupId) {
+    if (!session.user.organizationId || session.user.organizationId !== team.organizationId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
   }
-  if (team.startupId !== user.startupId) {
-    return NextResponse.json({ error: "User not in same startup" }, { status: 400 })
+  if (team.organizationId !== user.organizationId) {
+    return NextResponse.json({ error: "User not in same organization" }, { status: 400 })
   }
 
   const member = await prisma.teamMember.upsert({
-    where: { teamId_userId: { teamId: id, userId } },
-    update: { roleInTeam },
-    create: { teamId: id, userId, roleInTeam },
+    where: { teamId_userId: { teamId: id, userId: userToAssignId } },
+    update: { roleInTeam }, // If updating, keep status or should we reset? Usually keep.
+    create: { 
+      teamId: id, 
+      userId: userToAssignId, 
+      roleInTeam,
+      status: "PENDING" // Force acceptance flow
+    },
+  })
+
+  // Notify the assigned member
+  const teamWithName = await prisma.team.findUnique({ where: { id }, select: { name: true } })
+  const { dispatchNotification } = await import("@/lib/notifications")
+  await dispatchNotification({
+    userId: userToAssignId,
+    type: "TEAM_INVITATION",
+    title: "New Squad Deployment Authorization",
+    message: `You have been drafted into: ${teamWithName?.name}. Mission briefing requires your formal acceptance.`,
+    actionUrl: `/dashboard/member` // Where they can accept
   })
 
   return NextResponse.json(member, { status: 201 })
 }
+
 

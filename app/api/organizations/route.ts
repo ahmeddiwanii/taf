@@ -1,51 +1,100 @@
 import { NextResponse } from "next/server"
+import { getServerSession } from "next-auth/next"
+import { authOptions } from "../../../lib/auth"
 import { prisma } from "../../../lib/db"
+import bcrypt from "bcryptjs"
+import { v4 as uuidv4 } from "uuid"
+import { sendInviteEmail } from "@/lib/email"
 
 export async function GET(req: Request) {
   try {
-    const { searchParams } = new URL(req.url)
-    const page = parseInt(searchParams.get("page") || "1")
-    const limit = parseInt(searchParams.get("limit") || "12")
-    const skip = (page - 1) * limit
+    const session = await getServerSession(authOptions)
 
-    // Get all startups with public profiles
-    const startups = await prisma.startup.findMany({
-      where: {
-        startupProfile: {
-          isPublic: true,
-        },
-      },
+    if (!session) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    }
+
+    const organizations = await prisma.organization.findMany({
       include: {
-        startupProfile: true,
-        user: {
-          where: { role: "HR" },
-          select: { id: true, name: true, email: true },
-        },
         _count: {
-          select: { user: true, event: true, project: true },
-        },
-      },
-      skip,
-      take: limit,
-      orderBy: { createdAt: "desc" },
-    })
-
-    const total = await prisma.startup.count({
-      where: {
-        startupProfile: {
-          isPublic: true,
+          select: { user: true },
         },
       },
     })
 
-    return NextResponse.json({
-      startups,
-      total,
-      pages: Math.ceil(total / limit),
-      currentPage: page,
-    })
+    return NextResponse.json(organizations)
   } catch (error) {
-    console.error("Error fetching organizations:", error)
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 })
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
+  }
+}
+
+export async function POST(req: Request) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session || session.user.role !== "SUPERADMIN") {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
+    }
+
+    const body = await req.json()
+    const { name, hrName, hrEmail } = body
+
+    if (!name || typeof name !== "string") {
+      return NextResponse.json({ error: "Invalid organization name" }, { status: 400 })
+    }
+
+    const orgId = uuidv4()
+    
+    // Check if HR email already exists if provided
+    if (hrEmail) {
+      const existingUser = await prisma.user.findUnique({ where: { email: hrEmail } })
+      if (existingUser) {
+        return NextResponse.json({ error: "User with this email already exists" }, { status: 400 })
+      }
+    }
+
+    let newOrganization;
+
+    await prisma.$transaction(async (tx) => {
+      // 1. Create Organization
+      newOrganization = await tx.organization.create({
+        data: {
+          id: orgId,
+          name,
+          createdById: session.user.id,
+          updatedAt: new Date(),
+        },
+      })
+
+      // 2. Create HR User if details provided
+      if (hrName && hrEmail) {
+        const rawPassword = Math.random().toString(36).slice(-8)
+        const hashedPassword = await bcrypt.hash(rawPassword, 10)
+        
+        await tx.user.create({
+          data: {
+            id: uuidv4(),
+            name: hrName,
+            email: hrEmail,
+            password: hashedPassword,
+            role: "HR",
+            organizationId: orgId,
+            memberStatus: "ACCEPTED",
+            updatedAt: new Date()
+          }
+        })
+
+        // Send invite email (fire and forget)
+        sendInviteEmail({
+          to: hrEmail,
+          password: rawPassword,
+        }).catch(err => console.error("Failed to send HR invite email:", err))
+      }
+    })
+
+    return NextResponse.json(newOrganization, { status: 201 })
+  } catch (error) {
+    console.error("[CREATE_ORGANIZATION]", error)
+    return NextResponse.json({ error: "Internal Server Error" }, { status: 500 })
   }
 }

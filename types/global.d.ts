@@ -7,14 +7,14 @@ declare module "next-auth" {
     email?: string | null
     image?: string | null
     role?: import("./user").UserRole
-    startupId?: string | null
+    organizationId?: string | null
   }
 
   interface Session {
     user: User & {
       id: string
       role?: import("./user").UserRole
-      startupId?: string | null
+      organizationId?: string | null
     }
   }
 }

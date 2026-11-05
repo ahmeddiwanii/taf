@@ -11,9 +11,9 @@ export async function DELETE(_: Request, context: { params: Promise<{ id: string
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
-  const team = await prisma.team.findUnique({ where: { id }, select: { startupId: true } })
+  const team = await prisma.team.findUnique({ where: { id }, select: { organizationId: true } })
   if (!team) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (session.user.role !== "SUPERADMIN" && session.user.startupId !== team.startupId) {
+  if (session.user.role !== "SUPERADMIN" && session.user.organizationId !== team.organizationId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -23,4 +23,5 @@ export async function DELETE(_: Request, context: { params: Promise<{ id: string
 
   return NextResponse.json({ success: true })
 }
+
 

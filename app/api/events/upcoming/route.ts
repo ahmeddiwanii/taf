@@ -17,11 +17,11 @@ export async function GET(req: Request) {
         ],
       },
       include: {
-        startup: {
+        organization: {
           select: {
             id: true,
             name: true,
-            startupProfile: {
+            organizationProfile: {
               select: { profileImageUrl: true },
             },
           },

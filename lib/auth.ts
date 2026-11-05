@@ -4,11 +4,12 @@ import type { NextAuthOptions } from "next-auth"
 import CredentialsProvider from "next-auth/providers/credentials"
 
 import { prisma } from "../lib/db"
+import { getMemberStatus } from "./member-status-db"
 
 export enum UserRole {
   SUPERADMIN = "SUPERADMIN",
   HR = "HR",
-  EMPLOYEE = "EMPLOYEE",
+  MEMBER = "MEMBER",
   REGULAR_USER = "REGULAR_USER",
 }
 
@@ -31,53 +32,30 @@ export const authOptions: NextAuthOptions = {
       },
       async authorize(credentials) {
         try {
-          console.log("🔐 Auth attempt for email:", credentials?.email)
-          
           if (!credentials?.email || !credentials?.password) {
-            console.log("❌ Missing credentials")
             return null
-          }
-
-          // Test database connection
-          try {
-            await prisma.$connect()
-            console.log("✅ Database connection successful")
-          } catch (dbError) {
-            console.error("❌ Database connection failed:", dbError)
-            throw new Error("Database connection failed")
           }
 
           const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email,
-            },
+            where: { email: credentials.email },
           })
 
-          if (!user) {
-            console.log("❌ User not found:", credentials.email)
-            return null
-          }
-
-          console.log("✅ User found:", user.email)
+          if (!user) return null
 
           const isPasswordValid = await compare(credentials.password, user.password)
-
-          if (!isPasswordValid) {
-            console.log("❌ Invalid password for user:", credentials.email)
-            return null
-          }
-
-          console.log("✅ Authentication successful for:", user.email)
+          if (!isPasswordValid) return null
 
           return {
             id: user.id,
             email: user.email,
             name: user.name,
             role: user.role as unknown as UserRole,
-            startupId: user.startupId,
+            organizationId: user.organizationId,
+            avatarId: user.avatarId ?? 1,
+            memberStatus: (user as { memberStatus?: string }).memberStatus ?? "ACCEPTED",
           }
         } catch (error) {
-          console.error("❌ Auth error:", error)
+          console.error("[auth] authorize failed")
           throw error
         }
       },
@@ -85,45 +63,40 @@ export const authOptions: NextAuthOptions = {
   ],
   callbacks: {
     async session({ token, session }) {
-      try {
-        if (token) {
-          session.user.id = token.id as string
-          session.user.name = token.name as string
-          session.user.email = token.email as string
-          session.user.role = token.role as UserRole | undefined
-          session.user.startupId = token.startupId as string | null
-        }
-        return session
-      } catch (error) {
-        console.error("❌ Session callback error:", error)
-        throw error
+      if (token) {
+        session.user.id = token.id as string
+        session.user.name = token.name as string
+        session.user.email = token.email as string
+        session.user.role = token.role as UserRole | undefined
+        session.user.organizationId = token.organizationId as string | null
+        ;(session.user as { avatarId?: number }).avatarId = (token as { avatarId?: number }).avatarId ?? 1
+        ;(session.user as { memberStatus?: string }).memberStatus = (
+          token as { memberStatus?: string }
+        ).memberStatus
       }
+      return session
     },
     async jwt({ token, user }) {
-      try {
-        if (user) {
-          token.id = user.id
-          token.role = user.role
-          token.startupId = user.startupId
-        }
-        return token
-      } catch (error) {
-        console.error("❌ JWT callback error:", error)
-        throw error
+      if (user) {
+        token.id = user.id
+        token.role = user.role
+        token.organizationId = user.organizationId
+        token.avatarId = user.avatarId ?? 1
+        ;(token as { memberStatus?: string }).memberStatus =
+          (user as { memberStatus?: string }).memberStatus ?? "ACCEPTED"
       }
-    },
-  },
-  events: {
-    async signIn({ user, account, profile, isNewUser }) {
-      console.log("✅ Sign in successful:", { user: user.email, isNewUser })
-    },
-    async signOut({ session, token }) {
-      console.log("✅ Sign out successful")
-    },
-    async createUser({ user }) {
-      console.log("✅ User created:", user.email)
+      if (token.id) {
+        const dbUser = await prisma.user.findUnique({
+          where: { id: token.id as string },
+          select: { avatarId: true },
+        })
+        if (dbUser) {
+          token.avatarId = dbUser.avatarId ?? 1
+        }
+        ;(token as { memberStatus?: string }).memberStatus = await getMemberStatus(token.id as string)
+      }
+      return token
     },
   },
   debug: process.env.NODE_ENV === "development",
 }
-

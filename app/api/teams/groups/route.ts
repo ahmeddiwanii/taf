@@ -11,9 +11,9 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  const { startupId, groups } = await req.json()
+  const { organizationId, groups } = await req.json()
 
-  if (!startupId || !Array.isArray(groups)) {
+  if (!organizationId || !Array.isArray(groups)) {
     return NextResponse.json({ error: "Invalid request" }, { status: 400 })
   }
 
@@ -35,7 +35,7 @@ export async function POST(req: Request) {
         where: { id: group.id },
         create: {
           id: group.id,
-          startupId,
+          organizationId,
           name: group.name,
           purpose: "Drag-and-drop created group",
           leadIdsJson: group.chefId ? [group.chefId] : [],

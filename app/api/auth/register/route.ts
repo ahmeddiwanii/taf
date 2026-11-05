@@ -3,59 +3,42 @@ import { NextResponse } from "next/server"
 import crypto from "crypto"
 
 import { prisma } from "../../../../lib/db"
+import { rateLimit } from "@/lib/rate-limit"
+import { UserRole } from "@/lib/auth"
 
 export async function POST(req: Request) {
   try {
-    console.log("🔐 Registration attempt started")
-    
-    const { name, email, password, role, startupId } = await req.json()
-    
-    console.log("📝 Registration data:", { name, email, role, startupId: startupId ? "provided" : "not provided" })
+    const ip = req.headers.get("x-forwarded-for")?.split(",")[0]?.trim() || "unknown"
+    if (!rateLimit(`register:${ip}`, 8, 60_000)) {
+      return NextResponse.json({ error: "Too many requests. Try again shortly." }, { status: 429 })
+    }
 
-    // Test database connection first
-    try {
-      await prisma.$connect()
-      console.log("✅ Database connection successful")
-    } catch (dbError) {
-      console.error("❌ Database connection failed:", dbError)
+    const { name, email, password } = await req.json()
+
+    if (!name || !email || !password || String(password).length < 8) {
       return NextResponse.json(
-        { error: "Database connection failed. Please try again later." },
-        { status: 500 }
+        { error: "Name, email, and a password of at least 8 characters are required." },
+        { status: 400 },
       )
     }
 
-    // Check if user already exists
-    const existingUser = await prisma.user.findUnique({
-      where: {
-        email,
-      },
-    })
-
+    const existingUser = await prisma.user.findUnique({ where: { email } })
     if (existingUser) {
-      console.log("❌ User already exists:", email)
       return NextResponse.json({ error: "User with this email already exists" }, { status: 400 })
     }
 
-    console.log("✅ User does not exist, proceeding with creation")
-
-    // Hash password
     const hashedPassword = await hash(password, 10)
-    console.log("✅ Password hashed successfully")
-
-    // Create user
     const user = await prisma.user.create({
       data: {
         id: crypto.randomUUID(),
         name,
         email,
         password: hashedPassword,
-        role,
-        startupId,
+        role: UserRole.REGULAR_USER,
+        avatarId: 1,
         updatedAt: new Date(),
       },
     })
-
-    console.log("✅ User created successfully:", user.email)
 
     return NextResponse.json(
       {
@@ -67,34 +50,7 @@ export async function POST(req: Request) {
       { status: 201 },
     )
   } catch (error) {
-    console.error("❌ Registration error:", error)
-    
-    // Provide more specific error messages
-    if (error instanceof Error) {
-      if (error.message.includes("Database connection failed")) {
-        return NextResponse.json(
-          { error: "Database connection failed. Please try again later." },
-          { status: 500 }
-        )
-      }
-      if (error.message.includes("Unique constraint")) {
-        return NextResponse.json(
-          { error: "User with this email already exists" },
-          { status: 400 }
-        )
-      }
-    }
-    
-    return NextResponse.json(
-      { error: "Registration failed. Please try again." },
-      { status: 500 }
-    )
-  } finally {
-    try {
-      await prisma.$disconnect()
-      console.log("✅ Database connection closed")
-    } catch (error) {
-      console.error("❌ Error disconnecting from database:", error)
-    }
+    console.error("[register] failed")
+    return NextResponse.json({ error: "Registration failed. Please try again." }, { status: 500 })
   }
 }

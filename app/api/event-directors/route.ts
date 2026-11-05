@@ -13,16 +13,16 @@ export async function GET(request: NextRequest) {
     // Get user's organization
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { startup: true },
+      include: { organization: true },
     })
 
-    if (!user?.startupId) {
+    if (!user?.organizationId) {
       return NextResponse.json({ error: "No organization found" }, { status: 404 })
     }
 
     // Get all members in the organization
     const members = await prisma.user.findMany({
-      where: { startupId: user.startupId },
+      where: { organizationId: user.organizationId },
       select: {
         id: true,
         name: true,
@@ -54,7 +54,7 @@ export async function POST(request: NextRequest) {
 
     const user = await prisma.user.findUnique({
       where: { email: session.user.email },
-      include: { startup: true },
+      include: { organization: true },
     })
 
     // Verify event belongs to user's organization
@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
       where: { id: eventId },
     })
 
-    if (!event || event.startupId !== user?.startupId) {
+    if (!event || event.organizationId !== user?.organizationId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 

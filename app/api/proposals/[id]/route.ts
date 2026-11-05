@@ -23,7 +23,7 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
   if (!proposal) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   if (session.user.role !== "SUPERADMIN") {
-    if (!session.user.startupId || session.user.startupId !== proposal.startupId) {
+    if (!session.user.organizationId || session.user.organizationId !== proposal.organizationId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
     if (proposal.visibility === "HR_ONLY" && session.user.role !== "HR") {
@@ -39,12 +39,12 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
 
-  const existing = await prisma.proposal.findUnique({ where: { id }, select: { startupId: true, visibility: true, submittedById: true } })
+  const existing = await prisma.proposal.findUnique({ where: { id }, select: { organizationId: true, visibility: true, submittedById: true } })
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   const canEdit =
     session.user.role === "SUPERADMIN" ||
-    (session.user.role === "HR" && session.user.startupId === existing.startupId) ||
+    (session.user.role === "HR" && session.user.organizationId === existing.organizationId) ||
     session.user.id === existing.submittedById
 
   if (!canEdit) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
@@ -67,4 +67,5 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
 
   return NextResponse.json(updated)
 }
+
 

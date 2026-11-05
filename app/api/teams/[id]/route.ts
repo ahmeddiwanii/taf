@@ -12,14 +12,68 @@ export async function GET(_: Request, context: { params: Promise<{ id: string }>
   const team = await prisma.team.findUnique({
     where: { id },
     include: {
-      members: { include: { user: { select: { id: true, name: true, role: true, startupId: true } } } },
-      projects: true,
+      members: { 
+        include: { 
+          user: { 
+            select: { 
+              id: true, 
+              name: true, 
+              email: true,
+              role: true, 
+              avatarId: true,
+              organizationId: true 
+            } 
+          } 
+        } 
+      },
+      directors: {
+        include: {
+           user: {
+              select: {
+                 id: true,
+                 name: true,
+                 email: true,
+                 avatarId: true
+              }
+           }
+        }
+      },
+      tasks: {
+        include: {
+           assignments: {
+              include: {
+                 user: {
+                    select: {
+                       id: true,
+                       name: true
+                    }
+                 }
+              }
+           }
+        }
+      },
+      project: true,
+      event: {
+        include: {
+          directors: {
+            include: {
+              user: {
+                select: {
+                  id: true,
+                  name: true,
+                  avatarId: true
+                }
+              }
+            }
+          }
+        }
+      }
     },
   })
   if (!team) return NextResponse.json({ error: "Not found" }, { status: 404 })
 
   if (session.user.role !== "SUPERADMIN") {
-    if (!session.user.startupId || session.user.startupId !== team.startupId) {
+    if (!session.user.organizationId || session.user.organizationId !== team.organizationId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
   }
@@ -34,9 +88,9 @@ export async function PATCH(req: Request, context: { params: Promise<{ id: strin
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
-  const existing = await prisma.team.findUnique({ where: { id }, select: { startupId: true } })
+  const existing = await prisma.team.findUnique({ where: { id }, select: { organizationId: true } })
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (session.user.role !== "SUPERADMIN" && session.user.startupId !== existing.startupId) {
+  if (session.user.role !== "SUPERADMIN" && session.user.organizationId !== existing.organizationId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -55,9 +109,9 @@ export async function PUT(req: Request, context: { params: Promise<{ id: string 
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
-  const existing = await prisma.team.findUnique({ where: { id }, select: { startupId: true } })
+  const existing = await prisma.team.findUnique({ where: { id }, select: { organizationId: true } })
   if (!existing) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (session.user.role !== "SUPERADMIN" && session.user.startupId !== existing.startupId) {
+  if (session.user.role !== "SUPERADMIN" && session.user.organizationId !== existing.organizationId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -76,9 +130,9 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
-  const team = await prisma.team.findUnique({ where: { id }, select: { startupId: true } })
+  const team = await prisma.team.findUnique({ where: { id }, select: { organizationId: true } })
   if (!team) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (session.user.role !== "SUPERADMIN" && session.user.startupId !== team.startupId) {
+  if (session.user.role !== "SUPERADMIN" && session.user.organizationId !== team.organizationId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -90,4 +144,5 @@ export async function DELETE(req: Request, context: { params: Promise<{ id: stri
 
   return NextResponse.json({ message: "Team deleted successfully" })
 }
+
 

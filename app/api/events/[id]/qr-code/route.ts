@@ -22,7 +22,7 @@ export async function GET(
     // Check if user is event creator or HR in same org
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { createdById: true, startupId: true, qrCodeUrl: true, qrCodeData: true },
+      select: { createdById: true, organizationId: true, qrCodeUrl: true, qrCodeData: true },
     })
 
     if (!event) {
@@ -31,11 +31,11 @@ export async function GET(
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true, startupId: true },
+      select: { role: true, organizationId: true },
     })
 
     const isCreator = event.createdById === session.user.id
-    const isHRInOrg = user?.role === "HR" && user?.startupId === event.startupId
+    const isHRInOrg = user?.role === "HR" && user?.organizationId === event.organizationId
 
     if (!isCreator && !isHRInOrg) {
       return NextResponse.json(
@@ -74,7 +74,7 @@ export async function POST(
     // Check if user is event creator or HR in same org
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { createdById: true, startupId: true, qrCodeUrl: true },
+      select: { createdById: true, organizationId: true, qrCodeUrl: true },
     })
 
     if (!event) {
@@ -83,11 +83,11 @@ export async function POST(
 
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { role: true, startupId: true },
+      select: { role: true, organizationId: true },
     })
 
     const isCreator = event.createdById === session.user.id
-    const isHRInOrg = user?.role === "HR" && user?.startupId === event.startupId
+    const isHRInOrg = user?.role === "HR" && user?.organizationId === event.organizationId
 
     if (!isCreator && !isHRInOrg) {
       return NextResponse.json(

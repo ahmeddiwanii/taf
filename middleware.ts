@@ -5,39 +5,48 @@ import type { NextRequestWithAuth } from "next-auth/middleware"
 export default async function middleware(req: NextRequestWithAuth) {
   const token = await getToken({ req })
   const isAuthenticated = !!token
+  const path = req.nextUrl.pathname
 
-  // Public paths that don't require authentication
-  const publicPaths = ["/auth/login", "/auth/register"]
-  const isPublicPath = publicPaths.some((path) => req.nextUrl.pathname.startsWith(path))
+  const publicAuthPaths = ["/auth/login", "/auth/register", "/auth/forgot-password", "/auth/reset-password"]
+  const isPublicAuthPath = publicAuthPaths.some((p) => path.startsWith(p))
 
-  // Redirect unauthenticated users to login
-  if (!isAuthenticated && !isPublicPath) {
+  if (!isAuthenticated && !isPublicAuthPath && path.startsWith("/auth")) {
     return NextResponse.redirect(new URL("/auth/login", req.url))
   }
 
-  // Redirect authenticated users away from public paths
-  if (isAuthenticated && isPublicPath) {
+  if (!isAuthenticated && path.startsWith("/dashboard")) {
+    return NextResponse.redirect(new URL("/auth/login", req.url))
+  }
+
+  if (isAuthenticated && isPublicAuthPath) {
     return redirectBasedOnRole(token.role as string, req.url)
   }
 
-  // Role-based access control
   if (isAuthenticated) {
     const role = token.role as string
-    const path = req.nextUrl.pathname
+    const memberStatus = (token as { memberStatus?: string }).memberStatus
 
-    // Admin paths
     if (path.startsWith("/dashboard/admin") && role !== "SUPERADMIN") {
       return redirectBasedOnRole(role, req.url)
     }
 
-    // HR paths
     if (path.startsWith("/dashboard/hr") && role !== "HR") {
       return redirectBasedOnRole(role, req.url)
     }
 
-    // Employee paths
-    if (path.startsWith("/dashboard/employee") && role !== "EMPLOYEE") {
+    if (path.startsWith("/dashboard/member") && role !== "MEMBER") {
       return redirectBasedOnRole(role, req.url)
+    }
+
+    if (role === "MEMBER" && path.startsWith("/dashboard/member")) {
+      if (memberStatus === "REJECTED") {
+        return NextResponse.redirect(new URL("/auth/login?message=rejected", req.url))
+      }
+
+      const isWaitingPage = path.startsWith("/dashboard/member/waiting")
+      if (!isWaitingPage && memberStatus === "AWAITING_HR") {
+        return NextResponse.redirect(new URL("/dashboard/member/waiting", req.url))
+      }
     }
   }
 
@@ -45,17 +54,18 @@ export default async function middleware(req: NextRequestWithAuth) {
 }
 
 function redirectBasedOnRole(role: string, baseUrl: string) {
-  let redirectPath = "/dashboard/employee"
-
   if (role === "SUPERADMIN") {
-    redirectPath = "/dashboard/admin"
-  } else if (role === "HR") {
-    redirectPath = "/dashboard/hr"
+    return NextResponse.redirect(new URL("/dashboard/admin", baseUrl))
   }
-
-  return NextResponse.redirect(new URL(redirectPath, baseUrl))
+  if (role === "HR") {
+    return NextResponse.redirect(new URL("/dashboard/hr", baseUrl))
+  }
+  if (role === "MEMBER") {
+    return NextResponse.redirect(new URL("/dashboard/member", baseUrl))
+  }
+  return NextResponse.redirect(new URL("/organizations", baseUrl))
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/auth/:path*", "/test/:path*", "/results/:path*"],
+  matcher: ["/dashboard/:path*", "/auth/:path*"],
 }

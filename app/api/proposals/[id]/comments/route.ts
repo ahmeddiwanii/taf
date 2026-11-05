@@ -9,10 +9,10 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   const { id } = await context.params
 
-  const proposal = await prisma.proposal.findUnique({ where: { id }, select: { startupId: true, visibility: true } })
+  const proposal = await prisma.proposal.findUnique({ where: { id }, select: { organizationId: true, visibility: true } })
   if (!proposal) return NextResponse.json({ error: "Not found" }, { status: 404 })
   if (session.user.role !== "SUPERADMIN") {
-    if (!session.user.startupId || session.user.startupId !== proposal.startupId) {
+    if (!session.user.organizationId || session.user.organizationId !== proposal.organizationId) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
     if (proposal.visibility === "HR_ONLY" && session.user.role !== "HR") {
@@ -32,4 +32,5 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 
   return NextResponse.json(comment, { status: 201 })
 }
+
 

@@ -7,7 +7,7 @@ const prisma = new PrismaClient();
 async function main() {
   console.log("Starting seed...");
 
-  // Create admin user first (without startup)
+  // Create admin user first (without organization)
   const adminPassword = await bcryptjs.hash("admin123", 10);
   const admin = await prisma.user.upsert({
     where: { email: "admin@tafsula.com" },
@@ -23,13 +23,13 @@ async function main() {
     },
   });
 
-  // Create startup with admin as creator
-  const startup = await prisma.startup.upsert({
-    where: { id: "sample-startup-001" },
+  // Create organization with admin as creator
+  const organization = await prisma.organization.upsert({
+    where: { id: "sample-organization-001" },
     update: {},
     create: {
-      id: "sample-startup-001",
-      name: "Sample Startup",
+      id: "sample-organization-001",
+      name: "Sample Organization",
       createdAt: new Date(),
       updatedAt: new Date(),
       createdById: admin.id,
@@ -39,57 +39,57 @@ async function main() {
   // Create HR user
   const hrPassword = await bcryptjs.hash("hr123", 10);
   const hr = await prisma.user.upsert({
-    where: { email: "hr@samplestartup.com" },
+    where: { email: "hr@sampleorganization.com" },
     update: {},
     create: {
       id: uuidv4(),
       name: "HR Manager",
-      email: "hr@samplestartup.com",
+      email: "hr@sampleorganization.com",
       password: hrPassword,
       role: "HR",
-      startupId: startup.id,
+      organizationId: organization.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
   });
 
-  // Create employee user
-  const employeePassword = await bcryptjs.hash("employee123", 10);
-  const employee1 = await prisma.user.upsert({
-    where: { email: "john@samplestartup.com" },
+  // Create member user
+  const memberPassword = await bcryptjs.hash("member123", 10);
+  const member1 = await prisma.user.upsert({
+    where: { email: "john@sampleorganization.com" },
     update: {},
     create: {
       id: uuidv4(),
       name: "John Doe",
-      email: "john@samplestartup.com",
-      password: employeePassword,
-      role: "EMPLOYEE",
-      startupId: startup.id,
+      email: "john@sampleorganization.com",
+      password: memberPassword,
+      role: "MEMBER",
+      organizationId: organization.id,
       invitedById: hr.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
   });
 
-  // Create another employee user
-  const employee2Password = await bcryptjs.hash("employee123", 10);
-  const employee2 = await prisma.user.upsert({
-    where: { email: "jane@samplestartup.com" },
+  // Create another member user
+  const member2Password = await bcryptjs.hash("member123", 10);
+  const member2 = await prisma.user.upsert({
+    where: { email: "jane@sampleorganization.com" },
     update: {},
     create: {
       id: uuidv4(),
       name: "Jane Smith",
-      email: "jane@samplestartup.com",
-      password: employee2Password,
-      role: "EMPLOYEE",
-      startupId: startup.id,
+      email: "jane@sampleorganization.com",
+      password: member2Password,
+      role: "MEMBER",
+      organizationId: organization.id,
       invitedById: hr.id,
       createdAt: new Date(),
       updatedAt: new Date(),
     },
   });
 
-  console.log(`Created users: admin, hr, employees`);
+  console.log(`Created users: admin, hr, members`);
 
   console.log("Seed completed successfully!");
 }

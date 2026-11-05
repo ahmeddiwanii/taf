@@ -17,14 +17,15 @@ export async function GET(
   try {
     const { id: eventId } = await params
 
-    // Check if user is HR and owns the event
+    // Check if user is HR/SUPERADMIN and owns the event
     const event = await prisma.event.findUnique({
       where: { id: eventId },
       select: {
         id: true,
-        startupId: true,
+        organizationId: true,
         title: true,
         startAt: true,
+        createdById: true,
       },
     })
 
@@ -32,13 +33,16 @@ export async function GET(
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    // Verify user is HR in the same startup
-    const userStartup = await prisma.user.findUnique({
+    // Verify user is HR/SUPERADMIN in the same organization, or is the event creator
+    const userOrganization = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { startupId: true, role: true },
+      select: { organizationId: true, role: true },
     })
 
-    if (userStartup?.role !== "HR" || userStartup?.startupId !== event.startupId) {
+    const isCreator = event.createdById === session.user.id
+    const isOrgAdmin = (userOrganization?.role === "HR" || userOrganization?.role === "SUPERADMIN") && userOrganization?.organizationId === event.organizationId
+
+    if (!isCreator && !isOrgAdmin) {
       return NextResponse.json(
         { error: "Not authorized to view registrations" },
         { status: 403 }

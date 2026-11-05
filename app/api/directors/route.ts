@@ -5,7 +5,7 @@ import { prisma } from "@/lib/db"
 
 /**
  * GET /api/directors
- * Get all directors across all projects, events, and teams for the startup
+ * Get all directors across all projects, events, and teams for the organization
  * Query params:
  *   - type: "project" | "event" | "team" (optional, filter by type)
  *   - userId: string (optional, filter by user)
@@ -18,7 +18,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const startupId = session.user.startupId || ""
+    const organizationId = session.user.organizationId || ""
     const { searchParams } = new URL(req.url)
     const type = searchParams.get("type") // "project", "event", "team"
     const userId = searchParams.get("userId")
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     if (!type || type === "project") {
       const projectDirectors = await prisma.projectDirector.findMany({
         where: {
-          project: { startupId },
+          project: { organizationId },
           ...(userId && { userId }),
         },
         include: {
@@ -70,7 +70,7 @@ export async function GET(req: NextRequest) {
     if (!type || type === "event") {
       const eventDirectors = await prisma.eventDirector.findMany({
         where: {
-          event: { startupId },
+          event: { organizationId },
           ...(userId && { userId }),
         },
         include: {
@@ -101,7 +101,7 @@ export async function GET(req: NextRequest) {
     if (!type || type === "team") {
       const teamDirectors = await prisma.teamDirector.findMany({
         where: {
-          team: { startupId },
+          team: { organizationId },
           ...(userId && { userId }),
         },
         include: {

@@ -87,15 +87,15 @@ export async function POST(
     // Update user event stats
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { startupId: true },
+      select: { organizationId: true },
     })
 
     if (event) {
       await prisma.userEventStats.upsert({
         where: {
-          userId_startupId: {
+          userId_organizationId: {
             userId: session.user.id,
-            startupId: event.startupId,
+            organizationId: event.organizationId,
           },
         },
         update: {
@@ -105,7 +105,7 @@ export async function POST(
         },
         create: {
           userId: session.user.id,
-          startupId: event.startupId,
+          organizationId: event.organizationId,
           totalAttended: 1,
         },
       })

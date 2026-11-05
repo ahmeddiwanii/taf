@@ -9,8 +9,9 @@ import { v4 as uuidv4 } from "uuid"
 export async function GET(req: NextRequest) {
   try {
     const { searchParams } = new URL(req.url)
-    const startupId = searchParams.get("startupId")
+    const organizationId = searchParams.get("organizationId")
     const status = searchParams.get("status")
+    const includeAll = searchParams.get("includeAll") === "true"
     const limit = parseInt(searchParams.get("limit") || "20")
     const page = parseInt(searchParams.get("page") || "1")
     const skip = (page - 1) * limit
@@ -18,17 +19,41 @@ export async function GET(req: NextRequest) {
     const session = await getServerSession(authOptions)
     const where: any = {}
 
-    if (startupId) where.startupId = startupId
+    if (organizationId) where.organizationId = organizationId
     if (status) where.status = status
 
-    // Build visibility query based on user role
-    if (session?.user?.id) {
+    // HR/SUPERADMIN with includeAll=true: show all events for their org
+    if (includeAll && session?.user?.id) {
+      const user = await prisma.user.findUnique({
+        where: { id: session.user.id },
+        select: { role: true, organizationId: true },
+      })
+
+      if ((user?.role === "HR" || user?.role === "SUPERADMIN") && user?.organizationId) {
+        // Bypass visibility filter – show everything in their organization
+        where.organizationId = user.organizationId
+      } else {
+        // Non-HR users still get visibility filtering
+        where.OR = [
+          { visibility: "PUBLIC" },
+          { visibility: "ORG_ONLY", organizationId: session.user.organizationId },
+          { visibility: "MEMBERS_ONLY", organizationId: session.user.organizationId },
+          {
+            visibility: "PRIVATE",
+            approvalRequests: {
+              some: { userId: session.user.id, status: "APPROVED" },
+            },
+          },
+        ]
+      }
+    } else if (session?.user?.id) {
+      // Regular visibility filtering
       where.OR = [
         { visibility: "PUBLIC" },
-        { visibility: "ORG_ONLY", startupId: session.user.startupId },
+        { visibility: "ORG_ONLY", organizationId: session.user.organizationId },
         {
           visibility: "MEMBERS_ONLY",
-          startupId: session.user.startupId,
+          organizationId: session.user.organizationId,
         },
         {
           visibility: "PRIVATE",
@@ -96,9 +121,9 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    if (!user.startupId) {
+    if (!user.organizationId) {
       return NextResponse.json(
-        { error: "User not assigned to a startup" },
+        { error: "User not assigned to a organization" },
         { status: 400 }
       )
     }
@@ -133,7 +158,7 @@ export async function POST(req: NextRequest) {
 
     const event = await prisma.event.create({
       data: {
-        startupId: user.startupId,
+        organizationId: user.organizationId,
         title,
         description,
         type: type || "GENERAL",
@@ -211,4 +236,5 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
 

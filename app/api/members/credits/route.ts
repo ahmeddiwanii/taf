@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
     const teamId = searchParams.get("teamId");
 
     let whereClause: any = {
-      startupId: user.startupId,
+      organizationId: user.organizationId,
     };
 
     if (userId) {

@@ -13,16 +13,16 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
 
   const proposal = await prisma.proposal.findUnique({
     where: { id },
-    select: { startupId: true, title: true, description: true, type: true, submittedById: true },
+    select: { organizationId: true, title: true, description: true, type: true, submittedById: true },
   })
   if (!proposal) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (session.user.role !== "SUPERADMIN" && session.user.startupId !== proposal.startupId) {
+  if (session.user.role !== "SUPERADMIN" && session.user.organizationId !== proposal.organizationId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
   const project = await prisma.project.create({
     data: {
-      startupId: proposal.startupId,
+      organizationId: proposal.organizationId,
       title: proposal.title,
       description: proposal.description,
       type: proposal.type || "initiative",
@@ -39,4 +39,5 @@ export async function POST(_: Request, context: { params: Promise<{ id: string }
 
   return NextResponse.json({ proposal: updatedProposal, project })
 }
+
 

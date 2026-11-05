@@ -10,8 +10,14 @@ export async function GET() {
 
   const where: any = {}
   if (session.user.role !== "SUPERADMIN") {
-    where.startupId = session.user.startupId ?? undefined
-    where.visibility = { in: ["ORG", ...(session.user.role === "HR" ? ["HR_ONLY"] : [])] }
+    where.organizationId = session.user.organizationId ?? undefined
+    if (session.user.role === "HR") {
+      where.visibility = { in: ["ORG", "HR_ONLY", "PRIVATE"] }
+    } else if (session.user.role === "MEMBER") {
+      where.OR = [{ submittedById: session.user.id }, { visibility: "ORG" }]
+    } else {
+      where.visibility = { in: ["ORG"] }
+    }
   }
 
   const proposals = await prisma.proposal.findMany({
@@ -19,6 +25,17 @@ export async function GET() {
     include: {
       submittedBy: { select: { id: true, name: true } },
       reviewer: { select: { id: true, name: true } },
+      _count: { select: { comments: true } },
+      comments: {
+        orderBy: { createdAt: "desc" },
+        take: 25,
+        select: {
+          id: true,
+          body: true,
+          createdAt: true,
+          author: { select: { id: true, name: true } },
+        },
+      },
     },
     orderBy: { createdAt: "desc" },
   })
@@ -28,15 +45,15 @@ export async function GET() {
 export async function POST(req: Request) {
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
-  const startupId = session.user.role === "SUPERADMIN" ? (req.headers.get("x-startup-id") || session.user.startupId) : session.user.startupId
-  if (!startupId) return NextResponse.json({ error: "Startup required" }, { status: 400 })
+  const organizationId = session.user.role === "SUPERADMIN" ? (req.headers.get("x-organization-id") || session.user.organizationId) : session.user.organizationId
+  if (!organizationId) return NextResponse.json({ error: "Organization required" }, { status: 400 })
 
   const body = await req.json()
   const { type, title, visibility, canvasJson, swotJson, timelineStart, timelineEnd, expectedImpact } = body
 
   const proposal = await prisma.proposal.create({
     data: {
-      startupId,
+      organizationId,
       type,
       title,
       visibility: visibility || "ORG",
@@ -51,4 +68,5 @@ export async function POST(req: Request) {
   })
   return NextResponse.json(proposal, { status: 201 })
 }
+
 

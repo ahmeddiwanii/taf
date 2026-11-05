@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "mysql"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model answer {
@@ -36,7 +37,7 @@ model question {
   id           String        @id
   questionText String        @db.Text
   type         question_type @default(AGREEMENT_SCALE)
-  discMapping  String        @db.LongText
+  discMapping  String        @db.Text
   createdAt    DateTime      @default(now())
   updatedAt    DateTime
   answer       answer[]
@@ -57,7 +58,7 @@ model result {
   @@index([userId], map: "Result_userId_idx")
 }
 
-model startup {
+model organization {
   id          String   @id
   name        String
   createdAt   DateTime @default(now())
@@ -70,7 +71,7 @@ model startup {
   proposal    proposal[]
   event       event[]
   resource    resource[]
-  startupProfile startupProfile?
+  organizationProfile organizationProfile?
   posts       organizationPost[]
   eventStats  userEventStats[]
   memberCredits memberCredit[] @relation("MemberCredits")
@@ -79,6 +80,8 @@ model startup {
   collaborationCode       organizationCollaborationCode?
   collaborationRequests   collaborationRequest[] @relation("CollaborationRequester")
   collaborationTargets    collaborationRequest[] @relation("CollaborationTarget")
+  contacts               contact[]
+  featureAccess          featureAccess[]
 }
 
 model user {
@@ -87,16 +90,18 @@ model user {
   email       String    @unique(map: "User_email_key")
   password    String
   role        user_role @default(REGULAR_USER)
+  avatarId    Int       @default(0)
+  memberStatus member_status @default(ACCEPTED)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime
-  startupId   String?
+  organizationId   String?
   invitedById String?
   answer      answer[]
   insight     insight[]
   result      result[]
   user        user?     @relation("userTouser", fields: [invitedById], references: [id], map: "User_invitedById_fkey")
   other_user  user[]    @relation("userTouser")
-  startup     startup?  @relation(fields: [startupId], references: [id], map: "User_startupId_fkey")
+  organization     organization?  @relation(fields: [organizationId], references: [id], map: "User_organizationId_fkey")
   profile     profile?
   certificate certificate[]
   userSkill   userSkill[]
@@ -136,8 +141,15 @@ model user {
   eventDirectorships   eventDirector[] @relation("EventDirector")
   teamDirectorships    teamDirector[] @relation("TeamDirector")
 
-  @@index([invitedById], map: "User_invitedById_fkey")
-  @@index([startupId], map: "User_startupId_idx")
+  // NEW: Contacts & Feature Access
+  contacts             contact[] @relation("ContactAddedBy")
+  featureAccessGrants  featureAccess[] @relation("FeatureAccessUser")
+  featureAccessGiven   featureAccess[] @relation("FeatureAccessGranter")
+
+  teamTaskComments     teamTaskComment[]
+
+  @@index([invitedById], map: "User_invitedById_idx")
+  @@index([organizationId], map: "User_organizationId_idx")
 }
 
 enum question_type {
@@ -148,8 +160,15 @@ enum question_type {
 enum user_role {
   SUPERADMIN
   HR
-  EMPLOYEE
+  MEMBER
   REGULAR_USER
+}
+
+enum member_status {
+  TEST_PENDING
+  AWAITING_HR
+  ACCEPTED
+  REJECTED
 }
 
 enum result_dominantType {
@@ -157,6 +176,12 @@ enum result_dominantType {
   I
   S
   C
+}
+
+enum taskStatus {
+  PENDING
+  ACTIVE
+  FINALIZED
 }
 
 model profile {
@@ -214,7 +239,7 @@ model userSkill {
 
 model team {
   id           String   @id @default(cuid())
-  startupId    String
+  organizationId    String
   name         String
   purpose      String?
   description  String?
@@ -227,7 +252,7 @@ model team {
   createdAt    DateTime @default(now())
   updatedAt    DateTime @updatedAt
 
-  startup   startup @relation(fields: [startupId], references: [id])
+  organization   organization @relation(fields: [organizationId], references: [id])
   createdBy user    @relation("TeamCreator", fields: [createdById], references: [id])
   event     event?  @relation("TeamEvent", fields: [eventId], references: [id])
   project   project? @relation("TeamProject", fields: [projectId], references: [id])
@@ -236,7 +261,7 @@ model team {
   resources resource[] @relation("TeamResource")
   directors teamDirector[]
 
-  @@index([startupId])
+  @@index([organizationId])
   @@index([createdById])
   @@index([eventId])
   @@index([projectId])
@@ -247,6 +272,11 @@ model teamMember {
   teamId    String
   userId    String
   roleInTeam String?
+  
+  // NEW: Acceptance Flow
+  status    String   @default("ACCEPTED") // PENDING, ACCEPTED, REJECTED
+  invitationMessage String? @db.Text
+  
   createdAt DateTime @default(now())
 
   team team @relation(fields: [teamId], references: [id])
@@ -258,7 +288,7 @@ model teamMember {
 
 model project {
   id            String   @id @default(cuid())
-  startupId     String
+  organizationId     String
   title         String
   description   String?
   type          String   @default("internal")
@@ -271,7 +301,7 @@ model project {
   createdAt     DateTime @default(now())
   updatedAt     DateTime @updatedAt
 
-  startup    startup @relation(fields: [startupId], references: [id])
+  organization    organization @relation(fields: [organizationId], references: [id])
   createdBy  user    @relation("ProjectCreator", fields: [createdById], references: [id])
   teams      team[] @relation("TeamProject")
   tasks      task[]
@@ -279,7 +309,7 @@ model project {
   events     event[] @relation("ProjectEvent")
   directors  projectDirector[]
 
-  @@index([startupId])
+  @@index([organizationId])
   @@index([createdById])
 }
 
@@ -289,6 +319,7 @@ model task {
   title       String
   description String?
   status      String   @default("todo")
+  taskStatus  taskStatus @default(PENDING)
   priority    String   @default("medium")
   dueDate     DateTime?
   assigneeId  String?
@@ -303,6 +334,7 @@ model task {
   @@index([projectId])
   @@index([assigneeId])
   @@index([createdById])
+  @@index([taskStatus])
 }
 
 // NEW: Team-specific tasks related to events/projects
@@ -314,11 +346,15 @@ model teamTask {
   
   // Task Management
   status      String   @default("TODO")  // TODO, IN_PROGRESS, REVIEW, COMPLETED
+  taskStatus  taskStatus @default(PENDING)  // PENDING, ACTIVE, FINALIZED
   priority    String   @default("MEDIUM") // LOW, MEDIUM, HIGH, URGENT
   
-  // Assignment & Tracking
+  // Task Assignments, Attachments and Tracking
   createdById String
   dueDate     DateTime?
+  
+  hrDocumentName String?
+  hrDocumentUrl  String? @db.Text
   
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -328,10 +364,28 @@ model teamTask {
   
   // Task assignments for team members
   assignments teamTaskAssignment[]
+  comments    teamTaskComment[]
+
+  @@index([taskStatus])
 
   @@index([teamId])
   @@index([createdById])
   @@index([status])
+}
+
+// NEW: Task Discussion Threads
+model teamTaskComment {
+  id        String   @id @default(cuid())
+  taskId    String
+  userId    String
+  content   String   @db.Text
+  createdAt DateTime @default(now())
+  
+  task teamTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+  user user     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([taskId])
+  @@index([userId])
 }
 
 // NEW: Individual task assignments for team members
@@ -348,6 +402,13 @@ model teamTaskAssignment {
   // Review & Approval
   approvedBy     String?  // HR user who approved
   approvalStatus String   @default("PENDING")  // PENDING, APPROVED, REJECTED
+  
+  // NEW: Member Acceptance & Documents
+  acceptanceStatus String @default("PENDING") // PENDING, ACCEPTED, REJECTED
+  
+  memberDocumentName String?
+  memberDocumentUrl  String? @db.Text
+  
   approvalComment String?
   approvedAt     DateTime?
   
@@ -372,7 +433,7 @@ model teamTaskAssignment {
 model memberCredit {
   id           String   @id @default(cuid())
   userId       String
-  startupId    String
+  organizationId    String
   
   // Credit Tracking
   totalCredits Float    @default(0)  // Total credits earned
@@ -390,16 +451,16 @@ model memberCredit {
   updatedAt    DateTime @updatedAt
   
   user    user    @relation("MemberCredits", fields: [userId], references: [id], onDelete: Cascade)
-  startup startup @relation("MemberCredits", fields: [startupId], references: [id], onDelete: Cascade)
+  organization organization @relation("MemberCredits", fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, startupId])
+  @@unique([userId, organizationId])
   @@index([userId])
-  @@index([startupId])
+  @@index([organizationId])
 }
 
 model proposal {
   id             String   @id @default(cuid())
-  startupId      String
+  organizationId      String
   type           String
   title          String
   status         String   @default("submitted")
@@ -415,12 +476,12 @@ model proposal {
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
-  startup   startup @relation(fields: [startupId], references: [id])
+  organization   organization @relation(fields: [organizationId], references: [id])
   submittedBy user  @relation("ProposalSubmitter", fields: [submittedById], references: [id])
   reviewer   user?  @relation("ProposalReviewer", fields: [reviewerId], references: [id])
   comments   proposalComment[]
 
-  @@index([startupId])
+  @@index([organizationId])
   @@index([submittedById])
   @@index([reviewerId])
   @@index([status])
@@ -442,7 +503,7 @@ model proposalComment {
 
 model event {
   id                  String   @id @default(cuid())
-  startupId           String
+  organizationId           String
   title               String
   description         String?  @db.Text
   
@@ -465,15 +526,15 @@ model event {
   endAt               DateTime?
   
   // Location (for in-person events)
-  location            String?
-  venue               String?
+  location            String?  @db.Text
+  venue               String?  @db.Text
   
   // QR Code & Attendance
-  qrCodeUrl           String?  @db.LongText
-  qrCodeData          String?  @db.LongText
+  qrCodeUrl           String?  @db.Text
+  qrCodeData          String?  @db.Text
   
   // Event Poster
-  posterUrl           String?  @db.LongText
+  posterUrl           String?  @db.Text
 
   // Post-Event
   galleryImagesJson   Json?    // Array of image URLs
@@ -491,7 +552,7 @@ model event {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
-  startup             startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  organization             organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   relatedProject      project? @relation("ProjectEvent", fields: [relatedProjectId], references: [id])
   createdBy           user    @relation("EventCreator", fields: [createdById], references: [id])
   
@@ -503,7 +564,7 @@ model event {
   feedbacks           eventFeedback[]
   directors           eventDirector[]
 
-  @@index([startupId])
+  @@index([organizationId])
   @@index([createdById])
   @@index([status])
   @@index([visibility])
@@ -511,7 +572,7 @@ model event {
 
 model resource {
   id              String   @id @default(cuid())
-  startupId       String
+  organizationId       String
   title           String
   type            String
   url             String?
@@ -523,12 +584,12 @@ model resource {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  startup  startup @relation(fields: [startupId], references: [id])
+  organization  organization @relation(fields: [organizationId], references: [id])
   linkedProject project? @relation("ProjectResource", fields: [linkedProjectId], references: [id])
   linkedTeam   team?    @relation("TeamResource", fields: [linkedTeamId], references: [id])
   createdBy user @relation("ResourceCreator", fields: [createdById], references: [id])
 
-  @@index([startupId])
+  @@index([organizationId])
   @@index([linkedProjectId])
   @@index([linkedTeamId])
   @@index([createdById])
@@ -546,6 +607,9 @@ model eventRegistration {
   // Payment (if applicable)
   paymentStatus   String   @default("PENDING")    // PENDING, PAID, FAILED, REFUNDED
   ticketId        String?
+  
+  // NEW: Request Flow
+  preferredTeamId String? // Member requests a specific team
   
   appliedAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
@@ -616,8 +680,8 @@ model eventQRCode {
    code            String   @unique
 
    // QR Code Details
-   qrImageUrl      String?  @db.LongText
-   qrData          String?  @db.LongText
+   qrImageUrl      String?  @db.Text
+   qrData          String?  @db.Text
 
    // Scan Tracking
    totalScans      Int      @default(0)
@@ -652,7 +716,7 @@ model eventFeedback {
 model userEventStats {
   id                  String   @id @default(cuid())
   userId              String
-  startupId           String
+  organizationId           String
   
   totalEventsJoined   Int      @default(0)
   totalAttended       Int      @default(0)
@@ -661,17 +725,17 @@ model userEventStats {
   updatedAt           DateTime @updatedAt
 
   user                user     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  startup             startup  @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  organization             organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@unique([userId, startupId])
+  @@unique([userId, organizationId])
   @@index([userId])
 }
 
-model startupProfile {
+model organizationProfile {
   id                String   @id @default(cuid())
-  startupId         String   @unique
-  profileImageUrl   String?  @db.LongText
-  coverImageUrl     String?  @db.LongText
+  organizationId         String   @unique
+  profileImageUrl   String?  @db.Text
+  coverImageUrl     String?  @db.Text
   bio               String?  @db.Text
   contactEmail      String?
   contactPhone      String?
@@ -682,14 +746,14 @@ model startupProfile {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  startup startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  organization organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@index([startupId])
+  @@index([organizationId])
 }
 
 model organizationPost {
   id              String   @id @default(cuid())
-  startupId       String
+  organizationId       String
   title           String
   content         String   @db.Text
   imageUrl        String?
@@ -702,7 +766,7 @@ model organizationPost {
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
 
-  startup      startup           @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  organization      organization           @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   author       user              @relation(fields: [authorId], references: [id])
   approvedBy   user?             @relation("PostApprovals", fields: [approvedById], references: [id])
   comments     postComment[]
@@ -710,7 +774,7 @@ model organizationPost {
   views        postView[]
   notifications notification[]
 
-  @@index([startupId])
+  @@index([organizationId])
   @@index([authorId])
   @@index([approvedById])
 }
@@ -739,11 +803,29 @@ model commentReply {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  comment postComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
-  author  user        @relation(fields: [authorId], references: [id])
+  comment   postComment @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  author    user        @relation(fields: [authorId], references: [id])
 
   @@index([commentId])
   @@index([authorId])
+}
+
+model organizationJoinRequest {
+  id              String   @id @default(cuid())
+  orgName         String
+  orgType         String?
+  contactName     String
+  contactEmail    String
+  contactPhone    String?
+  description     String   @db.Text
+  websiteUrl      String?
+  status          String   @default("PENDING") // PENDING, APPROVED, REJECTED
+  reviewedAt      DateTime?
+  reviewedBy      String?  // Superadmin User ID
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@index([status])
 }
 
 model postLike {
@@ -847,20 +929,20 @@ model teamDirector {
 // NEW: Organization Collaboration Code & Requests
 model organizationCollaborationCode {
   id        String   @id @default(cuid())
-  startupId String   @unique
+  organizationId String   @unique
   code      String   @unique // Unique 8-12 character code (e.g., ORG-ABC123XYZ)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  startup   startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  organization   organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@index([startupId])
+  @@index([organizationId])
 }
 
 model collaborationRequest {
   id                String   @id @default(cuid())
-  requesterStartupId String  // The organization sending the request
-  targetStartupId   String   // The organization receiving the request (identified by their code)
+  requesterOrganizationId String  // The organization sending the request
+  targetOrganizationId   String   // The organization receiving the request (identified by their code)
   
   status            String   @default("PENDING") // PENDING, ACCEPTED, REJECTED, CANCELLED
   message           String?  @db.Text
@@ -871,11 +953,53 @@ model collaborationRequest {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  requesterStartup  startup  @relation("CollaborationRequester", fields: [requesterStartupId], references: [id], onDelete: Cascade)
-  targetStartup     startup  @relation("CollaborationTarget", fields: [targetStartupId], references: [id], onDelete: Cascade)
+  requesterOrganization  organization  @relation("CollaborationRequester", fields: [requesterOrganizationId], references: [id], onDelete: Cascade)
+  targetOrganization     organization  @relation("CollaborationTarget", fields: [targetOrganizationId], references: [id], onDelete: Cascade)
 
-  @@unique([requesterStartupId, targetStartupId])
-  @@index([requesterStartupId])
-  @@index([targetStartupId])
+  @@unique([requesterOrganizationId, targetOrganizationId])
+  @@index([requesterOrganizationId])
+  @@index([targetOrganizationId])
   @@index([status])
+}
+
+// Contact Management for networking
+model contact {
+  id           String   @id @default(cuid())
+  organizationId    String
+  name         String
+  email        String?
+  phone        String?
+  organization String?
+  role         String?
+  description  String?  @db.Text
+  howMet       String?
+  tags         Json?
+  addedById    String
+  isGeneral    Boolean  @default(false)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  parentOrganization  organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  addedBy  user    @relation("ContactAddedBy", fields: [addedById], references: [id])
+
+  @@index([organizationId])
+  @@index([addedById])
+}
+
+// Feature access delegation
+model featureAccess {
+  id         String   @id @default(cuid())
+  userId     String
+  organizationId  String
+  feature    String   // EVENTS, TASKS, TEAMS, PROPOSALS
+  grantedById String
+  createdAt  DateTime @default(now())
+
+  user      user    @relation("FeatureAccessUser", fields: [userId], references: [id], onDelete: Cascade)
+  organization   organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  grantedBy user    @relation("FeatureAccessGranter", fields: [grantedById], references: [id])
+
+  @@unique([userId, organizationId, feature])
+  @@index([userId])
+  @@index([organizationId])
 }

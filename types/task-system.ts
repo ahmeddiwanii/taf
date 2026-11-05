@@ -4,7 +4,7 @@
 import type {
   user as PrismaUser,
   team as PrismaTeam,
-  startup as PrismaStartup,
+  organization as PrismaOrganization,
   event as PrismaEvent,
   project as PrismaProject,
   teamMember,
@@ -73,7 +73,7 @@ export interface TeamTaskAssignment {
 export interface MemberCredit {
   id: string;
   userId: string;
-  startupId: string;
+  organizationId: string;
 
   // Credits tracking
   totalCredits: number;
@@ -93,7 +93,7 @@ export interface MemberCredit {
 
   // Relations
   user?: PrismaUser;
-  startup?: PrismaStartup;
+  organization?: PrismaOrganization;
 }
 
 export interface CreditTransaction {
@@ -108,7 +108,7 @@ export interface CreditTransaction {
 
 export interface Team {
   id: string;
-  startupId: string;
+  organizationId: string;
   name: string;
   purpose?: string | null;
   description?: string | null;
@@ -126,7 +126,7 @@ export interface Team {
   updatedAt: Date;
 
   // Relations
-  startup?: PrismaStartup;
+  organization?: PrismaOrganization;
   createdBy?: PrismaUser;
   event?: PrismaEvent | null;
   project?: PrismaProject | null;
@@ -214,8 +214,8 @@ export interface UpdateAssignmentResponse {
   };
 }
 
-// Get Employee Tasks Response
-export interface GetEmployeeTasksResponse {
+// Get Member Tasks Response
+export interface GetMemberTasksResponse {
   assignments: Array<
     TeamTaskAssignment & {
       task: TeamTask & {
@@ -313,7 +313,7 @@ export interface TaskReviewDialogProps {
 // PAGE COMPONENT PROPS
 // ============================================================================
 
-export interface EmployeeHomePageData {
+export interface MemberHomePageData {
   assignments: TeamTaskAssignment[];
   posts: organizationPost[];
   upcomingEvents: PrismaEvent[];

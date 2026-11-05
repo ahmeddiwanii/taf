@@ -1,8 +1,8 @@
-// Add these fields to the existing startup model to enable organization profiles
+// Add these fields to the existing organization model to enable organization profiles
 
-model startupProfile {
+model organizationProfile {
   id                String   @id @default(cuid())
-  startupId         String   @unique
+  organizationId         String   @unique
   profileImageUrl   String?
   coverImageUrl     String?
   bio               String?  @db.Text
@@ -15,14 +15,14 @@ model startupProfile {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
-  startup startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  organization organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
 
-  @@index([startupId])
+  @@index([organizationId])
 }
 
 model organizationPost {
   id          String   @id @default(cuid())
-  startupId   String
+  organizationId   String
   title       String
   content     String   @db.Text
   imageUrl    String?
@@ -31,10 +31,10 @@ model organizationPost {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 
-  startup startup @relation(fields: [startupId], references: [id], onDelete: Cascade)
+  organization organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
   author  user    @relation(fields: [authorId], references: [id])
 
-  @@index([startupId])
+  @@index([organizationId])
   @@index([authorId])
 }
 
@@ -53,8 +53,8 @@ model eventRegistration {
 }
 
 // Update existing models with relationships
-// startup model should have these additions:
-// startupProfile     startupProfile?
+// organization model should have these additions:
+// organizationProfile     organizationProfile?
 // posts              organizationPost[]
 // eventRegistrations eventRegistration[]
 

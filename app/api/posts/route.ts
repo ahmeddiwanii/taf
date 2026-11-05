@@ -18,8 +18,8 @@ export async function GET(request: NextRequest) {
       where.status = 'published';
     }
 
-    if (session?.user?.startupId) {
-      where.startupId = session.user.startupId;
+    if (session?.user?.organizationId) {
+      where.organizationId = session.user.organizationId;
     }
 
     const [posts, total] = await Promise.all([
@@ -51,8 +51,8 @@ export async function POST(req: Request) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
   }
 
-  if (!session.user.startupId) {
-    return NextResponse.json({ error: "No startup assigned" }, { status: 400 })
+  if (!session.user.organizationId) {
+    return NextResponse.json({ error: "No organization assigned" }, { status: 400 })
   }
 
   const { title, content, imageUrl } = await req.json()
@@ -64,7 +64,7 @@ export async function POST(req: Request) {
   try {
     const post = await prisma.organizationPost.create({
       data: {
-        startupId: session.user.startupId,
+        organizationId: session.user.organizationId,
         title,
         content,
         imageUrl: imageUrl || null,

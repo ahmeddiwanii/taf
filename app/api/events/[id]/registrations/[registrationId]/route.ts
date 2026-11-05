@@ -30,19 +30,19 @@ export async function PATCH(
     // Check if user is HR and owns the event
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { startupId: true },
+      select: { organizationId: true },
     })
 
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    const userStartup = await prisma.user.findUnique({
+    const userOrganization = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { startupId: true, role: true },
+      select: { organizationId: true, role: true },
     })
 
-    if (userStartup?.role !== "HR" || userStartup?.startupId !== event.startupId) {
+    if (userOrganization?.role !== "HR" || userOrganization?.organizationId !== event.organizationId) {
       return NextResponse.json(
         { error: "Not authorized to manage registrations" },
         { status: 403 }
@@ -93,19 +93,19 @@ export async function DELETE(
     // Check if user is HR and owns the event
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { startupId: true },
+      select: { organizationId: true },
     })
 
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    const userStartup = await prisma.user.findUnique({
+    const userOrganization = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { startupId: true, role: true },
+      select: { organizationId: true, role: true },
     })
 
-    if (userStartup?.role !== "HR" || userStartup?.startupId !== event.startupId) {
+    if (userOrganization?.role !== "HR" || userOrganization?.organizationId !== event.organizationId) {
       return NextResponse.json(
         { error: "Not authorized to manage registrations" },
         { status: 403 }

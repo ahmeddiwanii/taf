@@ -13,15 +13,15 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url)
-    const startupId = searchParams.get("startupId")
+    const organizationId = searchParams.get("organizationId")
     const role = searchParams.get("role")
     const userId = searchParams.get("userId")
 
     const whereClause: any = {}
 
-    // Filter by startup if provided
-    if (startupId) {
-      whereClause.startupId = startupId
+    // Filter by organization if provided
+    if (organizationId) {
+      whereClause.organizationId = organizationId
     }
 
     // Filter by role if provided
@@ -45,7 +45,7 @@ export async function GET(req: Request) {
             },
             take: 1,
           },
-          startup: true,
+          organization: true,
         },
       })
 
@@ -58,12 +58,12 @@ export async function GET(req: Request) {
       )
     }
 
-    // HR can only see users in their startup
-    if (session.user.role === "HR" && session.user.startupId) {
+    // HR can only see users in their organization
+    if (session.user.role === "HR" && session.user.organizationId) {
       const users = await prisma.user.findMany({
         where: {
           ...whereClause,
-          startupId: session.user.startupId,
+          organizationId: session.user.organizationId,
         },
         include: {
           result: {
@@ -84,8 +84,8 @@ export async function GET(req: Request) {
       )
     }
 
-    // Employees can only see themselves
-    if (session.user.role === "EMPLOYEE") {
+    // Members can only see themselves
+    if (session.user.role === "MEMBER") {
       const user = await prisma.user.findUnique({
         where: {
           id: session.user.id,

@@ -3,7 +3,7 @@ export interface UserSession {
   name: string
   email: string
   role: string
-  startupId: string | null
+  organizationId: string | null
 }
 
 // DISC test types
@@ -60,17 +60,18 @@ export interface TeamCompatibility {
 }
 
 // Dashboard types
-export interface StartupData {
+export interface OrganizationData {
   id: string
   name: string
-  employeeCount: number
+  memberCount: number
   hrCount: number
 }
 
-export interface EmployeeData {
+export interface MemberData {
   id: string
   name: string
   email: string
   dominantType: string | null
   testCompleted: boolean
+  memberStatus?: string
 }

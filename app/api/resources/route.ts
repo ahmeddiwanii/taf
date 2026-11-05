@@ -10,7 +10,7 @@ export async function GET() {
 
   const where: any = {}
   if (session.user.role !== "SUPERADMIN") {
-    where.startupId = session.user.startupId ?? undefined
+    where.organizationId = session.user.organizationId ?? undefined
     where.OR = [
       { visibility: "ORG" },
       ...(session.user.role === "HR" ? [{ visibility: "HR_ONLY" }] : []),
@@ -32,12 +32,12 @@ export async function POST(req: Request) {
 
   const body = await req.json()
   const { title, type, url, description, tagsJson, linkedProjectId, linkedTeamId, visibility } = body
-  const startupId = session.user.role === "SUPERADMIN" ? (req.headers.get("x-startup-id") || session.user.startupId) : session.user.startupId
-  if (!startupId) return NextResponse.json({ error: "Startup required" }, { status: 400 })
+  const organizationId = session.user.role === "SUPERADMIN" ? (req.headers.get("x-organization-id") || session.user.organizationId) : session.user.organizationId
+  if (!organizationId) return NextResponse.json({ error: "Organization required" }, { status: 400 })
 
   const resource = await prisma.resource.create({
     data: {
-      startupId,
+      organizationId,
       title,
       type,
       url,
@@ -52,4 +52,5 @@ export async function POST(req: Request) {
 
   return NextResponse.json(resource, { status: 201 })
 }
+
 

@@ -8,14 +8,18 @@ declare module "next-auth" {
     email?: string | null
     image?: string | null
     role?: UserRole
-    startupId?: string | null
+    organizationId?: string | null
+    avatarId?: number
+    memberStatus?: string
   }
 
   interface Session {
     user: User & {
       id: string
       role?: UserRole
-      startupId?: string | null
+      organizationId?: string | null
+      avatarId?: number
+      memberStatus?: string
     }
   }
 } 

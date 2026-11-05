@@ -9,9 +9,9 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
   const session = await getServerSession(authOptions)
   if (!session) return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
 
-  const project = await prisma.project.findUnique({ where: { id }, select: { startupId: true } })
+  const project = await prisma.project.findUnique({ where: { id }, select: { organizationId: true } })
   if (!project) return NextResponse.json({ error: "Not found" }, { status: 404 })
-  if (session.user.role !== "SUPERADMIN" && session.user.startupId !== project.startupId) {
+  if (session.user.role !== "SUPERADMIN" && session.user.organizationId !== project.organizationId) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
   }
 
@@ -32,4 +32,5 @@ export async function POST(req: Request, context: { params: Promise<{ id: string
 
   return NextResponse.json(task, { status: 201 })
 }
+
 

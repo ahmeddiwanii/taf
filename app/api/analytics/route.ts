@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const startupId = session.user.startupId || ""
+    const organizationId = session.user.organizationId || ""
 
     // Get date range from query
     const { searchParams } = new URL(req.url)
@@ -22,7 +22,7 @@ export async function GET(req: NextRequest) {
     // Event engagement
     const eventStats = await prisma.eventRegistration.findMany({
       where: {
-        event: { startupId },
+        event: { organizationId },
       },
     })
 
@@ -31,7 +31,7 @@ export async function GET(req: NextRequest) {
     // Proposal metrics
     const proposalStats = await prisma.proposal.findMany({
       where: {
-        startupId,
+        organizationId,
         createdAt: { gte: startDate },
       },
     })
@@ -42,7 +42,7 @@ export async function GET(req: NextRequest) {
     // Team creation trend
     const teamStats = await prisma.team.findMany({
       where: {
-        startupId,
+        organizationId,
         createdAt: { gte: startDate },
       },
     })
@@ -50,7 +50,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({
       period: { days, startDate, endDate: new Date() },
       metrics: {
-        activeEmployees: 0,
+        activeMembers: 0,
         eventRegistrations: eventStats.length,
         eventAttendance: attendedCount,
         proposalsSubmitted: proposalStats.length,

@@ -20,13 +20,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get user's startup
+    // Get user's organization
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { startupId: true },
+      select: { organizationId: true },
     });
 
-    if (!user?.startupId) {
+    if (!user?.organizationId) {
       return NextResponse.json(
         { error: 'User does not belong to an organization' },
         { status: 400 }
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
         title,
         content,
         imageUrl,
-        startupId: user.startupId,
+        organizationId: user.organizationId,
         authorId: session.user.id,
         status: 'pending',
       },

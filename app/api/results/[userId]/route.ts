@@ -20,7 +20,7 @@ export async function GET(
 
     const isOwner = session.user.id === userId
 
-    if (!isOwner && !isSuperadmin && (!isHR || !session.user.startupId)) {
+    if (!isOwner && !isSuperadmin && (!isHR || !session.user.organizationId)) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
     }
 
@@ -29,7 +29,7 @@ export async function GET(
         where: { id: userId },
       })
 
-      if (!user || user.startupId !== session.user.startupId) {
+      if (!user || user.organizationId !== session.user.organizationId) {
         return NextResponse.json({ error: "Unauthorized" }, { status: 403 })
       }
     }

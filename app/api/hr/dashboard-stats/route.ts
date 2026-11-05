@@ -11,16 +11,16 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
     }
 
-    const startupId = session.user.startupId
+    const organizationId = session.user.organizationId
 
-    // Fetch all employees in the organization
-    const employees = await prisma.user.findMany({
-      where: { startupId },
+    // Fetch all members in the organization
+    const members = await prisma.user.findMany({
+      where: { organizationId },
     })
 
     // Fetch all events
     const events = await prisma.event.findMany({
-      where: { startupId: startupId || undefined },
+      where: { organizationId: organizationId || undefined },
     })
 
     const upcomingEvents = events.filter((e) => new Date(e.startAt) > new Date())
@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     // Fetch event registrations
     const registrations = await prisma.eventRegistration.findMany({
       where: {
-        event: { startupId: startupId || undefined },
+        event: { organizationId: organizationId || undefined },
       },
     })
 
@@ -39,7 +39,7 @@ export async function GET(req: NextRequest) {
     // Fetch all proposals
     const proposals = await prisma.proposal.findMany({
       where: {
-        submittedBy: { startupId: startupId || undefined },
+        submittedBy: { organizationId: organizationId || undefined },
       },
     })
 
@@ -49,7 +49,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch DISC distribution
     const discResults = await prisma.result.findMany({
-      where: { userId: { in: employees.map((e) => e.id) } },
+      where: { userId: { in: members.map((e) => e.id) } },
     })
 
     const discDistribution = {
@@ -61,7 +61,7 @@ export async function GET(req: NextRequest) {
 
     // Fetch teams
     const teams = await prisma.team.findMany({
-      where: { startupId: startupId || undefined },
+      where: { organizationId: organizationId || undefined },
       include: {
         members: { select: { id: true } },
       },
@@ -69,14 +69,14 @@ export async function GET(req: NextRequest) {
 
     // Fetch posts
     const posts = await prisma.organizationPost.findMany({
-      where: { startupId: startupId || undefined, status: "published" },
+      where: { organizationId: organizationId || undefined, status: "published" },
     })
 
     // Fetch recent activity (using direct queries if activityLog doesn't exist)
     const recentActivity: any[] = []
 
     return NextResponse.json({
-      totalEmployees: employees.length,
+      totalMembers: members.length,
       totalEvents: events.length,
       upcomingEventsCount: upcomingEvents.length,
       pastEventsCount: pastEvents.length,

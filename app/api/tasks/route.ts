@@ -13,18 +13,23 @@ export async function GET(req: NextRequest) {
 
     const { searchParams } = new URL(req.url)
     const status = searchParams.get("status")
+    const taskStatus = searchParams.get("taskStatus")
     const priority = searchParams.get("priority")
     const limit = parseInt(searchParams.get("limit") || "50")
 
     let where: any = {
       OR: [
-        { assignedToId: session.user.id },
+        { assigneeId: session.user.id },
         { createdById: session.user.id },
       ],
     }
 
     if (status) {
       where.status = status
+    }
+
+    if (taskStatus) {
+      where.taskStatus = taskStatus
     }
 
     if (priority) {
@@ -99,6 +104,73 @@ export async function POST(req: NextRequest) {
     console.error("Error creating task:", error)
     return NextResponse.json(
       { error: "Failed to create task" },
+      { status: 500 }
+    )
+  }
+}
+
+export async function PATCH(req: NextRequest) {
+  try {
+    const session = await getServerSession(authOptions)
+
+    if (!session?.user?.id) {
+      return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
+    }
+
+    // Check if user is HR or SUPERADMIN
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { role: true },
+    })
+
+    if (user?.role !== "HR" && user?.role !== "SUPERADMIN") {
+      return NextResponse.json(
+        { error: "Only HR can update task status" },
+        { status: 403 }
+      )
+    }
+
+    const body = await req.json()
+    const { taskId, taskStatus, status, priority } = body
+
+    if (!taskId) {
+      return NextResponse.json(
+        { error: "Task ID is required" },
+        { status: 400 }
+      )
+    }
+
+    // Verify task exists
+    const task = await prisma.task.findUnique({
+      where: { id: taskId },
+    })
+
+    if (!task) {
+      return NextResponse.json(
+        { error: "Task not found" },
+        { status: 404 }
+      )
+    }
+
+    const updateData: any = {}
+    if (taskStatus) updateData.taskStatus = taskStatus
+    if (status) updateData.status = status
+    if (priority) updateData.priority = priority
+
+    const updatedTask = await prisma.task.update({
+      where: { id: taskId },
+      data: updateData,
+      include: {
+        assignee: { select: { id: true, name: true, email: true } },
+        createdBy: { select: { id: true, name: true } },
+      },
+    })
+
+    return NextResponse.json({ task: updatedTask })
+  } catch (error: any) {
+    console.error("Error updating task:", error)
+    return NextResponse.json(
+      { error: "Failed to update task" },
       { status: 500 }
     )
   }

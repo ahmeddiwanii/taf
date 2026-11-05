@@ -18,22 +18,41 @@ export async function GET(
         createdBy: {
           select: { id: true, name: true, email: true, role: true },
         },
-        startup: {
+        organization: {
           select: {
             id: true,
             name: true,
-            startupProfile: {
+            organizationProfile: {
               select: { profileImageUrl: true },
             },
           },
         },
+        directors: {
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, avatarId: true }
+            }
+          }
+        },
+        teams: {
+          include: {
+            _count: {
+              select: { members: true, tasks: true }
+            },
+            members: {
+               include: { user: { select: { name: true, avatarId: true } } }
+            },
+            directors: {
+               include: { user: { select: { name: true, avatarId: true } } }
+            }
+          }
+        },
         registrations: {
-          select: {
-            id: true,
-            userId: true,
-            status: true,
-            appliedAt: true,
-          },
+          include: {
+            user: {
+              select: { id: true, name: true, email: true, avatarId: true }
+            }
+          }
         },
         attendances: {
           select: {
@@ -69,7 +88,7 @@ export async function GET(
     }
 
     if (event.visibility === "ORG_ONLY" || event.visibility === "MEMBERS_ONLY") {
-      if (session.user.startupId !== event.startupId) {
+      if (session.user.organizationId !== event.organizationId) {
         return NextResponse.json(
           { error: "Unauthorized" },
           { status: 403 }
@@ -116,17 +135,17 @@ export async function PATCH(
     const { id: eventId } = await params
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { createdById: true, startupId: true },
+      select: { createdById: true, organizationId: true },
     })
 
     if (!event) {
       return NextResponse.json({ error: "Event not found" }, { status: 404 })
     }
 
-    // Check authorization: only creator or HR from same startup
+    // Check authorization: only creator or HR from same organization
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, role: true, startupId: true },
+      select: { id: true, role: true, organizationId: true },
     })
 
     if (!user) {
@@ -134,7 +153,7 @@ export async function PATCH(
     }
 
     const isCreator = event.createdById === session.user.id
-    const isHRInSameOrg = user.role === "HR" && user.startupId === event.startupId
+    const isHRInSameOrg = (user.role === "HR" || user.role === "SUPERADMIN") && user.organizationId === event.organizationId
 
     if (!isCreator && !isHRInSameOrg) {
       return NextResponse.json(
@@ -205,7 +224,7 @@ export async function DELETE(
     const { id: eventId } = await params
     const event = await prisma.event.findUnique({
       where: { id: eventId },
-      select: { createdById: true, startupId: true },
+      select: { createdById: true, organizationId: true },
     })
 
     if (!event) {
@@ -231,4 +250,5 @@ export async function DELETE(
     return NextResponse.json({ error: "Internal server error" }, { status: 500 })
   }
 }
+
 
